@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Stride Analytics - Basic
- * Description: Automatically installs Google Tag Manager, Facebook Pixel, and LinkedIn Insight Tag. Includes UTM tracking and premium upgrade options.
+ * Description: Automatically installs Google Tag Manager, Facebook Pixel, and LinkedIn Insight Tag. Includes UTM tracking and premium upgrade options.Warning if GA4 or GAU tags installed.
  * Version: 1.1
  * Author: Digital Stride
  */
@@ -12,6 +12,7 @@ define('TRACKING_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 require_once TRACKING_PLUGIN_DIR . 'includes/settings-page.php';
 require_once TRACKING_PLUGIN_DIR . 'includes/enqueue-scripts.php';
+require_once TRACKING_PLUGIN_DIR . 'includes/disable-comments.php';
 
 function tracking_plugin_activate() {
     add_option('tracking_gtm_id', '');
