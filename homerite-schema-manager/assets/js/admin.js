@@ -376,6 +376,185 @@
 		updateCharCount($(this));
 	}).trigger('input');
 
+	// ─── Scan Content ─────────────────────────────────────────────────
+
+	function hsmEsc(str) {
+		return $('<div>').text(String(str)).html();
+	}
+
+	function hsmScanField(label, value, targetSelector) {
+		var display = value.length > 200 ? value.substring(0, 200) + '…' : value;
+		return '<div class="hsm-scan-field">' +
+			'<div class="hsm-scan-field-label">' + hsmEsc(label) + '</div>' +
+			'<div class="hsm-scan-field-value">' + hsmEsc(display) + '</div>' +
+			'<button type="button" class="button button-small hsm-apply-field" ' +
+				'data-target="' + hsmEsc(targetSelector) + '" ' +
+				'data-value="' + hsmEsc(value) + '">' +
+				'Apply to field' +
+			'</button>' +
+		'</div>';
+	}
+
+	$('#hsm-scan-content').on('click', function () {
+		var $btn     = $(this);
+		var $status  = $('#hsm-scan-status');
+		var $results = $('#hsm-scan-results');
+		var postId   = $btn.data('post-id');
+
+		$btn.prop('disabled', true).text('Scanning\u2026');
+		$status.removeClass('hsm-scan-ok hsm-scan-err').text('');
+		$results.hide().html('');
+
+		$.post(hsmData.ajaxurl, {
+			action:  'hsm_scan_content',
+			nonce:   hsmData.nonce,
+			post_id: postId
+		})
+		.done(function (response) {
+			$btn.prop('disabled', false).text('\uD83D\uDD0D Scan Content');
+
+			if (!response.success) {
+				$status.addClass('hsm-scan-err').text(response.data || 'Scan failed.');
+				return;
+			}
+
+			var d    = response.data;
+			var html = '<div class="hsm-scan-panel">';
+			html += '<p class="hsm-scan-source">Source: <strong>' + hsmEsc(d.source || 'post content') + '</strong></p>';
+
+			// ── SEO fields ──
+			var seoHtml = '';
+			if (d.seo_title)       seoHtml += hsmScanField('SEO Title',        d.seo_title,       '#hsm_seo_title');
+			if (d.seo_description) seoHtml += hsmScanField('Meta Description',  d.seo_description, '#hsm_seo_description');
+			if (seoHtml) html += '<div class="hsm-scan-group"><h4>SEO</h4>' + seoHtml + '</div>';
+
+			// ── Service fields ──
+			var svcHtml = '';
+			if (d.service_name)        svcHtml += hsmScanField('Service Name',        d.service_name,        '#hsm_service_name');
+			if (d.service_description) svcHtml += hsmScanField('Service Description', d.service_description, '#hsm_service_description');
+			if (svcHtml) html += '<div class="hsm-scan-group"><h4>Service</h4>' + svcHtml + '</div>';
+
+			// ── Product fields ──
+			var prodHtml = '';
+			if (d.product_name)        prodHtml += hsmScanField('Product Name',        d.product_name,        '#hsm_product_name');
+			if (d.product_description) prodHtml += hsmScanField('Product Description', d.product_description, '#hsm_product_description');
+			if (prodHtml) html += '<div class="hsm-scan-group"><h4>Product</h4>' + prodHtml + '</div>';
+
+			// ── FAQs ──
+			if (d.faqs && d.faqs.length) {
+				html += '<div class="hsm-scan-group">';
+				html += '<h4>FAQs found (' + d.faqs.length + ')' +
+					' <button type="button" class="button button-small hsm-apply-faqs">Apply all FAQs</button></h4>';
+				html += '<ol class="hsm-scan-list">';
+				$.each(d.faqs, function (i, faq) {
+					html += '<li><em>' + hsmEsc(faq.question) + '</em></li>';
+				});
+				html += '</ol></div>';
+			}
+
+			// ── HowTo steps ──
+			if (d.howto_steps && d.howto_steps.length) {
+				html += '<div class="hsm-scan-group">';
+				html += '<h4>HowTo Steps found (' + d.howto_steps.length + ')' +
+					' <button type="button" class="button button-small hsm-apply-steps">Apply all Steps</button></h4>';
+				html += '<ol class="hsm-scan-list">';
+				$.each(d.howto_steps, function (i, step) {
+					html += '<li>' + hsmEsc(step.name) + '</li>';
+				});
+				html += '</ol></div>';
+			}
+
+			// ── ACF fields ──
+			if (d.acf_fields && Object.keys(d.acf_fields).length) {
+				html += '<div class="hsm-scan-group hsm-scan-acf">';
+				html += '<h4>ACF Fields detected</h4>';
+				html += '<table class="widefat striped"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>';
+				$.each(d.acf_fields, function (key, value) {
+					var display = String(value).length > 120 ? String(value).substring(0, 120) + '…' : value;
+					html += '<tr><td><code>' + hsmEsc(key) + '</code></td><td>' + hsmEsc(display) + '</td></tr>';
+				});
+				html += '</tbody></table></div>';
+			}
+
+			if (html === '<div class="hsm-scan-panel"><p class="hsm-scan-source">Source: <strong>' + hsmEsc(d.source || 'post content') + '</strong></p>') {
+				html += '<p>No content patterns detected. The page may not be published yet or uses a custom layout not readable by the scanner.</p>';
+			}
+
+			html += '</div>';
+
+			$results.data('scan-data', d).html(html).show();
+			$status.addClass('hsm-scan-ok').text('\u2713 Scan complete');
+		})
+		.fail(function () {
+			$btn.prop('disabled', false).text('\uD83D\uDD0D Scan Content');
+			$status.addClass('hsm-scan-err').text('Request failed. Check your connection.');
+		});
+	});
+
+	// Apply single field value.
+	$(document).on('click', '.hsm-apply-field', function () {
+		var $target = $($(this).data('target'));
+		var value   = $(this).data('value');
+		if ($target.length) {
+			$target.val(value).trigger('input');
+			$(this).text('\u2713 Applied').prop('disabled', true);
+		}
+	});
+
+	// Apply all FAQs — enables FAQPage toggle, populates #hsm-faq-list.
+	$(document).on('click', '.hsm-apply-faqs', function () {
+		var d = $('#hsm-scan-results').data('scan-data');
+		if (!d || !d.faqs || !d.faqs.length) return;
+
+		$('[name="hsm_schema_enable_FAQPage"]').prop('checked', true).trigger('change');
+		$('#hsm-faq-list').empty();
+
+		$.each(d.faqs, function (i, faq) {
+			var $row = $(
+				'<div class="hsm-faq-row">' +
+				'<div class="hsm-faq-handle">&#9776;</div>' +
+				'<div class="hsm-faq-fields">' +
+				'<input type="text" name="hsm_faq_question[]" class="large-text">' +
+				'<textarea name="hsm_faq_answer[]" rows="2" class="large-text"></textarea>' +
+				'</div>' +
+				'<button type="button" class="button hsm-remove-faq-row">Remove</button>' +
+				'</div>'
+			);
+			$row.find('[name="hsm_faq_question[]"]').val(faq.question);
+			$row.find('[name="hsm_faq_answer[]"]').val(faq.answer);
+			$('#hsm-faq-list').append($row);
+		});
+
+		$(this).text('\u2713 Applied').prop('disabled', true);
+	});
+
+	// Apply all HowTo steps — enables HowTo toggle, populates #hsm-howto-list.
+	$(document).on('click', '.hsm-apply-steps', function () {
+		var d = $('#hsm-scan-results').data('scan-data');
+		if (!d || !d.howto_steps || !d.howto_steps.length) return;
+
+		$('[name="hsm_schema_enable_HowTo"]').prop('checked', true).trigger('change');
+		$('#hsm-howto-list').empty();
+
+		$.each(d.howto_steps, function (i, step) {
+			var $row = $(
+				'<div class="hsm-howto-row">' +
+				'<div class="hsm-faq-handle">&#9776;</div>' +
+				'<div class="hsm-faq-fields">' +
+				'<input type="text" name="hsm_howto_step_name[]" class="large-text" placeholder="Step title">' +
+				'<textarea name="hsm_howto_step_text[]" rows="2" class="large-text" placeholder="Step instructions\u2026"></textarea>' +
+				'</div>' +
+				'<button type="button" class="button hsm-remove-howto-row">Remove</button>' +
+				'</div>'
+			);
+			$row.find('[name="hsm_howto_step_name[]"]').val(step.name);
+			$row.find('[name="hsm_howto_step_text[]"]').val(step.text);
+			$('#hsm-howto-list').append($row);
+		});
+
+		$(this).text('\u2713 Applied').prop('disabled', true);
+	});
+
 	// ─── WP Media Picker ──────────────────────────────────────────────
 	$(document).on('click', '.hsm-upload-image', function (e) {
 		e.preventDefault();
