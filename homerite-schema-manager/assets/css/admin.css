@@ -1,4 +1,4 @@
-/* HomeRite Schema Manager — Admin Styles */
+/* Stride Analytics — Admin Styles */
 
 /* ─── Layout wrapper ─────────────────────────────────────────────────── */
 .hsm-settings-wrap {
@@ -22,6 +22,72 @@
 	border-bottom: 1px solid #f0f0f1;
 	padding-bottom: 10px;
 	margin-bottom: 12px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* ─── Tooltips ───────────────────────────────────────────────────────── */
+.hsm-tooltip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	background: #72aee6;
+	color: #fff;
+	border-radius: 50%;
+	font-size: 11px;
+	font-weight: 700;
+	cursor: help;
+	flex-shrink: 0;
+	line-height: 1;
+	vertical-align: middle;
+	user-select: none;
+}
+
+.hsm-tooltip .hsm-tooltip-text {
+	visibility: hidden;
+	opacity: 0;
+	background: #1d2327;
+	color: #fff;
+	border-radius: 4px;
+	padding: 9px 13px;
+	position: absolute;
+	z-index: 9999;
+	bottom: calc(100% + 8px);
+	left: 50%;
+	transform: translateX(-50%);
+	width: 280px;
+	font-size: .8em;
+	font-weight: 400;
+	line-height: 1.55;
+	box-shadow: 0 3px 10px rgba(0,0,0,.35);
+	pointer-events: none;
+	transition: opacity .15s;
+}
+
+/* Arrow */
+.hsm-tooltip .hsm-tooltip-text::after {
+	content: '';
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	border: 6px solid transparent;
+	border-top-color: #1d2327;
+}
+
+.hsm-tooltip:hover .hsm-tooltip-text,
+.hsm-tooltip:focus .hsm-tooltip-text {
+	visibility: visible;
+	opacity: 1;
+}
+
+/* Inline tooltip next to th labels */
+th .hsm-tooltip {
+	margin-left: 4px;
 }
 
 /* ─── Hours table ────────────────────────────────────────────────────── */
@@ -48,6 +114,34 @@
 }
 .hsm-repeatable-row input {
 	flex: 1;
+}
+
+/* ─── Geo (lat/long) row ─────────────────────────────────────────────── */
+.hsm-geo-row {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.hsm-geo-label {
+	font-weight: 600;
+	font-size: .85em;
+	color: #50575e;
+}
+
+.hsm-geo-row .small-text {
+	width: 110px;
+}
+
+/* ─── Connected badge ────────────────────────────────────────────────── */
+.hsm-connected-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	color: #00a32a;
+	font-weight: 600;
+	margin: 4px 0 0;
 }
 
 /* ─── Tabs (meta box) ────────────────────────────────────────────────── */
@@ -133,14 +227,19 @@ ul.hsm-tabs li:hover {
 }
 .hsm-schema-section h4 {
 	margin-top: 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
 
 /* ─── FAQ rows ───────────────────────────────────────────────────────── */
-#hsm-faq-list {
+#hsm-faq-list,
+#hsm-howto-list {
 	margin-bottom: 10px;
 }
 
-.hsm-faq-row {
+.hsm-faq-row,
+.hsm-howto-row {
 	display: flex;
 	align-items: flex-start;
 	gap: 10px;
@@ -187,5 +286,9 @@ ul.hsm-tabs li:hover {
 	}
 	.hsm-repeatable-row {
 		flex-wrap: wrap;
+	}
+	.hsm-geo-row {
+		flex-direction: column;
+		align-items: flex-start;
 	}
 }

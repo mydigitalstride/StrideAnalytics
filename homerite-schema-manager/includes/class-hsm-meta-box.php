@@ -70,7 +70,7 @@ class HSM_Meta_Box {
 		}
 
 		// --- Schema fields ---
-		$schema_types = [ 'LocalBusiness', 'Service', 'Product', 'FAQPage', 'BreadcrumbList', 'WebPage' ];
+		$schema_types = [ 'LocalBusiness', 'Service', 'Product', 'FAQPage', 'HowTo', 'Review', 'BreadcrumbList', 'WebPage' ];
 		$enabled      = [];
 		foreach ( $schema_types as $type ) {
 			if ( ! empty( $_POST[ 'hsm_schema_enable_' . $type ] ) ) {
@@ -106,17 +106,46 @@ class HSM_Meta_Box {
 			}
 		}
 		update_post_meta( $post_id, 'hsm_faq_entries', $faqs );
+
+		// HowTo fields.
+		foreach ( [ 'hsm_howto_name', 'hsm_howto_description', 'hsm_howto_total_time' ] as $f ) {
+			update_post_meta( $post_id, $f, isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '' );
+		}
+		$howto_steps = [];
+		if ( ! empty( $_POST['hsm_howto_step_name'] ) && is_array( $_POST['hsm_howto_step_name'] ) ) {
+			$step_names = array_map( 'sanitize_text_field', wp_unslash( $_POST['hsm_howto_step_name'] ) );
+			$step_texts = array_map( 'wp_kses_post', wp_unslash( $_POST['hsm_howto_step_text'] ?? [] ) );
+			foreach ( $step_names as $i => $name ) {
+				if ( '' !== $name ) {
+					$howto_steps[] = [ 'name' => $name, 'text' => $step_texts[ $i ] ?? '' ];
+				}
+			}
+		}
+		update_post_meta( $post_id, 'hsm_howto_steps', $howto_steps );
+
+		// Review fields.
+		foreach ( [ 'hsm_review_name', 'hsm_review_body', 'hsm_review_rating', 'hsm_review_author', 'hsm_review_item_name' ] as $f ) {
+			update_post_meta( $post_id, $f, isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '' );
+		}
 	}
 
 	// ------------------------------------------------------------------
 	// Render
 	// ------------------------------------------------------------------
 
+	/** Small inline tooltip for the meta box. */
+	private static function tip( string $text ): string {
+		return '<span class="hsm-tooltip" tabindex="0" aria-label="' . esc_attr( $text ) . '">?'
+			. '<span class="hsm-tooltip-text" role="tooltip">' . esc_html( $text ) . '</span>'
+			. '</span>';
+	}
+
 	public static function render( WP_Post $post ): void {
 		wp_nonce_field( 'hsm_meta_box_nonce', 'hsm_meta_box_nonce' );
 
 		$enabled_types     = get_post_meta( $post->ID, 'hsm_schema_enabled_types', true ) ?: [];
 		$faq_entries       = get_post_meta( $post->ID, 'hsm_faq_entries', true ) ?: [];
+		$howto_steps       = get_post_meta( $post->ID, 'hsm_howto_steps', true ) ?: [];
 		$is_front          = (int) get_option( 'page_on_front' ) === $post->ID;
 
 		$availability_opts = [
@@ -224,6 +253,8 @@ class HSM_Meta_Box {
 						'Service'        => 'Service',
 						'Product'        => 'Product',
 						'FAQPage'        => 'FAQPage',
+						'HowTo'          => 'HowTo',
+						'Review'         => 'Review',
 						'BreadcrumbList' => 'BreadcrumbList (auto-generated)',
 						'WebPage'        => 'WebPage / AboutPage / ContactPage',
 					];
@@ -275,7 +306,10 @@ class HSM_Meta_Box {
 							<td><input type="text" id="hsm_service_type" name="hsm_service_type" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_service_type', true ) ); ?>" class="regular-text"></td>
 						</tr>
 						<tr>
-							<th><label for="hsm_service_area_override"><?php esc_html_e( 'Area Served Override', 'homerite-schema' ); ?></label></th>
+							<th>
+								<label for="hsm_service_area_override"><?php esc_html_e( 'Area Served Override', 'homerite-schema' ); ?></label>
+								<?php echo self::tip( 'If this page is for a specific area different from your main service region, type it here (e.g. "Centre County, PA"). Leave blank and Google will use your global service areas list instead.' ); // phpcs:ignore ?>
+							</th>
 							<td><input type="text" id="hsm_service_area_override" name="hsm_service_area_override" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_service_area_override', true ) ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'Leave blank to use global service areas', 'homerite-schema' ); ?>"></td>
 						</tr>
 					</table>
@@ -349,6 +383,93 @@ class HSM_Meta_Box {
 						endif; ?>
 					</div>
 					<button type="button" class="button" id="hsm-add-faq-row"><?php esc_html_e( '+ Add FAQ', 'homerite-schema' ); ?></button>
+				</div>
+
+				<!-- HowTo editor -->
+				<div id="hsm-schema-section-howto" class="hsm-schema-section <?php echo in_array( 'HowTo', $enabled_types, true ) ? 'active' : ''; ?>">
+					<h4>
+						<?php esc_html_e( 'HowTo Schema', 'homerite-schema' ); ?>
+						<?php echo self::tip( 'HowTo schema tells Google that this page explains how to do something step-by-step. Google may show your steps as a rich result in search, which can get you more clicks.' ); // phpcs:ignore ?>
+					</h4>
+					<table class="form-table">
+						<tr>
+							<th><label for="hsm_howto_name"><?php esc_html_e( 'How-To Title', 'homerite-schema' ); ?></label></th>
+							<td><input type="text" id="hsm_howto_name" name="hsm_howto_name" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_howto_name', true ) ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'e.g. How to Replace a Roof Shingle', 'homerite-schema' ); ?>"></td>
+						</tr>
+						<tr>
+							<th><label for="hsm_howto_description"><?php esc_html_e( 'Brief Description', 'homerite-schema' ); ?></label></th>
+							<td><textarea id="hsm_howto_description" name="hsm_howto_description" rows="2" class="large-text"><?php echo esc_textarea( get_post_meta( $post->ID, 'hsm_howto_description', true ) ); ?></textarea></td>
+						</tr>
+						<tr>
+							<th>
+								<label for="hsm_howto_total_time"><?php esc_html_e( 'Total Time', 'homerite-schema' ); ?></label>
+								<?php echo self::tip( 'How long the whole process takes. Use the ISO 8601 format: PT30M = 30 minutes, PT2H = 2 hours, PT1H30M = 1 hour 30 minutes.' ); // phpcs:ignore ?>
+							</th>
+							<td><input type="text" id="hsm_howto_total_time" name="hsm_howto_total_time" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_howto_total_time', true ) ); ?>" class="small-text" placeholder="PT30M"></td>
+						</tr>
+					</table>
+
+					<p style="font-weight:600;margin-top:16px;"><?php esc_html_e( 'Steps', 'homerite-schema' ); ?></p>
+					<div id="hsm-howto-list">
+						<?php if ( empty( $howto_steps ) ) : ?>
+							<div class="hsm-howto-row">
+								<div class="hsm-faq-handle">&#9776;</div>
+								<div class="hsm-faq-fields">
+									<input type="text" name="hsm_howto_step_name[]" placeholder="<?php esc_attr_e( 'Step title (e.g. Remove damaged shingle)', 'homerite-schema' ); ?>" class="large-text">
+									<textarea name="hsm_howto_step_text[]" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Step instructions…', 'homerite-schema' ); ?>"></textarea>
+								</div>
+								<button type="button" class="button hsm-remove-howto-row"><?php esc_html_e( 'Remove', 'homerite-schema' ); ?></button>
+							</div>
+						<?php else :
+							foreach ( $howto_steps as $step ) : ?>
+								<div class="hsm-howto-row">
+									<div class="hsm-faq-handle">&#9776;</div>
+									<div class="hsm-faq-fields">
+										<input type="text" name="hsm_howto_step_name[]" value="<?php echo esc_attr( $step['name'] ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'Step title', 'homerite-schema' ); ?>">
+										<textarea name="hsm_howto_step_text[]" rows="2" class="large-text" placeholder="<?php esc_attr_e( 'Step instructions…', 'homerite-schema' ); ?>"><?php echo esc_textarea( $step['text'] ); ?></textarea>
+									</div>
+									<button type="button" class="button hsm-remove-howto-row"><?php esc_html_e( 'Remove', 'homerite-schema' ); ?></button>
+								</div>
+							<?php endforeach;
+						endif; ?>
+					</div>
+					<button type="button" class="button" id="hsm-add-howto-row"><?php esc_html_e( '+ Add Step', 'homerite-schema' ); ?></button>
+				</div>
+
+				<!-- Review schema -->
+				<div id="hsm-schema-section-review" class="hsm-schema-section <?php echo in_array( 'Review', $enabled_types, true ) ? 'active' : ''; ?>">
+					<h4>
+						<?php esc_html_e( 'Review Schema', 'homerite-schema' ); ?>
+						<?php echo self::tip( 'Review schema marks this page as containing a customer review. Google may show star ratings next to this page in search results, making it stand out and get more clicks.' ); // phpcs:ignore ?>
+					</h4>
+					<table class="form-table">
+						<tr>
+							<th><label for="hsm_review_item_name"><?php esc_html_e( 'Item Being Reviewed', 'homerite-schema' ); ?></label></th>
+							<td>
+								<input type="text" id="hsm_review_item_name" name="hsm_review_item_name" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_review_item_name', true ) ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'e.g. Roof Replacement Service', 'homerite-schema' ); ?>">
+								<p class="description"><?php esc_html_e( 'The product, service, or business being reviewed.', 'homerite-schema' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th><label for="hsm_review_name"><?php esc_html_e( 'Review Headline', 'homerite-schema' ); ?></label></th>
+							<td><input type="text" id="hsm_review_name" name="hsm_review_name" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_review_name', true ) ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'e.g. Excellent roof replacement — fast and clean', 'homerite-schema' ); ?>"></td>
+						</tr>
+						<tr>
+							<th><label for="hsm_review_body"><?php esc_html_e( 'Review Text', 'homerite-schema' ); ?></label></th>
+							<td><textarea id="hsm_review_body" name="hsm_review_body" rows="4" class="large-text"><?php echo esc_textarea( get_post_meta( $post->ID, 'hsm_review_body', true ) ); ?></textarea></td>
+						</tr>
+						<tr>
+							<th>
+								<label for="hsm_review_rating"><?php esc_html_e( 'Star Rating', 'homerite-schema' ); ?></label>
+								<?php echo self::tip( 'The star rating given in this review, from 1 (lowest) to 5 (highest).' ); // phpcs:ignore ?>
+							</th>
+							<td><input type="number" id="hsm_review_rating" name="hsm_review_rating" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_review_rating', true ) ?: '5' ); ?>" min="1" max="5" step="0.5" class="small-text"></td>
+						</tr>
+						<tr>
+							<th><label for="hsm_review_author"><?php esc_html_e( 'Reviewer Name', 'homerite-schema' ); ?></label></th>
+							<td><input type="text" id="hsm_review_author" name="hsm_review_author" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_review_author', true ) ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g. Jane Smith', 'homerite-schema' ); ?>"></td>
+						</tr>
+					</table>
 				</div>
 
 			</div><!-- #hsm-tab-schema -->

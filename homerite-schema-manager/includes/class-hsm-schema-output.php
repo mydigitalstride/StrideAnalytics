@@ -153,6 +153,24 @@ class HSM_Schema_Output {
 				}
 			}
 
+			// HowTo.
+			if ( in_array( 'HowTo', $enabled_types, true ) && ! in_array( 'HowTo', $emitted_types, true ) ) {
+				$s = self::build_howto( $post_id );
+				if ( $s ) {
+					$schemas[]       = $s;
+					$emitted_types[] = 'HowTo';
+				}
+			}
+
+			// Review.
+			if ( in_array( 'Review', $enabled_types, true ) && ! in_array( 'Review', $emitted_types, true ) ) {
+				$s = self::build_review( $post_id );
+				if ( $s ) {
+					$schemas[]       = $s;
+					$emitted_types[] = 'Review';
+				}
+			}
+
 			// BreadcrumbList.
 			if ( in_array( 'BreadcrumbList', $enabled_types, true ) && ! in_array( 'BreadcrumbList', $emitted_types, true ) ) {
 				$s = self::build_breadcrumb( $post_id );
@@ -498,6 +516,70 @@ class HSM_Schema_Output {
 			'url'         => get_permalink( $post_id ),
 			'description' => get_post_meta( $post_id, 'hsm_seo_description', true ),
 		];
+	}
+
+	private static function build_howto( int $post_id ): ?array {
+		$steps = get_post_meta( $post_id, 'hsm_howto_steps', true ) ?: [];
+		if ( empty( $steps ) ) return null;
+
+		$name = get_post_meta( $post_id, 'hsm_howto_name', true ) ?: get_the_title( $post_id );
+
+		$schema = [
+			'@context' => 'https://schema.org',
+			'@type'    => 'HowTo',
+			'name'     => $name,
+		];
+
+		$desc = get_post_meta( $post_id, 'hsm_howto_description', true );
+		if ( '' !== $desc ) $schema['description'] = $desc;
+
+		$total_time = get_post_meta( $post_id, 'hsm_howto_total_time', true );
+		if ( '' !== $total_time ) $schema['totalTime'] = $total_time;
+
+		$schema['step'] = array_map( function ( array $step, int $i ): array {
+			return [
+				'@type'    => 'HowToStep',
+				'position' => $i + 1,
+				'name'     => $step['name'],
+				'text'     => $step['text'],
+			];
+		}, $steps, array_keys( $steps ) );
+
+		return $schema;
+	}
+
+	private static function build_review( int $post_id ): ?array {
+		$item_name = get_post_meta( $post_id, 'hsm_review_item_name', true );
+		$author    = get_post_meta( $post_id, 'hsm_review_author', true );
+		if ( '' === $item_name || '' === $author ) return null;
+
+		$rating  = get_post_meta( $post_id, 'hsm_review_rating', true ) ?: '5';
+		$schema  = [
+			'@context'     => 'https://schema.org',
+			'@type'        => 'Review',
+			'itemReviewed' => [
+				'@type' => 'Thing',
+				'name'  => $item_name,
+			],
+			'author'       => [
+				'@type' => 'Person',
+				'name'  => $author,
+			],
+			'reviewRating' => [
+				'@type'       => 'Rating',
+				'ratingValue' => (float) $rating,
+				'bestRating'  => 5,
+				'worstRating' => 1,
+			],
+		];
+
+		$name = get_post_meta( $post_id, 'hsm_review_name', true );
+		if ( '' !== $name ) $schema['name'] = $name;
+
+		$body = get_post_meta( $post_id, 'hsm_review_body', true );
+		if ( '' !== $body ) $schema['reviewBody'] = $body;
+
+		return $schema;
 	}
 
 	private static function build_product_item_list(): ?array {
