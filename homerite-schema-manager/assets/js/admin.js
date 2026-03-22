@@ -376,7 +376,186 @@
 		updateCharCount($(this));
 	}).trigger('input');
 
-	// ─── Scan Content ─────────────────────────────────────────────────
+	// ─── Content Analysis ─────────────────────────────────────────────
+
+	/**
+	 * Get the post body as plain text from whichever editor is active.
+	 * Handles Gutenberg, TinyMCE, and plain textarea.
+	 */
+	function hsmGetEditorText() {
+		if (
+			typeof wp !== 'undefined' &&
+			wp.data &&
+			wp.data.select &&
+			wp.data.select('core/editor')
+		) {
+			try {
+				var gb = wp.data.select('core/editor').getEditedPostContent();
+				if (gb) return gb.replace(/<[^>]+>/g, ' ');
+			} catch (e) {}
+		}
+
+		if (typeof tinymce !== 'undefined') {
+			var ed = tinymce.get('content');
+			if (ed && !ed.isHidden()) {
+				return ed.getContent({ format: 'text' });
+			}
+		}
+
+		return ($('#content').val() || '').replace(/<[^>]+>/g, ' ');
+	}
+
+	function hsmCountOccurrences(haystack, needle) {
+		if (!needle) return 0;
+		var escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		var matches = haystack.match(new RegExp('\\b' + escaped + '\\b', 'gi'));
+		return matches ? matches.length : 0;
+	}
+
+	function hsmWordCount(text) {
+		var trimmed = text.replace(/\s+/g, ' ').trim();
+		return trimmed ? trimmed.split(' ').length : 0;
+	}
+
+	function hsmDensityLevel(pct) {
+		if (pct === 0) return { label: 'Not found',     cls: 'hsm-level-none' };
+		if (pct < 0.5) return { label: 'Too low',       cls: 'hsm-level-low' };
+		if (pct < 1)   return { label: 'Could be more', cls: 'hsm-level-fair' };
+		if (pct <= 3)  return { label: 'Optimal',       cls: 'hsm-level-optimal' };
+		if (pct <= 5)  return { label: 'High',          cls: 'hsm-level-high' };
+		return               { label: 'Over-optimised', cls: 'hsm-level-over' };
+	}
+
+	function hsmPlacementChecklist(keyword) {
+		if (!keyword) return [];
+		var re    = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+		var items = [];
+		items.push({ pass: re.test($('#hsm_seo_title').val() || document.title || ''), text: 'In page title' });
+		items.push({ pass: re.test($('#hsm_seo_description').val() || ''), text: 'In meta description' });
+		items.push({ pass: true, text: 'Focus keyword is set' });
+		return items;
+	}
+
+	var hsmSuggestionRules = [
+		{
+			type: 'FAQPage', label: 'FAQPage',
+			reason: 'Page contains question-and-answer patterns (multiple "?" or Q&A headings).',
+			test: function (t) { return (t.match(/\?/g) || []).length >= 3; },
+		},
+		{
+			type: 'HowTo', label: 'HowTo',
+			reason: 'Page contains step-by-step instructions (numbered steps or "Step N" patterns).',
+			test: function (t) {
+				return /step\s+\d|^\s*\d+\.\s+\w/im.test(t) ||
+					/(first|second|third|then|next|finally)[,\s]/i.test(t);
+			},
+		},
+		{
+			type: 'Product', label: 'Product',
+			reason: 'Page mentions prices, availability, or product-buying language.',
+			test: function (t) {
+				return /\$\s*[\d,]+(\.\d{2})?|\bprice\b|\bbuy\b|\bpurchase\b|\badd to cart\b|\bin stock\b/i.test(t);
+			},
+		},
+		{
+			type: 'Review', label: 'Review',
+			reason: 'Page contains review or rating language.',
+			test: function (t) {
+				return /\b(stars?|rated|rating|review|recommend|out of 5|[1-5]\/5)\b/i.test(t);
+			},
+		},
+		{
+			type: 'Service', label: 'Service',
+			reason: 'Page describes a service offering (service keywords detected).',
+			test: function (t) {
+				return /\b(service|repair|installation|replacement|cleaning|inspection|consultation|estimate|quote)\b/i.test(t);
+			},
+		},
+		{
+			type: 'LocalBusiness', label: 'LocalBusiness',
+			reason: 'Page mentions business location, phone, or contact details.',
+			test: function (t) {
+				return /\b(call us|contact us|visit us|located at|serving|phone|address|\d{3}[-.\s]\d{3}[-.\s]\d{4})\b/i.test(t);
+			},
+		},
+	];
+
+	function hsmRunAnalysis() {
+		var keyword = $('#hsm_focus_keyword').val().trim();
+		var text    = hsmGetEditorText();
+		var wordCnt = hsmWordCount(text);
+
+		$('#hsm-kd-keyword-label').text(keyword || '(none set)');
+
+		if (!keyword) {
+			$('#hsm-kd-results').hide();
+			$('#hsm-kd-no-keyword').show();
+		} else {
+			$('#hsm-kd-no-keyword').hide();
+			$('#hsm-kd-results').show();
+
+			var count   = hsmCountOccurrences(text, keyword);
+			var density = wordCnt > 0 ? (count / wordCnt * 100) : 0;
+			var level   = hsmDensityLevel(density);
+			var barPct  = Math.min(density / 4 * 100, 100);
+
+			$('#hsm-kd-bar').css('width', barPct + '%').attr('class', 'hsm-meter-fill ' + level.cls);
+			$('#hsm-kd-density').text(density.toFixed(2) + '%');
+			$('#hsm-kd-count').text(count);
+			$('#hsm-kd-words').text(wordCnt.toLocaleString());
+			$('#hsm-kd-badge').text(level.label).attr('class', 'hsm-kd-badge ' + level.cls);
+
+			var $cl = $('#hsm-kd-checklist').empty();
+			$.each(hsmPlacementChecklist(keyword), function (i, item) {
+				$cl.append(
+					'<div class="hsm-check-item ' + (item.pass ? 'hsm-check-pass' : 'hsm-check-fail') + '">' +
+					(item.pass ? '&#10003;' : '&#10007;') + ' ' + item.text + '</div>'
+				);
+			});
+		}
+
+		var $list = $('#hsm-suggestions-list').empty();
+		var found = $.grep(hsmSuggestionRules, function (rule) { return rule.test(text); });
+
+		if (!found.length) {
+			$list.html('<p class="description">No strong pattern signals found. Try adding more content, then scan again.</p>');
+		} else {
+			$.each(found, function (i, rule) {
+				var alreadyOn = $('[name="hsm_schema_enable_' + rule.type + '"]').is(':checked');
+				$list.append(
+					'<div class="hsm-suggestion-card">' +
+					'<div class="hsm-suggestion-info">' +
+					'<strong class="hsm-suggestion-type">' + rule.label + '</strong>' +
+					'<span class="hsm-suggestion-reason">' + rule.reason + '</span>' +
+					'</div>' +
+					'<div class="hsm-suggestion-action">' +
+					(alreadyOn
+						? '<span class="hsm-suggestion-active">&#10003; Already enabled</span>'
+						: '<button type="button" class="button button-small hsm-apply-suggestion" data-type="' + rule.type + '">Apply</button>'
+					) +
+					'</div></div>'
+				);
+			});
+		}
+	}
+
+	$('#hsm-ca-scan').on('click', hsmRunAnalysis);
+
+	$(document).on('click', '.hsm-apply-suggestion', function () {
+		var type = $(this).data('type');
+		var $cb  = $('[name="hsm_schema_enable_' + type + '"]');
+		if ($cb.length) {
+			$cb.prop('checked', true).trigger('change');
+			$('[data-tab="hsm-tab-schema"]').trigger('click');
+			var $section = $('#hsm-schema-section-' + type.toLowerCase());
+			if ($section.length) {
+				$('html, body').animate({ scrollTop: $section.offset().top - 40 }, 300);
+			}
+		}
+		hsmRunAnalysis();
+	});
+
+	// ─── Scan Content (Schema tab — AJAX) ────────────────────────────
 
 	function hsmEsc(str) {
 		return $('<div>').text(String(str)).html();

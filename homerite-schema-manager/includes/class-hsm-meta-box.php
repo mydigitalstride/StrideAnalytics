@@ -459,6 +459,7 @@ class HSM_Meta_Box {
 			<ul class="hsm-tabs">
 				<li class="hsm-tab-link active" data-tab="hsm-tab-seo"><?php esc_html_e( 'SEO Meta', 'homerite-schema' ); ?></li>
 				<li class="hsm-tab-link" data-tab="hsm-tab-schema"><?php esc_html_e( 'Schema', 'homerite-schema' ); ?></li>
+				<li class="hsm-tab-link" data-tab="hsm-tab-analysis"><?php esc_html_e( 'Content Analysis', 'homerite-schema' ); ?></li>
 			</ul>
 
 			<!-- ========== TAB 1: SEO Meta ========== -->
@@ -670,19 +671,6 @@ class HSM_Meta_Box {
 
 			<!-- ========== TAB 2: Schema ========== -->
 			<div id="hsm-tab-schema" class="hsm-tab-panel">
-
-				<!-- ── Scan Content ── -->
-				<div class="hsm-scan-wrap">
-					<button type="button" id="hsm-scan-content" class="button button-primary"
-						data-post-id="<?php echo esc_attr( $post->ID ); ?>">
-						&#128269; <?php esc_html_e( 'Scan Content', 'homerite-schema' ); ?>
-					</button>
-					<span class="description" style="margin-left:8px;">
-						<?php esc_html_e( 'Reads ACF fields, post content, and the rendered page to auto-fill schema fields below.', 'homerite-schema' ); ?>
-					</span>
-					<div id="hsm-scan-status" style="margin-top:6px;"></div>
-					<div id="hsm-scan-results" style="display:none;margin-top:12px;"></div>
-				</div>
 
 				<h4>
 					<?php esc_html_e( 'Enable Schema Types', 'homerite-schema' ); ?>
@@ -929,6 +917,67 @@ class HSM_Meta_Box {
 				</div>
 
 			</div><!-- #hsm-tab-schema -->
+
+		<!-- ========== TAB 3: Content Analysis ========== -->
+		<div id="hsm-tab-analysis" class="hsm-tab-panel">
+
+			<!-- ── Focus Keyword Density ── -->
+			<div class="hsm-analysis-card">
+				<h4 class="hsm-analysis-title">
+					<?php esc_html_e( 'Focus Keyword Density', 'homerite-schema' ); ?>
+					<?php echo self::tip( 'Keyword density is how often your focus keyword appears relative to total word count. The ideal range is 1–3 %. Too low and the page may not rank; too high looks spammy to Google.' ); // phpcs:ignore ?>
+				</h4>
+
+				<div class="hsm-kd-meta">
+					<span class="hsm-kd-keyword-display">
+						<?php esc_html_e( 'Keyword:', 'homerite-schema' ); ?>
+						<strong id="hsm-kd-keyword-label"><?php esc_html_e( '(none set)', 'homerite-schema' ); ?></strong>
+					</span>
+					<button type="button" class="button button-small" id="hsm-ca-scan">
+						<?php esc_html_e( '&#8635; Scan Content', 'homerite-schema' ); ?>
+					</button>
+				</div>
+
+				<div id="hsm-kd-results" class="hsm-kd-results" style="display:none">
+					<div class="hsm-meter-wrap">
+						<div class="hsm-meter-track">
+							<div class="hsm-meter-fill" id="hsm-kd-bar" style="width:0%"></div>
+							<div class="hsm-meter-zone" style="left:25%;width:37.5%"></div>
+						</div>
+						<div class="hsm-meter-labels">
+							<span>0%</span><span>1%</span><span>2%</span><span>3%</span><span>4%+</span>
+						</div>
+					</div>
+
+					<div class="hsm-kd-stats">
+						<span><?php esc_html_e( 'Density:', 'homerite-schema' ); ?> <strong id="hsm-kd-density">—</strong></span>
+						<span><?php esc_html_e( 'Uses:', 'homerite-schema' ); ?> <strong id="hsm-kd-count">—</strong></span>
+						<span><?php esc_html_e( 'Words:', 'homerite-schema' ); ?> <strong id="hsm-kd-words">—</strong></span>
+					</div>
+
+					<div id="hsm-kd-badge" class="hsm-kd-badge"></div>
+
+					<div class="hsm-kd-checklist" id="hsm-kd-checklist"></div>
+				</div>
+
+				<p class="description" id="hsm-kd-no-keyword" style="display:none">
+					<?php esc_html_e( 'Set a Focus Keyword on the SEO Meta tab first, then click Scan Content.', 'homerite-schema' ); ?>
+				</p>
+			</div>
+
+			<!-- ── Schema Type Suggestions ── -->
+			<div class="hsm-analysis-card">
+				<h4 class="hsm-analysis-title">
+					<?php esc_html_e( 'Schema Type Suggestions', 'homerite-schema' ); ?>
+					<?php echo self::tip( 'Stride Analytics scans your page content for common patterns and recommends relevant schema types. Click "Apply" on any suggestion to enable that schema in the Schema tab.' ); // phpcs:ignore ?>
+				</h4>
+
+				<div id="hsm-suggestions-list" class="hsm-suggestions-list">
+					<p class="description"><?php esc_html_e( 'Click "Scan Content" above to analyse your page and generate recommendations.', 'homerite-schema' ); ?></p>
+				</div>
+			</div>
+
+		</div><!-- #hsm-tab-analysis -->
 		</div><!-- #hsm-meta-box-wrap -->
 		<?php
 	}
