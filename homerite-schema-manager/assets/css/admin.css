@@ -90,6 +90,15 @@ th .hsm-tooltip {
 	margin-left: 4px;
 }
 
+/* ─── Best practice hints ─────────────────────────────────────────────── */
+.hsm-best-practice {
+	color: #50575e;
+	font-style: italic;
+	margin-top: 5px !important;
+	font-size: .82em !important;
+	line-height: 1.5 !important;
+}
+
 /* ─── Hours table ────────────────────────────────────────────────────── */
 .hsm-hours-table {
 	border-collapse: collapse;
@@ -149,6 +158,34 @@ th .hsm-tooltip {
 
 .hsm-location-block-fields .small-text {
 	flex: 0 0 90px;
+}
+
+/* ─── Cascading business type dropdowns ─────────────────────────────── */
+.hsm-business-type-row {
+	display: flex;
+	gap: 16px;
+	flex-wrap: wrap;
+	align-items: flex-end;
+}
+
+.hsm-type-step {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 200px;
+	flex: 1 1 200px;
+}
+
+.hsm-type-step-label {
+	font-size: .8em;
+	font-weight: 600;
+	color: #50575e;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+}
+
+.hsm-type-step select {
+	width: 100%;
 }
 
 /* ─── Geo (lat/long) row ─────────────────────────────────────────────── */
@@ -217,6 +254,55 @@ ul.hsm-tabs li:hover {
 }
 .hsm-tab-panel.active {
 	display: block;
+}
+
+/* ─── OG / Twitter (X) sync sections ────────────────────────────────── */
+.hsm-sync-section {
+	margin-top: 20px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.hsm-sync-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	background: #f6f7f7;
+	padding: 10px 14px;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+.hsm-sync-header h4 {
+	margin: 0;
+	font-size: 1em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.hsm-sync-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: .875em;
+	color: #2271b1;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.hsm-sync-label input[type="checkbox"] {
+	margin: 0;
+}
+
+.hsm-sync-fields {
+	padding: 0 14px;
+}
+
+.hsm-sync-fields .form-table {
+	margin-top: 0;
 }
 
 /* ─── Schema type toggles ────────────────────────────────────────────── */
@@ -323,6 +409,13 @@ ul.hsm-tabs li:hover {
 		flex-wrap: wrap;
 	}
 	.hsm-geo-row {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+	.hsm-business-type-row {
+		flex-direction: column;
+	}
+	.hsm-sync-header {
 		flex-direction: column;
 		align-items: flex-start;
 	}

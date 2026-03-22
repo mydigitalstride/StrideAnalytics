@@ -65,14 +65,19 @@ class HSM_Schema_Output {
 			echo '<meta name="robots" content="' . esc_attr( implode( ', ', $robots ) ) . '">' . "\n";
 		}
 
+		// Resolved SEO title (used as fallback for OG/Twitter when synced).
+		$seo_title = get_post_meta( $post_id, 'hsm_seo_title', true ) ?: get_the_title( $post_id );
+
 		// Open Graph.
+		// '0' !== flag means synced (default for new posts is '' which also means synced).
+		$og_synced = ( '0' !== get_post_meta( $post_id, 'hsm_og_same_as_meta', true ) );
 		$og_fields = [
-			'og:title'       => get_post_meta( $post_id, 'hsm_og_title', true )       ?: get_the_title( $post_id ),
-			'og:description' => get_post_meta( $post_id, 'hsm_og_description', true ) ?: $desc,
+			'og:title'       => $og_synced ? $seo_title        : ( get_post_meta( $post_id, 'hsm_og_title', true )       ?: $seo_title ),
+			'og:description' => $og_synced ? $desc             : ( get_post_meta( $post_id, 'hsm_og_description', true ) ?: $desc ),
 			'og:url'         => get_permalink( $post_id ),
 			'og:type'        => 'website',
 		];
-		$og_image = get_post_meta( $post_id, 'hsm_og_image', true );
+		$og_image = $og_synced ? '' : get_post_meta( $post_id, 'hsm_og_image', true );
 		if ( '' !== $og_image ) {
 			$og_fields['og:image'] = $og_image;
 		}
@@ -82,10 +87,11 @@ class HSM_Schema_Output {
 			}
 		}
 
-		// Twitter card.
-		$tw_title = get_post_meta( $post_id, 'hsm_twitter_title', true )       ?: get_the_title( $post_id );
-		$tw_desc  = get_post_meta( $post_id, 'hsm_twitter_description', true ) ?: $desc;
-		$tw_image = get_post_meta( $post_id, 'hsm_twitter_image', true );
+		// Twitter (X) card.
+		$tw_synced = ( '0' !== get_post_meta( $post_id, 'hsm_twitter_same_as_meta', true ) );
+		$tw_title  = $tw_synced ? $seo_title : ( get_post_meta( $post_id, 'hsm_twitter_title', true )       ?: $seo_title );
+		$tw_desc   = $tw_synced ? $desc      : ( get_post_meta( $post_id, 'hsm_twitter_description', true ) ?: $desc );
+		$tw_image  = $tw_synced ? ''         : get_post_meta( $post_id, 'hsm_twitter_image', true );
 
 		echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 		if ( '' !== $tw_title ) echo '<meta name="twitter:title" content="' . esc_attr( $tw_title ) . '">' . "\n";
