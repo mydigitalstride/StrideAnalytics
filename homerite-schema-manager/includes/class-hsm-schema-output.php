@@ -186,8 +186,8 @@ class HSM_Schema_Output {
 				}
 			}
 
-			// WebPage.
-			if ( in_array( 'WebPage', $enabled_types, true ) && ! in_array( 'WebPage', $emitted_types, true ) ) {
+			// WebPage — always output on singular pages (auto-detects AboutPage, ContactPage).
+			if ( ! in_array( 'WebPage', $emitted_types, true ) ) {
 				$schemas[]       = self::build_webpage( $post_id );
 				$emitted_types[] = 'WebPage';
 			}
