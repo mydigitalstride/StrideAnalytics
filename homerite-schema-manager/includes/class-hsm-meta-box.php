@@ -13,8 +13,9 @@ class HSM_Meta_Box {
 	private static array $post_types = [ 'page', 'post', 'product' ];
 
 	public static function init(): void {
-		add_action( 'add_meta_boxes', [ __CLASS__, 'register' ] );
-		add_action( 'save_post',      [ __CLASS__, 'save' ], 10, 2 );
+		add_action( 'add_meta_boxes',             [ __CLASS__, 'register' ] );
+		add_action( 'save_post',                  [ __CLASS__, 'save' ], 10, 2 );
+		add_action( 'wp_ajax_hsm_scan_content',   [ __CLASS__, 'ajax_scan_content' ] );
 	}
 
 	public static function register(): void {
@@ -141,6 +142,292 @@ class HSM_Meta_Box {
 		foreach ( [ 'hsm_review_name', 'hsm_review_body', 'hsm_review_rating', 'hsm_review_author', 'hsm_review_item_name' ] as $f ) {
 			update_post_meta( $post_id, $f, isset( $_POST[ $f ] ) ? sanitize_text_field( wp_unslash( $_POST[ $f ] ) ) : '' );
 		}
+	}
+
+	// ------------------------------------------------------------------
+	// AJAX: Scan Content
+	// ------------------------------------------------------------------
+
+	public static function ajax_scan_content(): void {
+		check_ajax_referer( 'hsm_meta_box_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( 'Insufficient permissions.' );
+		}
+
+		$post_id = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+		if ( ! $post_id || ! get_post( $post_id ) ) {
+			wp_send_json_error( 'Invalid post ID.' );
+		}
+
+		$result = [
+			'seo_title'           => '',
+			'seo_description'     => '',
+			'service_name'        => '',
+			'service_description' => '',
+			'product_name'        => '',
+			'product_description' => '',
+			'faqs'                => [],
+			'howto_steps'         => [],
+			'acf_fields'          => [],
+			'source'              => '',
+		];
+
+		// ── 1. ACF fields (fast, in-process) ──────────────────────────────
+		if ( function_exists( 'get_fields' ) ) {
+			$acf = get_fields( $post_id );
+			if ( $acf ) {
+				$result['acf_fields'] = self::flatten_acf( (array) $acf );
+				self::hydrate_from_acf( $result['acf_fields'], $result );
+			}
+		}
+
+		// ── 2. WordPress post content (the_content with filters applied) ──
+		$post = get_post( $post_id );
+		if ( $post ) {
+			$content = apply_filters( 'the_content', $post->post_content );
+			if ( '' !== $content ) {
+				self::hydrate_from_html( $content, $result );
+				$result['source'] = 'post_content';
+			}
+		}
+
+		// ── 3. Rendered front-end HTML (catches page-builder output) ──────
+		$url      = get_permalink( $post_id );
+		$response = wp_remote_get( $url, [
+			'timeout'   => 20,
+			'sslverify' => false,
+			'headers'   => [ 'X-HSM-Scan' => '1' ],
+		] );
+
+		if ( ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) ) {
+			$html = wp_remote_retrieve_body( $response );
+			// Use rendered HTML result only for fields still empty after post_content pass.
+			$rendered = [
+				'seo_title'           => '',
+				'seo_description'     => '',
+				'service_name'        => '',
+				'service_description' => '',
+				'product_name'        => '',
+				'product_description' => '',
+				'faqs'                => [],
+				'howto_steps'         => [],
+			];
+			self::hydrate_from_html( $html, $rendered );
+
+			foreach ( [ 'seo_title', 'seo_description', 'service_name', 'service_description', 'product_name', 'product_description' ] as $k ) {
+				if ( '' === $result[ $k ] && '' !== $rendered[ $k ] ) {
+					$result[ $k ] = $rendered[ $k ];
+				}
+			}
+			if ( empty( $result['faqs'] ) && ! empty( $rendered['faqs'] ) ) {
+				$result['faqs'] = $rendered['faqs'];
+			}
+			if ( empty( $result['howto_steps'] ) && ! empty( $rendered['howto_steps'] ) ) {
+				$result['howto_steps'] = $rendered['howto_steps'];
+			}
+			$result['source'] = 'rendered_html';
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	// ── HTML parser ────────────────────────────────────────────────────────
+
+	private static function hydrate_from_html( string $html, array &$result ): void {
+		if ( '' === trim( $html ) ) return;
+
+		libxml_use_internal_errors( true );
+		$dom = new DOMDocument( '1.0', 'UTF-8' );
+		$dom->loadHTML( mb_convert_encoding( $html, 'HTML-ENTITIES', 'UTF-8' ), LIBXML_NOERROR | LIBXML_NOWARNING );
+		libxml_clear_errors();
+		$xpath = new DOMXPath( $dom );
+
+		// H1 → SEO title / service name / product name.
+		foreach ( $xpath->query( '//main//h1 | //article//h1 | //div[contains(@class,"entry")]//h1 | //h1' ) as $node ) {
+			$text = self::clean_text( $node->textContent );
+			if ( '' !== $text ) {
+				if ( '' === $result['seo_title'] )       $result['seo_title']       = $text;
+				if ( '' === $result['service_name'] )    $result['service_name']    = $text;
+				if ( '' === $result['product_name'] )    $result['product_name']    = $text;
+				break;
+			}
+		}
+
+		// First substantive <p> → meta description / service/product description.
+		foreach ( $xpath->query( '//main//p | //article//p | //div[contains(@class,"entry")]//p | //p' ) as $node ) {
+			$text = self::clean_text( $node->textContent );
+			if ( strlen( $text ) >= 40 ) {
+				if ( '' === $result['seo_description'] )     $result['seo_description']     = substr( $text, 0, 160 );
+				if ( '' === $result['service_description'] ) $result['service_description'] = $text;
+				if ( '' === $result['product_description'] ) $result['product_description'] = $text;
+				break;
+			}
+		}
+
+		// FAQ patterns (runs only if no FAQs found yet).
+		if ( empty( $result['faqs'] ) ) {
+			$result['faqs'] = self::extract_faqs( $xpath );
+		}
+
+		// HowTo steps from <ol><li>.
+		if ( empty( $result['howto_steps'] ) ) {
+			$result['howto_steps'] = self::extract_steps( $xpath );
+		}
+	}
+
+	private static function extract_faqs( DOMXPath $xpath ): array {
+		$faqs = [];
+
+		// Pattern A: headings containing '?' followed by sibling element.
+		foreach ( $xpath->query( '//h2 | //h3 | //h4' ) as $h ) {
+			$q = self::clean_text( $h->textContent );
+			if ( strpos( $q, '?' ) !== false ) {
+				$sibling = $h->nextSibling;
+				while ( $sibling && XML_TEXT_NODE === $sibling->nodeType ) {
+					$sibling = $sibling->nextSibling;
+				}
+				if ( $sibling ) {
+					$a = self::clean_text( $sibling->textContent );
+					if ( '' !== $a ) {
+						$faqs[] = [ 'question' => $q, 'answer' => $a ];
+					}
+				}
+			}
+			if ( count( $faqs ) >= 10 ) break;
+		}
+
+		// Pattern B: <dl><dt>/<dd>.
+		if ( empty( $faqs ) ) {
+			foreach ( $xpath->query( '//dl/dt' ) as $dt ) {
+				$q  = self::clean_text( $dt->textContent );
+				$dd = $xpath->query( 'following-sibling::dd[1]', $dt )->item(0);
+				if ( $dd && '' !== $q ) {
+					$faqs[] = [ 'question' => $q, 'answer' => self::clean_text( $dd->textContent ) ];
+				}
+				if ( count( $faqs ) >= 10 ) break;
+			}
+		}
+
+		// Pattern C: <details><summary>.
+		if ( empty( $faqs ) ) {
+			foreach ( $xpath->query( '//details' ) as $detail ) {
+				$summary = $xpath->query( 'summary', $detail )->item(0);
+				if ( $summary ) {
+					$q = self::clean_text( $summary->textContent );
+					$a = self::clean_text( str_replace( $summary->textContent, '', $detail->textContent ) );
+					if ( '' !== $q && '' !== $a ) {
+						$faqs[] = [ 'question' => $q, 'answer' => $a ];
+					}
+				}
+				if ( count( $faqs ) >= 10 ) break;
+			}
+		}
+
+		return array_slice( $faqs, 0, 10 );
+	}
+
+	private static function extract_steps( DOMXPath $xpath ): array {
+		$steps = [];
+
+		foreach ( $xpath->query( '//main//ol | //article//ol | //div[contains(@class,"entry")]//ol | //ol' ) as $ol ) {
+			$lis = $xpath->query( 'li', $ol );
+			if ( $lis->length < 2 ) continue;
+			foreach ( $lis as $li ) {
+				$text = self::clean_text( $li->textContent );
+				if ( '' === $text ) continue;
+				// Use first sentence (≤80 chars) as the step name.
+				preg_match( '/^[^.!?]{1,80}/', $text, $m );
+				$name    = isset( $m[0] ) ? trim( $m[0] ) : substr( $text, 0, 60 );
+				$steps[] = [ 'name' => $name, 'text' => $text ];
+			}
+			break; // First qualifying <ol> only.
+		}
+
+		return array_slice( $steps, 0, 10 );
+	}
+
+	// ── ACF helpers ────────────────────────────────────────────────────────
+
+	/**
+	 * Recursively flatten ACF fields to key → scalar value for display.
+	 * Repeater rows and flexible content are serialised to JSON strings.
+	 */
+	private static function flatten_acf( array $acf, string $prefix = '' ): array {
+		$out = [];
+		foreach ( $acf as $key => $value ) {
+			$full_key = $prefix ? $prefix . '.' . $key : $key;
+			if ( is_array( $value ) ) {
+				// Check if it looks like a repeater (numeric keys, each row is array).
+				if ( isset( $value[0] ) && is_array( $value[0] ) ) {
+					$out[ $full_key ] = wp_json_encode( $value );
+				} else {
+					$nested = self::flatten_acf( $value, $full_key );
+					$out    = array_merge( $out, $nested );
+				}
+			} elseif ( is_string( $value ) || is_numeric( $value ) ) {
+				$out[ $full_key ] = (string) $value;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Try to map well-known ACF field names to schema fields.
+	 */
+	private static function hydrate_from_acf( array $flat, array &$result ): void {
+		$title_keys = [ 'title', 'heading', 'name', 'page_title', 'service_title', 'product_title' ];
+		$desc_keys  = [ 'description', 'content', 'summary', 'excerpt', 'intro', 'body', 'text', 'overview' ];
+		$faq_keys   = [ 'faqs', 'faq', 'faq_items', 'questions', 'qa', 'q_and_a' ];
+		$step_keys  = [ 'steps', 'how_to_steps', 'howto_steps', 'instructions', 'process' ];
+
+		foreach ( $flat as $key => $value ) {
+			$base = strtolower( basename( str_replace( '.', '/', $key ) ) );
+
+			if ( '' === $result['seo_title'] && in_array( $base, $title_keys, true ) && is_string( $value ) ) {
+				$result['seo_title']    = $value;
+				$result['service_name'] = $value;
+				$result['product_name'] = $value;
+			}
+
+			if ( '' === $result['seo_description'] && in_array( $base, $desc_keys, true ) && is_string( $value ) && strlen( $value ) >= 20 ) {
+				$result['seo_description']     = substr( $value, 0, 160 );
+				$result['service_description'] = $value;
+				$result['product_description'] = $value;
+			}
+
+			// FAQ repeater: JSON-encoded array of rows.
+			if ( empty( $result['faqs'] ) && in_array( $base, $faq_keys, true ) ) {
+				$rows = json_decode( $value, true );
+				if ( is_array( $rows ) ) {
+					foreach ( $rows as $row ) {
+						$q = $row['question'] ?? $row['q'] ?? $row['faq_question'] ?? '';
+						$a = $row['answer']   ?? $row['a'] ?? $row['faq_answer']   ?? '';
+						if ( '' !== $q ) {
+							$result['faqs'][] = [ 'question' => $q, 'answer' => $a ];
+						}
+					}
+				}
+			}
+
+			// Steps repeater.
+			if ( empty( $result['howto_steps'] ) && in_array( $base, $step_keys, true ) ) {
+				$rows = json_decode( $value, true );
+				if ( is_array( $rows ) ) {
+					foreach ( $rows as $row ) {
+						$name = $row['title'] ?? $row['name'] ?? $row['step_title'] ?? '';
+						$text = $row['description'] ?? $row['content'] ?? $row['step_description'] ?? $row['text'] ?? '';
+						if ( '' !== $name || '' !== $text ) {
+							$result['howto_steps'][] = [ 'name' => $name ?: $text, 'text' => $text ?: $name ];
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static function clean_text( string $text ): string {
+		return trim( preg_replace( '/\s+/u', ' ', $text ) );
 	}
 
 	// ------------------------------------------------------------------
@@ -384,6 +671,19 @@ class HSM_Meta_Box {
 
 			<!-- ========== TAB 2: Schema ========== -->
 			<div id="hsm-tab-schema" class="hsm-tab-panel">
+
+				<!-- ── Scan Content ── -->
+				<div class="hsm-scan-wrap">
+					<button type="button" id="hsm-scan-content" class="button button-primary"
+						data-post-id="<?php echo esc_attr( $post->ID ); ?>">
+						&#128269; <?php esc_html_e( 'Scan Content', 'homerite-schema' ); ?>
+					</button>
+					<span class="description" style="margin-left:8px;">
+						<?php esc_html_e( 'Reads ACF fields, post content, and the rendered page to auto-fill schema fields below.', 'homerite-schema' ); ?>
+					</span>
+					<div id="hsm-scan-status" style="margin-top:6px;"></div>
+					<div id="hsm-scan-results" style="display:none;margin-top:12px;"></div>
+				</div>
 
 				<h4>
 					<?php esc_html_e( 'Enable Schema Types', 'homerite-schema' ); ?>

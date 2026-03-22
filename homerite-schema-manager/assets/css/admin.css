@@ -413,6 +413,60 @@ ul.hsm-tabs li:hover {
 	font-weight: 600;
 }
 
+/* ─── Scan Content ───────────────────────────────────────────────────── */
+.hsm-scan-wrap {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 14px 16px;
+	margin-bottom: 20px;
+}
+#hsm-scan-status.hsm-scan-ok  { color: #00a32a; font-weight: 600; }
+#hsm-scan-status.hsm-scan-err { color: #d63638; font-weight: 600; }
+
+.hsm-scan-panel {
+	font-size: 13px;
+}
+.hsm-scan-source {
+	color: #646970;
+	margin: 0 0 12px;
+}
+.hsm-scan-group {
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	padding: 12px 14px;
+	margin-bottom: 12px;
+	background: #fff;
+}
+.hsm-scan-group h4 {
+	margin: 0 0 10px;
+	font-size: 13px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.hsm-scan-field {
+	display: grid;
+	grid-template-columns: 160px 1fr auto;
+	gap: 8px;
+	align-items: start;
+	padding: 6px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+.hsm-scan-field:last-child { border-bottom: none; }
+.hsm-scan-field-label { font-weight: 600; padding-top: 2px; }
+.hsm-scan-field-value {
+	color: #3c434a;
+	word-break: break-word;
+	padding-top: 2px;
+}
+.hsm-scan-list {
+	margin: 6px 0 0 18px;
+	padding: 0;
+}
+.hsm-scan-list li { margin-bottom: 4px; }
+.hsm-scan-acf table { margin-top: 8px; }
+
 /* ─── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 782px) {
 	.hsm-schema-types {
