@@ -30,11 +30,8 @@ class HSM_Activator {
 			'hsm_latitude'        => '',
 			'hsm_longitude'       => '',
 
-			// Address – secondary (Boalsburg).
-			'hsm_street_2'        => '',
-			'hsm_city_2'          => '',
-			'hsm_state_2'         => '',
-			'hsm_zip_2'           => '',
+			// Secondary locations (repeatable).
+			'hsm_secondary_locations' => [],  // array of {label, street, city, state, zip}.
 
 			// Service area.
 			'hsm_service_areas'   => [],   // array of city/town strings.

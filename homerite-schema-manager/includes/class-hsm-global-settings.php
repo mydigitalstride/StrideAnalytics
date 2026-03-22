@@ -47,10 +47,6 @@ class HSM_Global_Settings {
 			'hsm_zip',
 			'hsm_latitude',
 			'hsm_longitude',
-			'hsm_street_2',
-			'hsm_city_2',
-			'hsm_state_2',
-			'hsm_zip_2',
 			'hsm_rating_value',
 			'hsm_rating_count',
 			'hsm_logo_url',
@@ -58,6 +54,28 @@ class HSM_Global_Settings {
 			'hsm_founded_year',
 			'hsm_slogan',
 		];
+
+		// Secondary locations – repeatable address blocks.
+		$secondary_locations = [];
+		if ( ! empty( $_POST['hsm_loc_street'] ) && is_array( $_POST['hsm_loc_street'] ) ) {
+			$streets = array_map( 'sanitize_text_field', wp_unslash( $_POST['hsm_loc_street'] ) );
+			$cities  = array_map( 'sanitize_text_field', wp_unslash( $_POST['hsm_loc_city']   ?? [] ) );
+			$states  = array_map( 'sanitize_text_field', wp_unslash( $_POST['hsm_loc_state']  ?? [] ) );
+			$zips    = array_map( 'sanitize_text_field', wp_unslash( $_POST['hsm_loc_zip']    ?? [] ) );
+			$labels  = array_map( 'sanitize_text_field', wp_unslash( $_POST['hsm_loc_label']  ?? [] ) );
+			foreach ( $streets as $i => $street ) {
+				if ( '' !== $street ) {
+					$secondary_locations[] = [
+						'label'  => $labels[ $i ] ?? '',
+						'street' => $street,
+						'city'   => $cities[ $i ]  ?? '',
+						'state'  => $states[ $i ]  ?? '',
+						'zip'    => $zips[ $i ]    ?? '',
+					];
+				}
+			}
+		}
+		update_option( 'hsm_secondary_locations', $secondary_locations );
 
 		foreach ( $text_fields as $field ) {
 			$raw = isset( $_POST[ $field ] ) ? sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) : '';
@@ -137,10 +155,11 @@ class HSM_Global_Settings {
 			return;
 		}
 
-		$days          = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
-		$hours         = get_option( 'hsm_hours', [] );
-		$service_areas = get_option( 'hsm_service_areas', [] );
-		$same_as       = get_option( 'hsm_same_as', [] );
+		$days                = [ 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' ];
+		$hours               = get_option( 'hsm_hours', [] );
+		$service_areas       = get_option( 'hsm_service_areas', [] );
+		$same_as             = get_option( 'hsm_same_as', [] );
+		$secondary_locations = get_option( 'hsm_secondary_locations', [] );
 
 		$schema_types = [
 			'LocalBusiness'               => 'LocalBusiness',
@@ -252,30 +271,40 @@ class HSM_Global_Settings {
 					</table>
 				</div>
 
-				<!-- ===== Secondary Address (Boalsburg) ===== -->
+				<!-- ===== Secondary Locations ===== -->
 				<div class="hsm-card">
 					<h2>
-						<?php esc_html_e( 'Secondary Address (Boalsburg)', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'If your business has a second location — like the Boalsburg office — enter it here so Google knows you have a presence there too.' ); // phpcs:ignore ?>
+						<?php esc_html_e( 'Secondary Locations', 'homerite-schema' ); ?>
+						<?php echo self::tip( 'If your business has additional offices or locations, add them here. Google will know you have a physical presence in each place.' ); // phpcs:ignore ?>
 					</h2>
-					<table class="form-table">
-						<tr>
-							<th><label for="hsm_street_2"><?php esc_html_e( 'Street Address', 'homerite-schema' ); ?></label></th>
-							<td><input type="text" id="hsm_street_2" name="hsm_street_2" value="<?php echo esc_attr( get_option( 'hsm_street_2' ) ); ?>" class="regular-text"></td>
-						</tr>
-						<tr>
-							<th><label for="hsm_city_2"><?php esc_html_e( 'City', 'homerite-schema' ); ?></label></th>
-							<td><input type="text" id="hsm_city_2" name="hsm_city_2" value="<?php echo esc_attr( get_option( 'hsm_city_2' ) ); ?>" class="regular-text"></td>
-						</tr>
-						<tr>
-							<th><label for="hsm_state_2"><?php esc_html_e( 'State', 'homerite-schema' ); ?></label></th>
-							<td><input type="text" id="hsm_state_2" name="hsm_state_2" value="<?php echo esc_attr( get_option( 'hsm_state_2' ) ); ?>" class="regular-text" placeholder="PA"></td>
-						</tr>
-						<tr>
-							<th><label for="hsm_zip_2"><?php esc_html_e( 'ZIP Code', 'homerite-schema' ); ?></label></th>
-							<td><input type="text" id="hsm_zip_2" name="hsm_zip_2" value="<?php echo esc_attr( get_option( 'hsm_zip_2' ) ); ?>" class="small-text"></td>
-						</tr>
-					</table>
+					<p class="description"><?php esc_html_e( 'Add each additional office or job site address.', 'homerite-schema' ); ?></p>
+
+					<div id="hsm-locations-list">
+						<?php
+						$locations_to_show = ! empty( $secondary_locations ) ? $secondary_locations : [ [] ];
+						foreach ( $locations_to_show as $loc ) :
+							$loc_label  = $loc['label']  ?? '';
+							$loc_street = $loc['street'] ?? '';
+							$loc_city   = $loc['city']   ?? '';
+							$loc_state  = $loc['state']  ?? '';
+							$loc_zip    = $loc['zip']    ?? '';
+						?>
+						<div class="hsm-location-block">
+							<div class="hsm-location-block-header">
+								<input type="text" name="hsm_loc_label[]" value="<?php echo esc_attr( $loc_label ); ?>" class="regular-text hsm-location-label-input" placeholder="<?php esc_attr_e( 'Location name (e.g. Boalsburg Office)', 'homerite-schema' ); ?>">
+								<button type="button" class="button hsm-remove-location"><?php esc_html_e( 'Remove', 'homerite-schema' ); ?></button>
+							</div>
+							<div class="hsm-location-block-fields">
+								<input type="text" name="hsm_loc_street[]" value="<?php echo esc_attr( $loc_street ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Street Address', 'homerite-schema' ); ?>">
+								<input type="text" name="hsm_loc_city[]"   value="<?php echo esc_attr( $loc_city ); ?>"   class="regular-text" placeholder="<?php esc_attr_e( 'City', 'homerite-schema' ); ?>">
+								<input type="text" name="hsm_loc_state[]"  value="<?php echo esc_attr( $loc_state ); ?>"  class="small-text"   placeholder="<?php esc_attr_e( 'State', 'homerite-schema' ); ?>">
+								<input type="text" name="hsm_loc_zip[]"    value="<?php echo esc_attr( $loc_zip ); ?>"    class="small-text"   placeholder="<?php esc_attr_e( 'ZIP', 'homerite-schema' ); ?>">
+							</div>
+						</div>
+						<?php endforeach; ?>
+					</div>
+
+					<button type="button" class="button" id="hsm-add-location"><?php esc_html_e( '+ Add Location', 'homerite-schema' ); ?></button>
 				</div>
 
 				<!-- ===== Service Area ===== -->

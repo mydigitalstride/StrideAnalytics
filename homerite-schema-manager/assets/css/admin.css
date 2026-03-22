@@ -116,6 +116,41 @@ th .hsm-tooltip {
 	flex: 1;
 }
 
+/* ─── Secondary location blocks ──────────────────────────────────────── */
+.hsm-location-block {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 14px 16px;
+	margin-bottom: 10px;
+}
+
+.hsm-location-block-header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.hsm-location-block-header .hsm-location-label-input {
+	flex: 1;
+	font-weight: 600;
+}
+
+.hsm-location-block-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.hsm-location-block-fields .regular-text {
+	flex: 1 1 200px;
+}
+
+.hsm-location-block-fields .small-text {
+	flex: 0 0 90px;
+}
+
 /* ─── Geo (lat/long) row ─────────────────────────────────────────────── */
 .hsm-geo-row {
 	display: flex;

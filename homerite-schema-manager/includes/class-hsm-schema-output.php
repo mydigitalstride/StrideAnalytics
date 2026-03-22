@@ -219,18 +219,36 @@ class HSM_Schema_Output {
 		return '';
 	}
 
-	private static function get_address( string $suffix = '' ): array {
-		$street = self::g( 'hsm_street' . $suffix );
+	private static function get_address(): array {
+		$street = self::g( 'hsm_street' );
 		if ( '' === $street ) return [];
 
 		return [
 			'@type'           => 'PostalAddress',
 			'streetAddress'   => $street,
-			'addressLocality' => self::g( 'hsm_city' . $suffix ),
-			'addressRegion'   => self::g( 'hsm_state' . $suffix ),
-			'postalCode'      => self::g( 'hsm_zip' . $suffix ),
+			'addressLocality' => self::g( 'hsm_city' ),
+			'addressRegion'   => self::g( 'hsm_state' ),
+			'postalCode'      => self::g( 'hsm_zip' ),
 			'addressCountry'  => 'US',
 		];
+	}
+
+	private static function get_secondary_addresses(): array {
+		$locations = self::g( 'hsm_secondary_locations', [] );
+		$addresses = [];
+		foreach ( (array) $locations as $loc ) {
+			if ( ! empty( $loc['street'] ) ) {
+				$addresses[] = [
+					'@type'           => 'PostalAddress',
+					'streetAddress'   => $loc['street'],
+					'addressLocality' => $loc['city']  ?? '',
+					'addressRegion'   => $loc['state'] ?? '',
+					'postalCode'      => $loc['zip']   ?? '',
+					'addressCountry'  => 'US',
+				];
+			}
+		}
+		return $addresses;
 	}
 
 	private static function get_opening_hours(): array {
@@ -282,9 +300,13 @@ class HSM_Schema_Output {
 			$schema['logo'] = [ '@type' => 'ImageObject', 'url' => $logo_url ];
 		}
 
-		// Primary address.
-		$address = self::get_address();
-		if ( ! empty( $address ) ) $schema['address'] = $address;
+		// Address(es) — primary first, then any secondary locations.
+		$primary    = self::get_address();
+		$secondaries = self::get_secondary_addresses();
+		if ( ! empty( $primary ) ) {
+			$all_addresses = array_merge( [ $primary ], $secondaries );
+			$schema['address'] = count( $all_addresses ) === 1 ? $all_addresses[0] : $all_addresses;
+		}
 
 		// Geo.
 		$lat = self::g( 'hsm_latitude' );

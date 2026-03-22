@@ -135,6 +135,35 @@
 		});
 	}
 
+	// ─── Secondary location blocks ────────────────────────────────────
+	$('#hsm-add-location').on('click', function () {
+		var $block = $(
+			'<div class="hsm-location-block">' +
+			'<div class="hsm-location-block-header">' +
+			'<input type="text" name="hsm_loc_label[]" value="" class="regular-text hsm-location-label-input" placeholder="Location name (e.g. Boalsburg Office)">' +
+			'<button type="button" class="button hsm-remove-location">Remove</button>' +
+			'</div>' +
+			'<div class="hsm-location-block-fields">' +
+			'<input type="text" name="hsm_loc_street[]" value="" class="regular-text" placeholder="Street Address">' +
+			'<input type="text" name="hsm_loc_city[]"   value="" class="regular-text" placeholder="City">' +
+			'<input type="text" name="hsm_loc_state[]"  value="" class="small-text"   placeholder="State">' +
+			'<input type="text" name="hsm_loc_zip[]"    value="" class="small-text"   placeholder="ZIP">' +
+			'</div>' +
+			'</div>'
+		);
+		$('#hsm-locations-list').append($block);
+		$block.find('.hsm-location-label-input').focus();
+	});
+
+	$(document).on('click', '.hsm-remove-location', function () {
+		var $list = $('#hsm-locations-list');
+		if ($list.find('.hsm-location-block').length > 1) {
+			$(this).closest('.hsm-location-block').remove();
+		} else {
+			$(this).closest('.hsm-location-block').find('input').val('');
+		}
+	});
+
 	// ─── Address → Lat/Long geocoding ─────────────────────────────────
 	$('#hsm-find-coords').on('click', function () {
 		var street = $('#hsm_street').val().trim();
