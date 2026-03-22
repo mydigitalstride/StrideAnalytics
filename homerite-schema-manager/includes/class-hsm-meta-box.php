@@ -1,6 +1,6 @@
 <?php
 /**
- * Per-page meta box — SEO Meta tab + Schema Customizer tab (Phases 3 & 4).
+ * Per-page meta box — SEO Meta tab + Schema Customizer tab.
  *
  * @package HomeRite_Schema_Manager
  */
@@ -31,11 +31,20 @@ class HSM_Meta_Box {
 	}
 
 	// ------------------------------------------------------------------
+	// Tooltip helper
+	// ------------------------------------------------------------------
+
+	private static function tip( string $text ): string {
+		return '<span class="hsm-tooltip" tabindex="0" aria-label="' . esc_attr( $text ) . '">?'
+			. '<span class="hsm-tooltip-text" role="tooltip">' . esc_html( $text ) . '</span>'
+			. '</span>';
+	}
+
+	// ------------------------------------------------------------------
 	// Save
 	// ------------------------------------------------------------------
 
 	public static function save( int $post_id, WP_Post $post ): void {
-		// Bail on autosave / revision.
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
 		if ( wp_is_post_revision( $post_id ) ) return;
 		if ( ! current_user_can( 'edit_post', $post_id ) ) return;
@@ -62,6 +71,11 @@ class HSM_Meta_Box {
 			$value = isset( $_POST[ $field ] ) ? sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) : '';
 			update_post_meta( $post_id, $field, $value );
 		}
+
+		// OG / Twitter "same as SEO Meta" flags.
+		// Checkbox present = '1' (same as meta / collapsed). Absent = '0' (custom).
+		update_post_meta( $post_id, 'hsm_og_same_as_meta',      isset( $_POST['hsm_og_same_as_meta'] )      ? '1' : '0' );
+		update_post_meta( $post_id, 'hsm_twitter_same_as_meta', isset( $_POST['hsm_twitter_same_as_meta'] ) ? '1' : '0' );
 
 		// Robots toggles.
 		$robots_fields = [ 'hsm_noindex', 'hsm_nofollow' ];
@@ -133,20 +147,19 @@ class HSM_Meta_Box {
 	// Render
 	// ------------------------------------------------------------------
 
-	/** Small inline tooltip for the meta box. */
-	private static function tip( string $text ): string {
-		return '<span class="hsm-tooltip" tabindex="0" aria-label="' . esc_attr( $text ) . '">?'
-			. '<span class="hsm-tooltip-text" role="tooltip">' . esc_html( $text ) . '</span>'
-			. '</span>';
-	}
-
 	public static function render( WP_Post $post ): void {
 		wp_nonce_field( 'hsm_meta_box_nonce', 'hsm_meta_box_nonce' );
 
-		$enabled_types     = get_post_meta( $post->ID, 'hsm_schema_enabled_types', true ) ?: [];
-		$faq_entries       = get_post_meta( $post->ID, 'hsm_faq_entries', true ) ?: [];
-		$howto_steps       = get_post_meta( $post->ID, 'hsm_howto_steps', true ) ?: [];
-		$is_front          = (int) get_option( 'page_on_front' ) === $post->ID;
+		$enabled_types = get_post_meta( $post->ID, 'hsm_schema_enabled_types', true ) ?: [];
+		$faq_entries   = get_post_meta( $post->ID, 'hsm_faq_entries', true ) ?: [];
+		$howto_steps   = get_post_meta( $post->ID, 'hsm_howto_steps', true ) ?: [];
+		$is_front      = (int) get_option( 'page_on_front' ) === $post->ID;
+
+		// OG / Twitter sync flags. Default '1' (same as meta) for new/unsaved posts.
+		$og_same_meta  = get_post_meta( $post->ID, 'hsm_og_same_as_meta', true );
+		$tw_same_meta  = get_post_meta( $post->ID, 'hsm_twitter_same_as_meta', true );
+		$og_synced     = ( '0' !== $og_same_meta );   // '' or '1' → synced (default on)
+		$tw_synced     = ( '0' !== $tw_same_meta );
 
 		$availability_opts = [
 			'https://schema.org/InStock'    => 'In Stock',
@@ -164,69 +177,195 @@ class HSM_Meta_Box {
 			<!-- ========== TAB 1: SEO Meta ========== -->
 			<div id="hsm-tab-seo" class="hsm-tab-panel active">
 
+				<!-- ── Core SEO ── -->
 				<table class="form-table">
 					<tr>
-						<th><label for="hsm_seo_title"><?php esc_html_e( 'Title Tag Override', 'homerite-schema' ); ?></label></th>
+						<th>
+							<label for="hsm_seo_title"><?php esc_html_e( 'Title Tag Override', 'homerite-schema' ); ?></label>
+							<?php echo self::tip( 'Overrides the browser tab title and the blue headline shown in Google search results. Leave blank to use the default WordPress title.' ); // phpcs:ignore ?>
+						</th>
 						<td>
-							<input type="text" id="hsm_seo_title" name="hsm_seo_title" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_seo_title', true ) ); ?>" class="large-text">
-							<p class="description"><?php esc_html_e( 'Leave blank to use the default WordPress title.', 'homerite-schema' ); ?></p>
+							<input type="text" id="hsm_seo_title" name="hsm_seo_title"
+								value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_seo_title', true ) ); ?>"
+								class="large-text">
+							<p class="description hsm-best-practice">
+								&#128270; <?php esc_html_e( 'Best practice: 50–60 characters. Lead with your primary keyword. End with your brand name. Example: "Roof Replacement in Harrisburg – Acme Roofing"', 'homerite-schema' ); ?>
+							</p>
 						</td>
 					</tr>
 					<tr>
-						<th><label for="hsm_seo_description"><?php esc_html_e( 'Meta Description', 'homerite-schema' ); ?></label></th>
+						<th>
+							<label for="hsm_seo_description"><?php esc_html_e( 'Meta Description', 'homerite-schema' ); ?></label>
+							<?php echo self::tip( 'The short paragraph shown beneath your page title in search results. Not a direct ranking factor, but a well-written description boosts click-through rate.' ); // phpcs:ignore ?>
+						</th>
 						<td>
-							<textarea id="hsm_seo_description" name="hsm_seo_description" rows="3" class="large-text" maxlength="160"><?php echo esc_textarea( get_post_meta( $post->ID, 'hsm_seo_description', true ) ); ?></textarea>
+							<textarea id="hsm_seo_description" name="hsm_seo_description" rows="3"
+								class="large-text" maxlength="160"><?php echo esc_textarea( get_post_meta( $post->ID, 'hsm_seo_description', true ) ); ?></textarea>
 							<p class="description hsm-char-count" data-max="160"><?php esc_html_e( '0 / 160 characters', 'homerite-schema' ); ?></p>
+							<p class="description hsm-best-practice">
+								&#128270; <?php esc_html_e( 'Best practice: 120–158 characters. Include your focus keyword, a clear benefit, and a call to action. Appears verbatim in search results.', 'homerite-schema' ); ?>
+							</p>
 						</td>
 					</tr>
 					<tr>
-						<th><label for="hsm_canonical_url"><?php esc_html_e( 'Canonical URL', 'homerite-schema' ); ?></label></th>
-						<td><input type="url" id="hsm_canonical_url" name="hsm_canonical_url" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_canonical_url', true ) ); ?>" class="large-text"></td>
-					</tr>
-					<tr>
-						<th><label for="hsm_focus_keyword"><?php esc_html_e( 'Focus Keyword', 'homerite-schema' ); ?></label></th>
-						<td><input type="text" id="hsm_focus_keyword" name="hsm_focus_keyword" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_focus_keyword', true ) ); ?>" class="regular-text"></td>
-					</tr>
-				</table>
-
-				<h4><?php esc_html_e( 'Open Graph', 'homerite-schema' ); ?></h4>
-				<table class="form-table">
-					<tr>
-						<th><label for="hsm_og_title"><?php esc_html_e( 'OG Title', 'homerite-schema' ); ?></label></th>
-						<td><input type="text" id="hsm_og_title" name="hsm_og_title" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_og_title', true ) ); ?>" class="large-text"></td>
-					</tr>
-					<tr>
-						<th><label for="hsm_og_description"><?php esc_html_e( 'OG Description', 'homerite-schema' ); ?></label></th>
-						<td><textarea id="hsm_og_description" name="hsm_og_description" rows="2" class="large-text"><?php echo esc_textarea( get_post_meta( $post->ID, 'hsm_og_description', true ) ); ?></textarea></td>
-					</tr>
-					<tr>
-						<th><label for="hsm_og_image"><?php esc_html_e( 'OG Image URL', 'homerite-schema' ); ?></label></th>
+						<th>
+							<label for="hsm_canonical_url"><?php esc_html_e( 'Canonical URL', 'homerite-schema' ); ?></label>
+							<?php echo self::tip( 'Tells Google which URL is the "official" version of this page. Only set this if the same content exists at more than one URL.' ); // phpcs:ignore ?>
+						</th>
 						<td>
-							<input type="url" id="hsm_og_image" name="hsm_og_image" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_og_image', true ) ); ?>" class="large-text">
-							<button type="button" class="button hsm-upload-image" data-target="hsm_og_image"><?php esc_html_e( 'Choose Image', 'homerite-schema' ); ?></button>
+							<input type="url" id="hsm_canonical_url" name="hsm_canonical_url"
+								value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_canonical_url', true ) ); ?>"
+								class="large-text">
+							<p class="description hsm-best-practice">
+								&#128270; <?php esc_html_e( 'Best practice: leave blank unless this content appears at multiple URLs. Prevents duplicate-content penalties.', 'homerite-schema' ); ?>
+							</p>
 						</td>
 					</tr>
-				</table>
-
-				<h4><?php esc_html_e( 'Twitter Card', 'homerite-schema' ); ?></h4>
-				<table class="form-table">
 					<tr>
-						<th><label for="hsm_twitter_title"><?php esc_html_e( 'Twitter Title', 'homerite-schema' ); ?></label></th>
-						<td><input type="text" id="hsm_twitter_title" name="hsm_twitter_title" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_twitter_title', true ) ); ?>" class="large-text"></td>
-					</tr>
-					<tr>
-						<th><label for="hsm_twitter_description"><?php esc_html_e( 'Twitter Description', 'homerite-schema' ); ?></label></th>
-						<td><textarea id="hsm_twitter_description" name="hsm_twitter_description" rows="2" class="large-text"><?php echo esc_textarea( get_post_meta( $post->ID, 'hsm_twitter_description', true ) ); ?></textarea></td>
-					</tr>
-					<tr>
-						<th><label for="hsm_twitter_image"><?php esc_html_e( 'Twitter Image URL', 'homerite-schema' ); ?></label></th>
+						<th>
+							<label for="hsm_focus_keyword"><?php esc_html_e( 'Focus Keyword', 'homerite-schema' ); ?></label>
+							<?php echo self::tip( 'The single primary keyword this page is trying to rank for. Used by the Content Analysis tab to measure how well your content is optimised.' ); // phpcs:ignore ?>
+						</th>
 						<td>
-							<input type="url" id="hsm_twitter_image" name="hsm_twitter_image" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_twitter_image', true ) ); ?>" class="large-text">
-							<button type="button" class="button hsm-upload-image" data-target="hsm_twitter_image"><?php esc_html_e( 'Choose Image', 'homerite-schema' ); ?></button>
+							<input type="text" id="hsm_focus_keyword" name="hsm_focus_keyword"
+								value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_focus_keyword', true ) ); ?>"
+								class="regular-text">
+							<p class="description hsm-best-practice">
+								&#128270; <?php esc_html_e( 'Best practice: one keyword per page. Use it in your title, meta description, first paragraph, and at least one heading.', 'homerite-schema' ); ?>
+							</p>
 						</td>
 					</tr>
 				</table>
 
+				<!-- ── Open Graph ── -->
+				<div class="hsm-sync-section">
+					<div class="hsm-sync-header">
+						<h4>
+							<?php esc_html_e( 'Open Graph', 'homerite-schema' ); ?>
+							<?php echo self::tip( 'Open Graph tags control how this page appears when shared on Facebook, LinkedIn, and other social networks — the image, title, and description in the preview card.' ); // phpcs:ignore ?>
+						</h4>
+						<label class="hsm-sync-label">
+							<input type="checkbox" id="hsm_og_same_as_meta" name="hsm_og_same_as_meta" value="1"
+								<?php checked( $og_synced ); ?>>
+							<?php esc_html_e( 'Use SEO Title &amp; Description (recommended)', 'homerite-schema' ); ?>
+						</label>
+					</div>
+
+					<div id="hsm-og-custom-fields" class="hsm-sync-fields"<?php echo $og_synced ? ' style="display:none"' : ''; ?>>
+						<table class="form-table">
+							<tr>
+								<th>
+									<label for="hsm_og_title"><?php esc_html_e( 'OG Title', 'homerite-schema' ); ?></label>
+									<?php echo self::tip( 'The headline shown in the social share card. Can differ slightly from your page title — write for curiosity and clicks.' ); // phpcs:ignore ?>
+								</th>
+								<td>
+									<input type="text" id="hsm_og_title" name="hsm_og_title"
+										value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_og_title', true ) ); ?>"
+										class="large-text">
+									<p class="description hsm-best-practice">
+										&#128270; <?php esc_html_e( 'Best practice: 60–90 characters. Can be slightly more descriptive or conversational than your title tag.', 'homerite-schema' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th>
+									<label for="hsm_og_description"><?php esc_html_e( 'OG Description', 'homerite-schema' ); ?></label>
+									<?php echo self::tip( 'The supporting text beneath the OG title in a social card. Write for a social audience — explain the benefit and why someone should click.' ); // phpcs:ignore ?>
+								</th>
+								<td>
+									<textarea id="hsm_og_description" name="hsm_og_description" rows="2"
+										class="large-text"><?php echo esc_textarea( get_post_meta( $post->ID, 'hsm_og_description', true ) ); ?></textarea>
+									<p class="description hsm-best-practice">
+										&#128270; <?php esc_html_e( 'Best practice: 150–200 characters. Focus on the benefit or outcome, not just a description.', 'homerite-schema' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th>
+									<label for="hsm_og_image"><?php esc_html_e( 'OG Image URL', 'homerite-schema' ); ?></label>
+									<?php echo self::tip( 'The image shown in the social share card. A compelling image dramatically increases click-through on Facebook and LinkedIn.' ); // phpcs:ignore ?>
+								</th>
+								<td>
+									<input type="url" id="hsm_og_image" name="hsm_og_image"
+										value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_og_image', true ) ); ?>"
+										class="large-text">
+									<button type="button" class="button hsm-upload-image" data-target="hsm_og_image">
+										<?php esc_html_e( 'Choose Image', 'homerite-schema' ); ?>
+									</button>
+									<p class="description hsm-best-practice">
+										&#128270; <?php esc_html_e( 'Best practice: 1200×630 px, under 8 MB. Use a bold, text-free image that works as a thumbnail.', 'homerite-schema' ); ?>
+									</p>
+								</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+
+				<!-- ── Twitter (X) Card ── -->
+				<div class="hsm-sync-section">
+					<div class="hsm-sync-header">
+						<h4>
+							<?php esc_html_e( 'Twitter (X) Card', 'homerite-schema' ); ?>
+							<?php echo self::tip( 'Twitter (X) Card tags control the preview shown when this page is shared on Twitter/X — the image, headline, and description in the tweet card.' ); // phpcs:ignore ?>
+						</h4>
+						<label class="hsm-sync-label">
+							<input type="checkbox" id="hsm_twitter_same_as_meta" name="hsm_twitter_same_as_meta" value="1"
+								<?php checked( $tw_synced ); ?>>
+							<?php esc_html_e( 'Use SEO Title &amp; Description (recommended)', 'homerite-schema' ); ?>
+						</label>
+					</div>
+
+					<div id="hsm-twitter-custom-fields" class="hsm-sync-fields"<?php echo $tw_synced ? ' style="display:none"' : ''; ?>>
+						<table class="form-table">
+							<tr>
+								<th>
+									<label for="hsm_twitter_title"><?php esc_html_e( 'Twitter (X) Title', 'homerite-schema' ); ?></label>
+									<?php echo self::tip( 'The headline shown in the Twitter/X card. Twitter truncates titles longer than ~70 characters on mobile.' ); // phpcs:ignore ?>
+								</th>
+								<td>
+									<input type="text" id="hsm_twitter_title" name="hsm_twitter_title"
+										value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_twitter_title', true ) ); ?>"
+										class="large-text">
+									<p class="description hsm-best-practice">
+										&#128270; <?php esc_html_e( 'Best practice: under 70 characters. Direct and action-oriented works well on Twitter/X.', 'homerite-schema' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th>
+									<label for="hsm_twitter_description"><?php esc_html_e( 'Twitter (X) Description', 'homerite-schema' ); ?></label>
+									<?php echo self::tip( 'Supporting text shown in the Twitter/X card. Keep it punchy — Twitter audiences scroll fast.' ); // phpcs:ignore ?>
+								</th>
+								<td>
+									<textarea id="hsm_twitter_description" name="hsm_twitter_description" rows="2"
+										class="large-text"><?php echo esc_textarea( get_post_meta( $post->ID, 'hsm_twitter_description', true ) ); ?></textarea>
+									<p class="description hsm-best-practice">
+										&#128270; <?php esc_html_e( 'Best practice: under 200 characters. Write for a fast-scrolling Twitter/X audience.', 'homerite-schema' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th>
+									<label for="hsm_twitter_image"><?php esc_html_e( 'Twitter (X) Image URL', 'homerite-schema' ); ?></label>
+									<?php echo self::tip( 'The image shown in the Twitter/X card. Twitter crops images differently than Facebook — test your card at cards-dev.twitter.com.' ); // phpcs:ignore ?>
+								</th>
+								<td>
+									<input type="url" id="hsm_twitter_image" name="hsm_twitter_image"
+										value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_twitter_image', true ) ); ?>"
+										class="large-text">
+									<button type="button" class="button hsm-upload-image" data-target="hsm_twitter_image">
+										<?php esc_html_e( 'Choose Image', 'homerite-schema' ); ?>
+									</button>
+									<p class="description hsm-best-practice">
+										&#128270; <?php esc_html_e( 'Best practice: 1200×628 px for summary_large_image card. Twitter crops to 2:1 ratio.', 'homerite-schema' ); ?>
+									</p>
+								</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+
+				<!-- ── Robots ── -->
 				<h4><?php esc_html_e( 'Robots', 'homerite-schema' ); ?></h4>
 				<p>
 					<label>
@@ -245,7 +384,10 @@ class HSM_Meta_Box {
 			<!-- ========== TAB 2: Schema ========== -->
 			<div id="hsm-tab-schema" class="hsm-tab-panel">
 
-				<h4><?php esc_html_e( 'Enable Schema Types', 'homerite-schema' ); ?></h4>
+				<h4>
+					<?php esc_html_e( 'Enable Schema Types', 'homerite-schema' ); ?>
+					<?php echo self::tip( 'Schema markup is invisible code that tells Google what your content is about — enabling rich results like star ratings, FAQ dropdowns, and how-to steps directly in search.' ); // phpcs:ignore ?>
+				</h4>
 				<div class="hsm-schema-types">
 					<?php
 					$schema_type_list = [
@@ -262,7 +404,9 @@ class HSM_Meta_Box {
 						$checked = in_array( $type, $enabled_types, true ) || ( $is_front && 'LocalBusiness' === $type );
 					?>
 						<label class="hsm-schema-type-toggle">
-							<input type="checkbox" name="<?php echo esc_attr( 'hsm_schema_enable_' . $type ); ?>" value="1"
+							<input type="checkbox"
+								name="<?php echo esc_attr( 'hsm_schema_enable_' . $type ); ?>"
+								value="1"
 								<?php checked( $checked ); ?>
 								data-reveals="hsm-schema-section-<?php echo esc_attr( strtolower( $type ) ); ?>">
 							<?php echo esc_html( $label ); ?>
@@ -272,7 +416,10 @@ class HSM_Meta_Box {
 
 				<!-- LocalBusiness overrides -->
 				<div id="hsm-schema-section-localbusiness" class="hsm-schema-section <?php echo in_array( 'LocalBusiness', $enabled_types, true ) || $is_front ? 'active' : ''; ?>">
-					<h4><?php esc_html_e( 'LocalBusiness Override Fields', 'homerite-schema' ); ?></h4>
+					<h4>
+						<?php esc_html_e( 'LocalBusiness Override Fields', 'homerite-schema' ); ?>
+						<?php echo self::tip( 'Override global settings for this specific page. Useful when a page represents a specific location or branch of your business.' ); // phpcs:ignore ?>
+					</h4>
 					<table class="form-table">
 						<tr>
 							<th><label for="hsm_lb_description"><?php esc_html_e( 'Description Override', 'homerite-schema' ); ?></label></th>
@@ -291,7 +438,10 @@ class HSM_Meta_Box {
 
 				<!-- Service fields -->
 				<div id="hsm-schema-section-service" class="hsm-schema-section <?php echo in_array( 'Service', $enabled_types, true ) ? 'active' : ''; ?>">
-					<h4><?php esc_html_e( 'Service Schema', 'homerite-schema' ); ?></h4>
+					<h4>
+						<?php esc_html_e( 'Service Schema', 'homerite-schema' ); ?>
+						<?php echo self::tip( 'Service schema tells Google this page describes a specific service you offer. Helps your service pages appear for relevant searches.' ); // phpcs:ignore ?>
+					</h4>
 					<table class="form-table">
 						<tr>
 							<th><label for="hsm_service_name"><?php esc_html_e( 'Service Name', 'homerite-schema' ); ?></label></th>
@@ -308,7 +458,7 @@ class HSM_Meta_Box {
 						<tr>
 							<th>
 								<label for="hsm_service_area_override"><?php esc_html_e( 'Area Served Override', 'homerite-schema' ); ?></label>
-								<?php echo self::tip( 'If this page is for a specific area different from your main service region, type it here (e.g. "Centre County, PA"). Leave blank and Google will use your global service areas list instead.' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'If this page targets a specific area different from your global service regions, enter it here (e.g. "Centre County, PA"). Leave blank to use global service areas.' ); // phpcs:ignore ?>
 							</th>
 							<td><input type="text" id="hsm_service_area_override" name="hsm_service_area_override" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_service_area_override', true ) ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'Leave blank to use global service areas', 'homerite-schema' ); ?>"></td>
 						</tr>
@@ -317,7 +467,10 @@ class HSM_Meta_Box {
 
 				<!-- Product fields -->
 				<div id="hsm-schema-section-product" class="hsm-schema-section <?php echo in_array( 'Product', $enabled_types, true ) ? 'active' : ''; ?>">
-					<h4><?php esc_html_e( 'Product Schema', 'homerite-schema' ); ?></h4>
+					<h4>
+						<?php esc_html_e( 'Product Schema', 'homerite-schema' ); ?>
+						<?php echo self::tip( 'Product schema enables rich results like star ratings, prices, and availability directly in Google search results for this product page.' ); // phpcs:ignore ?>
+					</h4>
 					<table class="form-table">
 						<tr>
 							<th><label for="hsm_product_name"><?php esc_html_e( 'Product Name Override', 'homerite-schema' ); ?></label></th>
@@ -358,7 +511,10 @@ class HSM_Meta_Box {
 
 				<!-- FAQ editor -->
 				<div id="hsm-schema-section-faqpage" class="hsm-schema-section <?php echo in_array( 'FAQPage', $enabled_types, true ) ? 'active' : ''; ?>">
-					<h4><?php esc_html_e( 'FAQ Editor', 'homerite-schema' ); ?></h4>
+					<h4>
+						<?php esc_html_e( 'FAQ Editor', 'homerite-schema' ); ?>
+						<?php echo self::tip( 'FAQPage schema can display your Q&As as expandable dropdowns directly in Google search results, increasing visibility without an extra click.' ); // phpcs:ignore ?>
+					</h4>
 					<div id="hsm-faq-list">
 						<?php if ( empty( $faq_entries ) ) : ?>
 							<div class="hsm-faq-row">
@@ -389,7 +545,7 @@ class HSM_Meta_Box {
 				<div id="hsm-schema-section-howto" class="hsm-schema-section <?php echo in_array( 'HowTo', $enabled_types, true ) ? 'active' : ''; ?>">
 					<h4>
 						<?php esc_html_e( 'HowTo Schema', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'HowTo schema tells Google that this page explains how to do something step-by-step. Google may show your steps as a rich result in search, which can get you more clicks.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'HowTo schema tells Google this page explains how to do something step-by-step. Google may show your steps as a rich result, which can significantly increase clicks.' ); // phpcs:ignore ?>
 					</h4>
 					<table class="form-table">
 						<tr>
@@ -403,7 +559,7 @@ class HSM_Meta_Box {
 						<tr>
 							<th>
 								<label for="hsm_howto_total_time"><?php esc_html_e( 'Total Time', 'homerite-schema' ); ?></label>
-								<?php echo self::tip( 'How long the whole process takes. Use the ISO 8601 format: PT30M = 30 minutes, PT2H = 2 hours, PT1H30M = 1 hour 30 minutes.' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'How long the whole process takes in ISO 8601 duration format: PT30M = 30 minutes, PT2H = 2 hours, PT1H30M = 1 hour 30 minutes.' ); // phpcs:ignore ?>
 							</th>
 							<td><input type="text" id="hsm_howto_total_time" name="hsm_howto_total_time" value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_howto_total_time', true ) ); ?>" class="small-text" placeholder="PT30M"></td>
 						</tr>
@@ -440,7 +596,7 @@ class HSM_Meta_Box {
 				<div id="hsm-schema-section-review" class="hsm-schema-section <?php echo in_array( 'Review', $enabled_types, true ) ? 'active' : ''; ?>">
 					<h4>
 						<?php esc_html_e( 'Review Schema', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'Review schema marks this page as containing a customer review. Google may show star ratings next to this page in search results, making it stand out and get more clicks.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'Review schema marks this page as containing a customer review. Google may show star ratings next to this page in search results.' ); // phpcs:ignore ?>
 					</h4>
 					<table class="form-table">
 						<tr>

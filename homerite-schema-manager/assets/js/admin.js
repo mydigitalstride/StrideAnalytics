@@ -10,6 +10,8 @@
  * - Address → Lat/Long geocoding (OpenStreetMap Nominatim)
  * - Meta description character counter
  * - WP media picker for image fields
+ * - Cascading business type dropdowns (category → type)
+ * - OG / Twitter (X) "same as SEO Meta" sync + collapse
  */
 
 (function ($) {
@@ -34,10 +36,148 @@
 		}
 	});
 
-	// Initialise on page load (in case of pre-checked boxes).
+	// Initialise on page load (pre-checked boxes).
 	$('[data-reveals]').each(function () {
 		if ($(this).is(':checked')) {
 			$('#' + $(this).data('reveals')).addClass('active');
+		}
+	});
+
+	// ─── Cascading business type dropdowns ────────────────────────────
+	var $catDrop  = $('#hsm_business_category');
+	var $typeDrop = $('#hsm_schema_type');
+
+	if ($catDrop.length && $typeDrop.length) {
+
+		// Build category → options map from rendered optgroups.
+		var catMap = {};
+		$typeDrop.find('optgroup').each(function () {
+			var cat  = $(this).attr('label');
+			var opts = [];
+			$(this).find('option').each(function () {
+				opts.push({ value: $(this).val(), text: $(this).text() });
+			});
+			catMap[cat] = opts;
+		});
+
+		// Rebuild the type dropdown for a given category (or all if blank).
+		function filterTypes(cat) {
+			var currentVal = $typeDrop.val();
+			$typeDrop.empty();
+
+			if (!cat) {
+				// Show all with optgroups.
+				$.each(catMap, function (catName, opts) {
+					var $grp = $('<optgroup>').attr('label', catName);
+					$.each(opts, function (i, o) {
+						$grp.append($('<option>').val(o.value).text(o.text));
+					});
+					$typeDrop.append($grp);
+				});
+			} else {
+				// Show only selected category's types (flat, no optgroup).
+				$.each(catMap[cat] || [], function (i, o) {
+					$typeDrop.append($('<option>').val(o.value).text(o.text));
+				});
+			}
+
+			// Restore previously selected value if it still exists in the new list.
+			if (currentVal) {
+				$typeDrop.val(currentVal);
+			}
+		}
+
+		// On page load: detect which category the saved type belongs to.
+		var savedType = $typeDrop.val();
+		if (savedType) {
+			$.each(catMap, function (catName, opts) {
+				$.each(opts, function (i, o) {
+					if (o.value === savedType) {
+						$catDrop.val(catName);
+						filterTypes(catName);
+						$typeDrop.val(savedType);
+						return false; // break inner
+					}
+				});
+				if ($catDrop.val() === catName) return false; // break outer
+			});
+		}
+
+		// On category change: filter the type dropdown.
+		$catDrop.on('change', function () {
+			filterTypes($(this).val());
+		});
+	}
+
+	// ─── OG "same as SEO Meta" sync + collapse ─────────────────────────
+	function syncOgToMeta() {
+		var title = $('#hsm_seo_title').val();
+		var desc  = $('#hsm_seo_description').val();
+		$('#hsm_og_title').val(title);
+		$('#hsm_og_description').val(desc);
+	}
+
+	function applyOgSync(animate) {
+		var checked = $('#hsm_og_same_as_meta').is(':checked');
+		if (checked) {
+			syncOgToMeta();
+			if (animate) {
+				$('#hsm-og-custom-fields').slideUp(200);
+			} else {
+				$('#hsm-og-custom-fields').hide();
+			}
+		} else {
+			if (animate) {
+				$('#hsm-og-custom-fields').slideDown(200);
+			} else {
+				$('#hsm-og-custom-fields').show();
+			}
+		}
+	}
+
+	$('#hsm_og_same_as_meta').on('change', function () { applyOgSync(true); });
+	applyOgSync(false); // initialise on load
+
+	// Live sync when SEO fields change while OG is locked.
+	$(document).on('input', '#hsm_seo_title, #hsm_seo_description', function () {
+		if ($('#hsm_og_same_as_meta').is(':checked')) {
+			syncOgToMeta();
+		}
+	});
+
+	// ─── Twitter (X) "same as SEO Meta" sync + collapse ──────────────
+	function syncTwitterToMeta() {
+		var title = $('#hsm_seo_title').val();
+		var desc  = $('#hsm_seo_description').val();
+		$('#hsm_twitter_title').val(title);
+		$('#hsm_twitter_description').val(desc);
+	}
+
+	function applyTwitterSync(animate) {
+		var checked = $('#hsm_twitter_same_as_meta').is(':checked');
+		if (checked) {
+			syncTwitterToMeta();
+			if (animate) {
+				$('#hsm-twitter-custom-fields').slideUp(200);
+			} else {
+				$('#hsm-twitter-custom-fields').hide();
+			}
+		} else {
+			if (animate) {
+				$('#hsm-twitter-custom-fields').slideDown(200);
+			} else {
+				$('#hsm-twitter-custom-fields').show();
+			}
+		}
+	}
+
+	$('#hsm_twitter_same_as_meta').on('change', function () { applyTwitterSync(true); });
+	applyTwitterSync(false); // initialise on load
+
+	// Live sync Twitter when SEO fields change while Twitter is locked.
+	$(document).on('input', '#hsm_seo_title, #hsm_seo_description', function () {
+		if ($('#hsm_twitter_same_as_meta').is(':checked')) {
+			syncTwitterToMeta();
 		}
 	});
 
@@ -61,7 +201,6 @@
 
 	$(document).on('click', '.hsm-remove-row', function () {
 		var $list = $(this).closest('[id]');
-		// Keep at least one row.
 		if ($list.find('.hsm-repeatable-row').length > 1) {
 			$(this).closest('.hsm-repeatable-row').remove();
 		} else {
@@ -93,13 +232,8 @@
 		}
 	});
 
-	// Drag-to-reorder FAQ rows.
 	if (typeof $.fn.sortable !== 'undefined') {
-		$('#hsm-faq-list').sortable({
-			handle: '.hsm-faq-handle',
-			axis: 'y',
-			tolerance: 'pointer',
-		});
+		$('#hsm-faq-list').sortable({ handle: '.hsm-faq-handle', axis: 'y', tolerance: 'pointer' });
 	}
 
 	// ─── HowTo step rows ──────────────────────────────────────────────
@@ -126,13 +260,8 @@
 		}
 	});
 
-	// Drag-to-reorder HowTo steps.
 	if (typeof $.fn.sortable !== 'undefined') {
-		$('#hsm-howto-list').sortable({
-			handle: '.hsm-faq-handle',
-			axis: 'y',
-			tolerance: 'pointer',
-		});
+		$('#hsm-howto-list').sortable({ handle: '.hsm-faq-handle', axis: 'y', tolerance: 'pointer' });
 	}
 
 	// ─── Secondary location blocks ────────────────────────────────────
@@ -177,8 +306,8 @@
 			return;
 		}
 
-		var query  = parts.join(', ');
-		var $btn   = $(this);
+		var query   = parts.join(', ');
+		var $btn    = $(this);
 		var $status = $('#hsm-geo-status');
 
 		$btn.prop('disabled', true).text('Searching\u2026');
@@ -216,12 +345,7 @@
 		var max     = parseInt($counter.data('max'), 10) || 160;
 
 		$counter.text(current + ' / ' + max + ' characters');
-
-		if (current > max) {
-			$counter.addClass('hsm-over-limit');
-		} else {
-			$counter.removeClass('hsm-over-limit');
-		}
+		$counter.toggleClass('hsm-over-limit', current > max);
 	}
 
 	$('#hsm_seo_description').on('input', function () {
