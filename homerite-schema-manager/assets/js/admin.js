@@ -208,6 +208,21 @@
 		}
 	});
 
+	// ─── Team member rows ─────────────────────────────────────────────
+	$(document).on('click', '.hsm-add-team-member', function () {
+		var $row = $(
+			'<div class="hsm-repeatable-row" style="display:grid;grid-template-columns:1fr 1fr 2fr 2fr auto;gap:8px;align-items:center;margin-bottom:8px;">' +
+			'<input type="text" name="hsm_team_name[]"      value="" class="regular-text" placeholder="Full Name">' +
+			'<input type="text" name="hsm_team_job_title[]" value="" class="regular-text" placeholder="Job Title">' +
+			'<input type="url"  name="hsm_team_linkedin[]"  value="" class="regular-text" placeholder="https://linkedin.com/in/...">' +
+			'<input type="url"  name="hsm_team_image[]"     value="" class="regular-text" placeholder="Headshot URL (optional)">' +
+			'<button type="button" class="button hsm-remove-row">Remove</button>' +
+			'</div>'
+		);
+		$('#' + $(this).data('target')).append($row);
+		$row.find('input').first().focus();
+	});
+
 	// ─── FAQ rows ─────────────────────────────────────────────────────
 	$('#hsm-add-faq-row').on('click', function () {
 		var $row = $(

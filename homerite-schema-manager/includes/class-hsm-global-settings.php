@@ -263,6 +263,26 @@ class HSM_Global_Settings {
 		}
 		update_option( 'hsm_same_as', $same_as );
 
+		// --- Team members ---
+		$team_members = [];
+		if ( ! empty( $_POST['hsm_team_name'] ) && is_array( $_POST['hsm_team_name'] ) ) {
+			$names      = array_map( 'sanitize_text_field', wp_unslash( $_POST['hsm_team_name'] ) );
+			$titles     = array_map( 'sanitize_text_field', wp_unslash( $_POST['hsm_team_job_title'] ?? [] ) );
+			$linkedins  = wp_unslash( $_POST['hsm_team_linkedin'] ?? [] );
+			$images     = wp_unslash( $_POST['hsm_team_image'] ?? [] );
+			foreach ( $names as $i => $name ) {
+				if ( '' !== $name ) {
+					$team_members[] = [
+						'name'      => $name,
+						'job_title' => $titles[ $i ] ?? '',
+						'linkedin'  => esc_url_raw( $linkedins[ $i ] ?? '' ),
+						'image'     => esc_url_raw( $images[ $i ] ?? '' ),
+					];
+				}
+			}
+		}
+		update_option( 'hsm_team_members', $team_members );
+
 		// --- Tracking fields (keep original option names for back-compat) ---
 		$tracking_text = [ 'tracking_gtm_id', 'tracking_facebook_pixel_id', 'tracking_linkedin_partner_id', 'utm_form_field' ];
 		foreach ( $tracking_text as $field ) {
@@ -301,6 +321,7 @@ class HSM_Global_Settings {
 		$service_areas       = get_option( 'hsm_service_areas', [] );
 		$same_as             = get_option( 'hsm_same_as', [] );
 		$secondary_locations = get_option( 'hsm_secondary_locations', [] );
+		$team_members        = get_option( 'hsm_team_members', [] );
 		$saved_type          = get_option( 'hsm_schema_type', 'HomeAndConstructionBusiness' );
 		$business_categories = self::get_business_categories();
 
@@ -606,7 +627,30 @@ class HSM_Global_Settings {
 					</table>
 				</div>
 
-				<!-- ===== Tracking ===== -->
+				<!-- ===== Team Members ===== -->
+			<div class="hsm-card">
+				<h2>
+					<?php esc_html_e( 'Team Members', 'homerite-schema' ); ?>
+					<?php echo self::tip( 'Add team members so AI and Google can identify real people behind the business. Names, job titles, and LinkedIn URLs are output as Person schema on every page.' ); // phpcs:ignore ?>
+				</h2>
+				<div id="hsm-team-list">
+					<?php
+					$team_to_show = ! empty( $team_members ) ? $team_members : [ [] ];
+					foreach ( $team_to_show as $member ) :
+					?>
+					<div class="hsm-repeatable-row" style="display:grid;grid-template-columns:1fr 1fr 2fr 2fr auto;gap:8px;align-items:center;margin-bottom:8px;">
+						<input type="text"  name="hsm_team_name[]"      value="<?php echo esc_attr( $member['name']      ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Full Name', 'homerite-schema' ); ?>">
+						<input type="text"  name="hsm_team_job_title[]" value="<?php echo esc_attr( $member['job_title'] ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Job Title', 'homerite-schema' ); ?>">
+						<input type="url"   name="hsm_team_linkedin[]"  value="<?php echo esc_attr( $member['linkedin']  ?? '' ); ?>" class="regular-text" placeholder="https://linkedin.com/in/...">
+						<input type="url"   name="hsm_team_image[]"     value="<?php echo esc_attr( $member['image']     ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Headshot URL (optional)', 'homerite-schema' ); ?>">
+						<button type="button" class="button hsm-remove-row"><?php esc_html_e( 'Remove', 'homerite-schema' ); ?></button>
+					</div>
+					<?php endforeach; ?>
+				</div>
+				<button type="button" class="button hsm-add-team-member" data-target="hsm-team-list"><?php esc_html_e( '+ Add Team Member', 'homerite-schema' ); ?></button>
+			</div>
+
+			<!-- ===== Tracking ===== -->
 				<div class="hsm-card">
 					<h2>
 						<?php esc_html_e( 'Analytics &amp; Tracking', 'homerite-schema' ); ?>
