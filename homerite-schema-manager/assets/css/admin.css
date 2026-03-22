@@ -1,0 +1,191 @@
+/* HomeRite Schema Manager — Admin Styles */
+
+/* ─── Layout wrapper ─────────────────────────────────────────────────── */
+.hsm-settings-wrap {
+	max-width: 960px;
+}
+
+/* ─── Cards ──────────────────────────────────────────────────────────── */
+.hsm-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px 24px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+
+.hsm-card h2 {
+	margin-top: 0;
+	padding-top: 0;
+	font-size: 1.1em;
+	border-bottom: 1px solid #f0f0f1;
+	padding-bottom: 10px;
+	margin-bottom: 12px;
+}
+
+/* ─── Hours table ────────────────────────────────────────────────────── */
+.hsm-hours-table {
+	border-collapse: collapse;
+	width: 100%;
+}
+.hsm-hours-table th,
+.hsm-hours-table td {
+	padding: 6px 10px;
+	vertical-align: middle;
+}
+.hsm-hours-table thead th {
+	font-weight: 600;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+/* ─── Repeatable rows ────────────────────────────────────────────────── */
+.hsm-repeatable-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+.hsm-repeatable-row input {
+	flex: 1;
+}
+
+/* ─── Tabs (meta box) ────────────────────────────────────────────────── */
+#hsm-meta-box-wrap {
+	padding: 0;
+}
+
+ul.hsm-tabs {
+	display: flex;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border-bottom: 2px solid #c3c4c7;
+}
+
+ul.hsm-tabs li {
+	padding: 8px 18px;
+	cursor: pointer;
+	font-weight: 500;
+	color: #50575e;
+	margin-bottom: -2px;
+	border-bottom: 2px solid transparent;
+	transition: all .15s;
+}
+
+ul.hsm-tabs li.active {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+}
+
+ul.hsm-tabs li:hover {
+	color: #2271b1;
+}
+
+.hsm-tab-panel {
+	display: none;
+	padding: 16px 0;
+}
+.hsm-tab-panel.active {
+	display: block;
+}
+
+/* ─── Schema type toggles ────────────────────────────────────────────── */
+.hsm-schema-types {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 16px;
+}
+
+.hsm-schema-type-toggle {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border: 1px solid #c3c4c7;
+	border-radius: 20px;
+	cursor: pointer;
+	font-size: .875em;
+	transition: border-color .15s, background .15s;
+}
+
+.hsm-schema-type-toggle:hover {
+	border-color: #2271b1;
+}
+
+.hsm-schema-type-toggle input:checked + span,
+.hsm-schema-type-toggle input[checked] ~ * {
+	color: #2271b1;
+}
+
+/* ─── Schema sections (accordion-like) ───────────────────────────────── */
+.hsm-schema-section {
+	display: none;
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 16px;
+	margin-top: 12px;
+}
+.hsm-schema-section.active {
+	display: block;
+}
+.hsm-schema-section h4 {
+	margin-top: 0;
+}
+
+/* ─── FAQ rows ───────────────────────────────────────────────────────── */
+#hsm-faq-list {
+	margin-bottom: 10px;
+}
+
+.hsm-faq-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px;
+	margin-bottom: 8px;
+}
+
+.hsm-faq-handle {
+	cursor: grab;
+	font-size: 1.2em;
+	color: #8c8f94;
+	padding-top: 4px;
+	flex-shrink: 0;
+}
+
+.hsm-faq-fields {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.hsm-faq-fields input,
+.hsm-faq-fields textarea {
+	width: 100%;
+}
+
+/* ─── Character counter ──────────────────────────────────────────────── */
+.hsm-char-count {
+	margin-top: 4px;
+}
+.hsm-char-count.hsm-over-limit {
+	color: #d63638;
+	font-weight: 600;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 782px) {
+	.hsm-schema-types {
+		flex-direction: column;
+	}
+	.hsm-repeatable-row {
+		flex-wrap: wrap;
+	}
+}
