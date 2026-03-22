@@ -57,27 +57,42 @@ class HSM_Schema_Output {
 			echo '<link rel="canonical" href="' . esc_url( $canonical ) . '">' . "\n";
 		}
 
-		// Robots.
-		$robots = [];
-		if ( '1' === get_post_meta( $post_id, 'hsm_noindex', true ) )  $robots[] = 'noindex';
-		if ( '1' === get_post_meta( $post_id, 'hsm_nofollow', true ) ) $robots[] = 'nofollow';
-		if ( ! empty( $robots ) ) {
-			echo '<meta name="robots" content="' . esc_attr( implode( ', ', $robots ) ) . '">' . "\n";
+		// Robots — always explicit; noindex/nofollow override the default index, follow.
+		$noindex  = '1' === get_post_meta( $post_id, 'hsm_noindex',  true );
+		$nofollow = '1' === get_post_meta( $post_id, 'hsm_nofollow', true );
+		if ( $noindex || $nofollow ) {
+			$robots = [];
+			if ( $noindex )  $robots[] = 'noindex';
+			if ( $nofollow ) $robots[] = 'nofollow';
+		} else {
+			$robots = [ 'index', 'follow' ];
 		}
+		echo '<meta name="robots" content="' . esc_attr( implode( ', ', $robots ) ) . '">' . "\n";
 
 		// Resolved SEO title (used as fallback for OG/Twitter when synced).
 		$seo_title = get_post_meta( $post_id, 'hsm_seo_title', true ) ?: get_the_title( $post_id );
 
-		// Open Graph.
-		// '0' !== flag means synced (default for new posts is '' which also means synced).
+		// Resolve og:image: per-page custom → featured image → global logo.
 		$og_synced = ( '0' !== get_post_meta( $post_id, 'hsm_og_same_as_meta', true ) );
+		$og_image  = $og_synced ? '' : get_post_meta( $post_id, 'hsm_og_image', true );
+		if ( '' === $og_image ) {
+			$thumb_id = get_post_thumbnail_id( $post_id );
+			if ( $thumb_id ) {
+				$img = wp_get_attachment_image_src( $thumb_id, 'large' );
+				if ( $img ) $og_image = $img[0];
+			}
+		}
+		if ( '' === $og_image ) {
+			$og_image = self::get_logo_url();
+		}
+
+		// Open Graph.
 		$og_fields = [
-			'og:title'       => $og_synced ? $seo_title        : ( get_post_meta( $post_id, 'hsm_og_title', true )       ?: $seo_title ),
-			'og:description' => $og_synced ? $desc             : ( get_post_meta( $post_id, 'hsm_og_description', true ) ?: $desc ),
+			'og:title'       => $og_synced ? $seo_title : ( get_post_meta( $post_id, 'hsm_og_title', true )       ?: $seo_title ),
+			'og:description' => $og_synced ? $desc      : ( get_post_meta( $post_id, 'hsm_og_description', true ) ?: $desc ),
 			'og:url'         => get_permalink( $post_id ),
 			'og:type'        => 'website',
 		];
-		$og_image = $og_synced ? '' : get_post_meta( $post_id, 'hsm_og_image', true );
 		if ( '' !== $og_image ) {
 			$og_fields['og:image'] = $og_image;
 		}
@@ -87,12 +102,13 @@ class HSM_Schema_Output {
 			}
 		}
 
-		// Twitter (X) card.
+		// Resolve twitter:image: per-page custom → same fallback chain as OG.
 		$tw_synced = ( '0' !== get_post_meta( $post_id, 'hsm_twitter_same_as_meta', true ) );
 		$tw_title  = $tw_synced ? $seo_title : ( get_post_meta( $post_id, 'hsm_twitter_title', true )       ?: $seo_title );
 		$tw_desc   = $tw_synced ? $desc      : ( get_post_meta( $post_id, 'hsm_twitter_description', true ) ?: $desc );
-		$tw_image  = $tw_synced ? ''         : get_post_meta( $post_id, 'hsm_twitter_image', true );
+		$tw_image  = $tw_synced ? $og_image  : ( get_post_meta( $post_id, 'hsm_twitter_image', true ) ?: $og_image );
 
+		// Twitter (X) card.
 		echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
 		if ( '' !== $tw_title ) echo '<meta name="twitter:title" content="' . esc_attr( $tw_title ) . '">' . "\n";
 		if ( '' !== $tw_desc )  echo '<meta name="twitter:description" content="' . esc_attr( $tw_desc ) . '">' . "\n";
@@ -107,29 +123,44 @@ class HSM_Schema_Output {
 		$schemas        = [];
 		$emitted_types  = [];
 
-		$is_front       = is_front_page();
-		$is_singular    = is_singular();
-		$post_id        = $is_singular ? get_the_ID() : 0;
-		$enabled_types  = $post_id ? ( get_post_meta( $post_id, 'hsm_schema_enabled_types', true ) ?: [] ) : [];
+		$is_front      = is_front_page();
+		$is_singular   = is_singular();
+		$post_id       = $is_singular ? get_the_ID() : 0;
+		$enabled_types = $post_id ? ( get_post_meta( $post_id, 'hsm_schema_enabled_types', true ) ?: [] ) : [];
 
-		// --- Homepage always gets LocalBusiness + WebSite + Organization ---
-		if ( $is_front ) {
-			$schemas[]       = self::build_organization();
-			$emitted_types[] = 'Organization';
+		// --- Sitewide: Organization + WebSite on every page ---
+		// Gives AI crawlers and Google a consistent entity anchor across the entire site.
+		$schemas[]       = self::build_organization();
+		$emitted_types[] = 'Organization';
 
+		$schemas[]       = self::build_website();
+		$emitted_types[] = 'WebSite';
+
+		// --- LocalBusiness: every singular page by default ---
+		// Ensures address, phone, and service area appear in SERPs on all pages.
+		if ( $is_front || ( $is_singular && $post_id ) ) {
 			$schemas[]       = self::build_local_business( $post_id );
 			$emitted_types[] = 'LocalBusiness';
+		}
 
-			$schemas[]       = self::build_website();
-			$emitted_types[] = 'WebSite';
+		// --- Person: output for each configured team member (sitewide) ---
+		// Allows AI to associate names/titles/LinkedIn with the business entity.
+		$team_members = self::g( 'hsm_team_members', [] );
+		foreach ( (array) $team_members as $member ) {
+			if ( ! empty( $member['name'] ) ) {
+				$schemas[] = self::build_person( $member );
+			}
 		}
 
 		if ( $is_singular && $post_id ) {
 
-			// LocalBusiness (non-homepage).
-			if ( ! $is_front && in_array( 'LocalBusiness', $enabled_types, true ) && ! in_array( 'LocalBusiness', $emitted_types, true ) ) {
-				$schemas[]       = self::build_local_business( $post_id );
-				$emitted_types[] = 'LocalBusiness';
+			// BreadcrumbList — auto on all non-homepage singular pages.
+			if ( ! $is_front && ! in_array( 'BreadcrumbList', $emitted_types, true ) ) {
+				$s = self::build_breadcrumb( $post_id );
+				if ( $s ) {
+					$schemas[]       = $s;
+					$emitted_types[] = 'BreadcrumbList';
+				}
 			}
 
 			// Service.
@@ -174,15 +205,6 @@ class HSM_Schema_Output {
 				if ( $s ) {
 					$schemas[]       = $s;
 					$emitted_types[] = 'Review';
-				}
-			}
-
-			// BreadcrumbList.
-			if ( in_array( 'BreadcrumbList', $enabled_types, true ) && ! in_array( 'BreadcrumbList', $emitted_types, true ) ) {
-				$s = self::build_breadcrumb( $post_id );
-				if ( $s ) {
-					$schemas[]       = $s;
-					$emitted_types[] = 'BreadcrumbList';
 				}
 			}
 
@@ -294,9 +316,9 @@ class HSM_Schema_Output {
 			'url'      => self::g( 'hsm_primary_url', home_url() ),
 		];
 
-		if ( '' !== $description )        $schema['description']  = $description;
-		if ( '' !== $phone )              $schema['telephone']    = $phone;
-		if ( '' !== self::g( 'hsm_email' ) ) $schema['email']    = self::g( 'hsm_email' );
+		if ( '' !== $description )               $schema['description']  = $description;
+		if ( '' !== $phone )                     $schema['telephone']    = $phone;
+		if ( '' !== self::g( 'hsm_email' ) )     $schema['email']        = self::g( 'hsm_email' );
 		if ( '' !== self::g( 'hsm_price_range' ) ) $schema['priceRange'] = self::g( 'hsm_price_range' );
 		if ( '' !== self::g( 'hsm_founded_year' ) ) $schema['foundingDate'] = self::g( 'hsm_founded_year' );
 
@@ -307,10 +329,10 @@ class HSM_Schema_Output {
 		}
 
 		// Address(es) — primary first, then any secondary locations.
-		$primary    = self::get_address();
+		$primary     = self::get_address();
 		$secondaries = self::get_secondary_addresses();
 		if ( ! empty( $primary ) ) {
-			$all_addresses = array_merge( [ $primary ], $secondaries );
+			$all_addresses     = array_merge( [ $primary ], $secondaries );
 			$schema['address'] = count( $all_addresses ) === 1 ? $all_addresses[0] : $all_addresses;
 		}
 
@@ -394,6 +416,34 @@ class HSM_Schema_Output {
 				'query-input' => 'required name=search_term_string',
 			],
 		];
+	}
+
+	/**
+	 * Build a Person schema block for a team member.
+	 *
+	 * Stored in global option hsm_team_members as an array of:
+	 *   [ 'name' => '', 'job_title' => '', 'linkedin' => '', 'image' => '' ]
+	 */
+	private static function build_person( array $member ): array {
+		$schema = [
+			'@context' => 'https://schema.org',
+			'@type'    => 'Person',
+			'name'     => $member['name'],
+			'worksFor' => [
+				'@type' => 'Organization',
+				'name'  => self::g( 'hsm_business_name' ),
+			],
+		];
+
+		if ( ! empty( $member['job_title'] ) ) $schema['jobTitle'] = $member['job_title'];
+		if ( ! empty( $member['image'] ) )     $schema['image']    = $member['image'];
+
+		// LinkedIn or other profile URL → sameAs.
+		if ( ! empty( $member['linkedin'] ) ) {
+			$schema['sameAs'] = [ $member['linkedin'] ];
+		}
+
+		return $schema;
 	}
 
 	private static function build_service( int $post_id ): ?array {
@@ -581,8 +631,8 @@ class HSM_Schema_Output {
 		$author    = get_post_meta( $post_id, 'hsm_review_author', true );
 		if ( '' === $item_name || '' === $author ) return null;
 
-		$rating  = get_post_meta( $post_id, 'hsm_review_rating', true ) ?: '5';
-		$schema  = [
+		$rating = get_post_meta( $post_id, 'hsm_review_rating', true ) ?: '5';
+		$schema = [
 			'@context'     => 'https://schema.org',
 			'@type'        => 'Review',
 			'itemReviewed' => [
