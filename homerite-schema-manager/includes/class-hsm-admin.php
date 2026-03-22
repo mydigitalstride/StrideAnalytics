@@ -15,12 +15,12 @@ class HSM_Admin {
 	}
 
 	/**
-	 * Add Settings → HomeRite Schema menu entry.
+	 * Add Settings → Stride Analytics menu entry.
 	 */
 	public static function register_menu(): void {
 		add_options_page(
-			__( 'HomeRite Schema Manager', 'homerite-schema' ),
-			__( 'HomeRite Schema', 'homerite-schema' ),
+			__( 'Stride Analytics', 'homerite-schema' ),
+			__( 'Stride Analytics', 'homerite-schema' ),
 			'manage_options',
 			'homerite-schema-settings',
 			[ 'HSM_Global_Settings', 'render_page' ]

@@ -1,11 +1,13 @@
 /**
- * HomeRite Schema Manager — Admin JS
+ * Stride Analytics — Admin JS
  *
  * Handles:
  * - Tabbed interface (meta box)
  * - Schema section show/hide based on type checkboxes
  * - Repeatable rows (service areas, sameAs)
  * - FAQ drag-to-reorder + add/remove rows
+ * - HowTo steps drag-to-reorder + add/remove rows
+ * - Address → Lat/Long geocoding (OpenStreetMap Nominatim)
  * - Meta description character counter
  * - WP media picker for image fields
  */
@@ -41,9 +43,9 @@
 
 	// ─── Repeatable rows (service areas, sameAs) ──────────────────────
 	$(document).on('click', '.hsm-add-area', function () {
-		var target  = $(this).data('target');
-		var name    = $(this).data('name');
-		var type    = $(this).data('type') || 'text';
+		var target      = $(this).data('target');
+		var name        = $(this).data('name');
+		var type        = $(this).data('type') || 'text';
 		var placeholder = type === 'url' ? 'https://' : '';
 
 		var $row = $(
@@ -100,6 +102,111 @@
 		});
 	}
 
+	// ─── HowTo step rows ──────────────────────────────────────────────
+	$('#hsm-add-howto-row').on('click', function () {
+		var $row = $(
+			'<div class="hsm-howto-row">' +
+			'<div class="hsm-faq-handle">&#9776;</div>' +
+			'<div class="hsm-faq-fields">' +
+			'<input type="text" name="hsm_howto_step_name[]" placeholder="Step title (e.g. Remove damaged shingle)" class="large-text">' +
+			'<textarea name="hsm_howto_step_text[]" rows="2" class="large-text" placeholder="Step instructions\u2026"></textarea>' +
+			'</div>' +
+			'<button type="button" class="button hsm-remove-howto-row">Remove</button>' +
+			'</div>'
+		);
+		$('#hsm-howto-list').append($row);
+		$row.find('input').first().focus();
+	});
+
+	$(document).on('click', '.hsm-remove-howto-row', function () {
+		if ($('#hsm-howto-list .hsm-howto-row').length > 1) {
+			$(this).closest('.hsm-howto-row').remove();
+		} else {
+			$(this).closest('.hsm-howto-row').find('input, textarea').val('');
+		}
+	});
+
+	// Drag-to-reorder HowTo steps.
+	if (typeof $.fn.sortable !== 'undefined') {
+		$('#hsm-howto-list').sortable({
+			handle: '.hsm-faq-handle',
+			axis: 'y',
+			tolerance: 'pointer',
+		});
+	}
+
+	// ─── Secondary location blocks ────────────────────────────────────
+	$('#hsm-add-location').on('click', function () {
+		var $block = $(
+			'<div class="hsm-location-block">' +
+			'<div class="hsm-location-block-header">' +
+			'<input type="text" name="hsm_loc_label[]" value="" class="regular-text hsm-location-label-input" placeholder="Location name (e.g. Boalsburg Office)">' +
+			'<button type="button" class="button hsm-remove-location">Remove</button>' +
+			'</div>' +
+			'<div class="hsm-location-block-fields">' +
+			'<input type="text" name="hsm_loc_street[]" value="" class="regular-text" placeholder="Street Address">' +
+			'<input type="text" name="hsm_loc_city[]"   value="" class="regular-text" placeholder="City">' +
+			'<input type="text" name="hsm_loc_state[]"  value="" class="small-text"   placeholder="State">' +
+			'<input type="text" name="hsm_loc_zip[]"    value="" class="small-text"   placeholder="ZIP">' +
+			'</div>' +
+			'</div>'
+		);
+		$('#hsm-locations-list').append($block);
+		$block.find('.hsm-location-label-input').focus();
+	});
+
+	$(document).on('click', '.hsm-remove-location', function () {
+		var $list = $('#hsm-locations-list');
+		if ($list.find('.hsm-location-block').length > 1) {
+			$(this).closest('.hsm-location-block').remove();
+		} else {
+			$(this).closest('.hsm-location-block').find('input').val('');
+		}
+	});
+
+	// ─── Address → Lat/Long geocoding ─────────────────────────────────
+	$('#hsm-find-coords').on('click', function () {
+		var street = $('#hsm_street').val().trim();
+		var city   = $('#hsm_city').val().trim();
+		var state  = $('#hsm_state').val().trim();
+		var zip    = $('#hsm_zip').val().trim();
+
+		var parts  = [street, city, state, zip].filter(Boolean);
+		if (!parts.length) {
+			$('#hsm-geo-status').text('Please fill in an address first.');
+			return;
+		}
+
+		var query  = parts.join(', ');
+		var $btn   = $(this);
+		var $status = $('#hsm-geo-status');
+
+		$btn.prop('disabled', true).text('Searching\u2026');
+		$status.text('');
+
+		fetch(
+			'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' +
+			encodeURIComponent(query),
+			{ headers: { 'Accept-Language': 'en-US,en' } }
+		)
+		.then(function (r) { return r.json(); })
+		.then(function (data) {
+			if (data && data.length > 0) {
+				$('#hsm_latitude').val(parseFloat(data[0].lat).toFixed(6));
+				$('#hsm_longitude').val(parseFloat(data[0].lon).toFixed(6));
+				$status.css('color', '#00a32a').text('\u2713 Coordinates found! Save settings to keep them.');
+			} else {
+				$status.css('color', '#d63638').text('Address not found. Try a more specific address.');
+			}
+		})
+		.catch(function () {
+			$status.css('color', '#d63638').text('Network error. Please try again.');
+		})
+		.finally(function () {
+			$btn.prop('disabled', false).text('Find Coordinates');
+		});
+	});
+
 	// ─── Character counter for meta description ────────────────────────
 	function updateCharCount($textarea) {
 		var $counter = $textarea.closest('td').find('.hsm-char-count');
@@ -125,7 +232,7 @@
 	$(document).on('click', '.hsm-upload-image', function (e) {
 		e.preventDefault();
 
-		var $btn    = $(this);
+		var $btn     = $(this);
 		var targetId = $btn.data('target');
 
 		var frame = wp.media({
