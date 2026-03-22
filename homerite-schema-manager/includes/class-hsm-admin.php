@@ -15,15 +15,17 @@ class HSM_Admin {
 	}
 
 	/**
-	 * Add Settings → Stride Analytics menu entry.
+	 * Add top-level "Stride Analytics" menu entry in the WP left sidebar.
 	 */
 	public static function register_menu(): void {
-		add_options_page(
+		add_menu_page(
 			__( 'Stride Analytics', 'homerite-schema' ),
 			__( 'Stride Analytics', 'homerite-schema' ),
 			'manage_options',
 			'homerite-schema-settings',
-			[ 'HSM_Global_Settings', 'render_page' ]
+			[ 'HSM_Global_Settings', 'render_page' ],
+			'dashicons-chart-line',
+			25
 		);
 	}
 
@@ -34,7 +36,7 @@ class HSM_Admin {
 	 */
 	public static function enqueue_assets( string $hook ): void {
 		$relevant = [
-			'settings_page_homerite-schema-settings',
+			'toplevel_page_homerite-schema-settings',
 			'post.php',
 			'post-new.php',
 		];
@@ -61,8 +63,9 @@ class HSM_Admin {
 		);
 
 		wp_localize_script( 'hsm-admin', 'hsmData', [
-			'nonce'   => wp_create_nonce( 'hsm_meta_box_nonce' ),
-			'ajaxurl' => admin_url( 'admin-ajax.php' ),
+			'nonce'         => wp_create_nonce( 'hsm_meta_box_nonce' ),
+			'ajaxurl'       => admin_url( 'admin-ajax.php' ),
+			'businessTypes' => HSM_Global_Settings::get_business_categories(),
 		] );
 	}
 }

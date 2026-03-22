@@ -14,6 +14,147 @@ class HSM_Global_Settings {
 	}
 
 	// ------------------------------------------------------------------
+	// Business category / type data
+	// ------------------------------------------------------------------
+
+	/**
+	 * Returns the full category → schema type map.
+	 * Used in the settings UI and passed to JS for the cascading dropdowns.
+	 */
+	public static function get_business_categories(): array {
+		return [
+			'Home & Construction' => [
+				'HomeAndConstructionBusiness' => 'Home & Construction (General)',
+				'GeneralContractor'           => 'General Contractor',
+				'RoofingContractor'           => 'Roofing Contractor',
+				'HVACBusiness'                => 'HVAC / Heating & Cooling',
+				'Plumber'                     => 'Plumber / Plumbing',
+				'Electrician'                 => 'Electrician',
+				'HousePainter'                => 'House Painter',
+				'Locksmith'                   => 'Locksmith',
+				'MovingCompany'               => 'Moving Company',
+			],
+			'Food & Dining' => [
+				'FoodEstablishment'           => 'Food Establishment (General)',
+				'Restaurant'                  => 'Restaurant',
+				'CafeOrCoffeeShop'            => 'Cafe / Coffee Shop',
+				'BarOrPub'                    => 'Bar or Pub',
+				'Bakery'                      => 'Bakery',
+				'FastFoodRestaurant'          => 'Fast Food Restaurant',
+				'IceCreamShop'                => 'Ice Cream Shop',
+				'Winery'                      => 'Winery / Brewery',
+			],
+			'Healthcare & Medical' => [
+				'MedicalBusiness'             => 'Medical Business (General)',
+				'Physician'                   => 'Doctor / Physician',
+				'Dentist'                     => 'Dentist',
+				'Pharmacy'                    => 'Pharmacy',
+				'Optician'                    => 'Optician / Optometrist',
+				'MedicalClinic'               => 'Medical Clinic / Urgent Care',
+				'Physiotherapist'             => 'Physical Therapist',
+				'Chiropractor'                => 'Chiropractor',
+			],
+			'Beauty & Personal Care' => [
+				'BeautySalon'                 => 'Beauty Salon (General)',
+				'HairSalon'                   => 'Hair Salon / Barber',
+				'NailSalon'                   => 'Nail Salon',
+				'DaySpa'                      => 'Day Spa',
+				'TattooParlor'                => 'Tattoo Parlor',
+			],
+			'Fitness & Sports' => [
+				'SportsActivityLocation'      => 'Sports & Fitness (General)',
+				'HealthClub'                  => 'Gym / Health Club',
+				'ExerciseGym'                 => 'Exercise Gym',
+				'BowlingAlley'                => 'Bowling Alley',
+				'GolfCourse'                  => 'Golf Course',
+				'TennisComplex'               => 'Tennis Complex',
+			],
+			'Automotive' => [
+				'AutomotiveBusiness'          => 'Automotive (General)',
+				'AutoRepair'                  => 'Auto Repair / Mechanic',
+				'AutoDealer'                  => 'Car Dealership',
+				'AutoPartsStore'              => 'Auto Parts Store',
+				'GasStation'                  => 'Gas Station',
+				'AutoBodyShop'                => 'Auto Body Shop',
+			],
+			'Retail & Shopping' => [
+				'Store'                       => 'Retail Store (General)',
+				'ClothingStore'               => 'Clothing / Apparel Store',
+				'ElectronicsStore'            => 'Electronics Store',
+				'BookStore'                   => 'Bookstore',
+				'GroceryStore'                => 'Grocery / Supermarket',
+				'HardwareStore'               => 'Hardware Store',
+				'PetStore'                    => 'Pet Store',
+				'SportingGoodsStore'          => 'Sporting Goods Store',
+				'HomeGoodsStore'              => 'Home Goods Store',
+				'FurnitureStore'              => 'Furniture Store',
+				'JewelryStore'                => 'Jewelry Store',
+				'ToyStore'                    => 'Toy Store',
+			],
+			'Legal & Financial' => [
+				'LegalService'                => 'Legal Service (General)',
+				'Attorney'                    => 'Attorney / Law Firm',
+				'Notary'                      => 'Notary',
+				'FinancialService'            => 'Financial Service (General)',
+				'AccountingService'           => 'Accountant / CPA',
+				'InsuranceAgency'             => 'Insurance Agency',
+				'BankOrCreditUnion'           => 'Bank / Credit Union',
+			],
+			'Real Estate & Lodging' => [
+				'RealEstateAgent'             => 'Real Estate Agent / Agency',
+				'LodgingBusiness'             => 'Lodging (General)',
+				'Hotel'                       => 'Hotel',
+				'Motel'                       => 'Motel',
+				'BedAndBreakfast'             => 'Bed & Breakfast',
+				'Hostel'                      => 'Hostel',
+				'Resort'                      => 'Resort',
+			],
+			'Entertainment & Events' => [
+				'EntertainmentBusiness'       => 'Entertainment (General)',
+				'MovieTheater'                => 'Movie Theater / Cinema',
+				'NightClub'                   => 'Night Club',
+				'AmusementPark'               => 'Amusement Park',
+				'Casino'                      => 'Casino',
+				'PerformingArtsTheater'       => 'Theater / Performing Arts',
+				'ArtGallery'                  => 'Art Gallery / Museum',
+				'ComedyClub'                  => 'Comedy Club',
+			],
+			'Travel & Hospitality' => [
+				'TravelAgency'                => 'Travel Agency',
+				'TouristInformationCenter'    => 'Tourist Information Center',
+			],
+			'Professional Services' => [
+				'ProfessionalService'         => 'Professional Services (General)',
+				'EmploymentAgency'            => 'Staffing / Employment Agency',
+				'ComputerStore'               => 'IT / Computer Services',
+			],
+			'Education' => [
+				'EducationalOrganization'     => 'Educational Organization (General)',
+				'School'                      => 'School (K–12)',
+				'CollegeOrUniversity'         => 'College / University',
+				'Library'                     => 'Library',
+			],
+			'Other' => [
+				'LocalBusiness'               => 'Local Business (Generic)',
+				'Organization'                => 'Organization / Nonprofit',
+			],
+		];
+	}
+
+	/**
+	 * Returns a flat list of all allowed schema type values.
+	 */
+	public static function get_all_allowed_types(): array {
+		$all = [];
+		foreach ( self::get_business_categories() as $types ) {
+			foreach ( array_keys( $types ) as $type ) {
+				$all[] = $type;
+			}
+		}
+		return $all;
+	}
+
+	// ------------------------------------------------------------------
 	// Tooltip helper
 	// ------------------------------------------------------------------
 
@@ -82,8 +223,8 @@ class HSM_Global_Settings {
 			update_option( $field, $raw );
 		}
 
-		// Schema type – whitelist.
-		$allowed_types = [ 'LocalBusiness', 'HomeAndConstructionBusiness', 'GeneralContractor', 'RoofingContractor', 'HVACBusiness', 'Plumber', 'Electrician' ];
+		// Schema type – whitelist against all registered types.
+		$allowed_types = self::get_all_allowed_types();
 		$schema_type   = isset( $_POST['hsm_schema_type'] ) ? sanitize_text_field( wp_unslash( $_POST['hsm_schema_type'] ) ) : 'HomeAndConstructionBusiness';
 		update_option( 'hsm_schema_type', in_array( $schema_type, $allowed_types, true ) ? $schema_type : 'HomeAndConstructionBusiness' );
 
@@ -142,7 +283,7 @@ class HSM_Global_Settings {
 		update_option( 'disable_comments',  ! empty( $_POST['disable_comments'] )  ? '1' : '' );
 		update_option( 'disable_pingbacks', ! empty( $_POST['disable_pingbacks'] ) ? '1' : '' );
 
-		wp_redirect( add_query_arg( [ 'page' => 'homerite-schema-settings', 'saved' => '1' ], admin_url( 'options-general.php' ) ) );
+		wp_redirect( add_query_arg( [ 'page' => 'homerite-schema-settings', 'saved' => '1' ], admin_url( 'admin.php' ) ) );
 		exit;
 	}
 
@@ -160,16 +301,17 @@ class HSM_Global_Settings {
 		$service_areas       = get_option( 'hsm_service_areas', [] );
 		$same_as             = get_option( 'hsm_same_as', [] );
 		$secondary_locations = get_option( 'hsm_secondary_locations', [] );
+		$saved_type          = get_option( 'hsm_schema_type', 'HomeAndConstructionBusiness' );
+		$business_categories = self::get_business_categories();
 
-		$schema_types = [
-			'LocalBusiness'               => 'LocalBusiness',
-			'HomeAndConstructionBusiness' => 'HomeAndConstructionBusiness',
-			'GeneralContractor'           => 'GeneralContractor',
-			'RoofingContractor'           => 'RoofingContractor',
-			'HVACBusiness'                => 'HVACBusiness',
-			'Plumber'                     => 'Plumber',
-			'Electrician'                 => 'Electrician',
-		];
+		// Find the saved type's category for pre-selecting the category dropdown.
+		$saved_category = '';
+		foreach ( $business_categories as $cat => $types ) {
+			if ( array_key_exists( $saved_type, $types ) ) {
+				$saved_category = $cat;
+				break;
+			}
+		}
 		?>
 		<div class="wrap hsm-settings-wrap">
 			<h1><?php esc_html_e( 'Stride Analytics — Global Settings', 'homerite-schema' ); ?></h1>
@@ -186,7 +328,7 @@ class HSM_Global_Settings {
 				<div class="hsm-card">
 					<h2>
 						<?php esc_html_e( 'Business Identity', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'This is your company\'s public profile — the name, type of business, and contact details that search engines show when people look you up online.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'Your company\'s public profile — name, type, and contact details that search engines show when people look you up online.' ); // phpcs:ignore ?>
 					</h2>
 					<table class="form-table">
 						<tr>
@@ -197,20 +339,51 @@ class HSM_Global_Settings {
 							<th><label for="hsm_legal_name"><?php esc_html_e( 'Legal Name', 'homerite-schema' ); ?></label></th>
 							<td>
 								<input type="text" id="hsm_legal_name" name="hsm_legal_name" value="<?php echo esc_attr( get_option( 'hsm_legal_name' ) ); ?>" class="regular-text">
-								<p class="description"><?php esc_html_e( 'The official registered name if different from the display name.', 'homerite-schema' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Official registered name if different from the display name.', 'homerite-schema' ); ?></p>
 							</td>
 						</tr>
+
+						<!-- Business Type — two-step cascading dropdowns -->
 						<tr>
-							<th><label for="hsm_schema_type"><?php esc_html_e( 'Business Type', 'homerite-schema' ); ?></label></th>
+							<th>
+								<?php esc_html_e( 'Business Type', 'homerite-schema' ); ?>
+								<?php echo self::tip( 'Choose the industry category first, then pick the specific schema.org type. This tells Google exactly what kind of business you are.' ); // phpcs:ignore ?>
+							</th>
 							<td>
-								<select id="hsm_schema_type" name="hsm_schema_type">
-									<?php foreach ( $schema_types as $val => $label ) : ?>
-										<option value="<?php echo esc_attr( $val ); ?>" <?php selected( get_option( 'hsm_schema_type' ), $val ); ?>><?php echo esc_html( $label ); ?></option>
-									<?php endforeach; ?>
-								</select>
-								<p class="description"><?php esc_html_e( 'Choose the category that best describes your business. This helps Google classify you correctly.', 'homerite-schema' ); ?></p>
+								<div class="hsm-business-type-row">
+									<!-- Step 1: Industry category (cosmetic, not submitted) -->
+									<div class="hsm-type-step">
+										<label class="hsm-type-step-label" for="hsm_business_category">
+											<?php esc_html_e( 'Step 1 — Industry', 'homerite-schema' ); ?>
+										</label>
+										<select id="hsm_business_category" name="">
+											<option value=""><?php esc_html_e( '— Select Industry —', 'homerite-schema' ); ?></option>
+											<?php foreach ( array_keys( $business_categories ) as $cat ) : ?>
+												<option value="<?php echo esc_attr( $cat ); ?>" <?php selected( $saved_category, $cat ); ?>><?php echo esc_html( $cat ); ?></option>
+											<?php endforeach; ?>
+										</select>
+									</div>
+
+									<!-- Step 2: Specific type (submitted) -->
+									<div class="hsm-type-step">
+										<label class="hsm-type-step-label" for="hsm_schema_type">
+											<?php esc_html_e( 'Step 2 — Business Type', 'homerite-schema' ); ?>
+										</label>
+										<select id="hsm_schema_type" name="hsm_schema_type">
+											<?php foreach ( $business_categories as $cat => $types ) : ?>
+												<optgroup label="<?php echo esc_attr( $cat ); ?>">
+													<?php foreach ( $types as $val => $label ) : ?>
+														<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $saved_type, $val ); ?>><?php echo esc_html( $label ); ?></option>
+													<?php endforeach; ?>
+												</optgroup>
+											<?php endforeach; ?>
+										</select>
+									</div>
+								</div>
+								<p class="description"><?php esc_html_e( 'Select your industry first to narrow down the list, then choose your specific business type. This value powers your schema.org @type.', 'homerite-schema' ); ?></p>
 							</td>
 						</tr>
+
 						<tr>
 							<th><label for="hsm_phone"><?php esc_html_e( 'Phone', 'homerite-schema' ); ?></label></th>
 							<td><input type="text" id="hsm_phone" name="hsm_phone" value="<?php echo esc_attr( get_option( 'hsm_phone' ) ); ?>" class="regular-text" placeholder="+1-555-555-5555"></td>
@@ -252,7 +425,7 @@ class HSM_Global_Settings {
 						<tr>
 							<th>
 								<?php esc_html_e( 'Coordinates', 'homerite-schema' ); ?>
-								<?php echo self::tip( 'These numbers pinpoint your exact location on a map. Click "Find Coordinates" to fill them in automatically from the address above — no manual lookup needed.' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'Exact lat/long pinpoints your location on the map. Click "Find Coordinates" to auto-fill from the address above.' ); // phpcs:ignore ?>
 							</th>
 							<td>
 								<div class="hsm-geo-row">
@@ -265,7 +438,7 @@ class HSM_Global_Settings {
 									</button>
 									<span id="hsm-geo-status" class="description" style="margin-left:8px;"></span>
 								</div>
-								<p class="description"><?php esc_html_e( 'Uses your address above. Results powered by OpenStreetMap.', 'homerite-schema' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Results powered by OpenStreetMap.', 'homerite-schema' ); ?></p>
 							</td>
 						</tr>
 					</table>
@@ -275,7 +448,7 @@ class HSM_Global_Settings {
 				<div class="hsm-card">
 					<h2>
 						<?php esc_html_e( 'Secondary Locations', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'If your business has additional offices or locations, add them here. Google will know you have a physical presence in each place.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'Additional offices or locations. Google will know you have a physical presence in each place.' ); // phpcs:ignore ?>
 					</h2>
 					<p class="description"><?php esc_html_e( 'Add each additional office or job site address.', 'homerite-schema' ); ?></p>
 
@@ -311,7 +484,7 @@ class HSM_Global_Settings {
 				<div class="hsm-card">
 					<h2>
 						<?php esc_html_e( 'Service Area', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'The towns and cities where you do work. Google uses this list to match your business with people searching for services in those areas.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'Towns and cities where you do work. Google uses this to match your business with searchers in those areas.' ); // phpcs:ignore ?>
 					</h2>
 					<p class="description"><?php esc_html_e( 'Add each city or town you serve.', 'homerite-schema' ); ?></p>
 					<div id="hsm-service-areas-list">
@@ -332,7 +505,7 @@ class HSM_Global_Settings {
 				<div class="hsm-card">
 					<h2>
 						<?php esc_html_e( 'Hours of Operation', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'Your regular business hours. Google can show these directly in search results and on Google Maps so customers know when you\'re open before they call.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'Your regular business hours. Google can show these in search results and on Google Maps.' ); // phpcs:ignore ?>
 					</h2>
 					<table class="form-table hsm-hours-table">
 						<thead>
@@ -361,7 +534,7 @@ class HSM_Global_Settings {
 				<div class="hsm-card">
 					<h2>
 						<?php esc_html_e( 'Social Profiles', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'Links to your business profiles on Google, Facebook, Nextdoor, BBB, and similar sites. This helps search engines confirm who you are and builds trust with customers.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'Links to your business profiles on Google, Facebook, Nextdoor, BBB, and similar sites. Helps search engines confirm who you are.' ); // phpcs:ignore ?>
 					</h2>
 					<p class="description"><?php esc_html_e( 'Google Business, Facebook, Nextdoor, BBB, etc.', 'homerite-schema' ); ?></p>
 					<div id="hsm-same-as-list">
@@ -400,7 +573,7 @@ class HSM_Global_Settings {
 				<div class="hsm-card">
 					<h2>
 						<?php esc_html_e( 'Organization Extras', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'Extra details about your company — your logo, pricing level, how long you\'ve been in business, and a short description. These help Google paint a fuller picture of who you are.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'Extra details — logo, pricing level, years in business, and a short description. Help Google paint a fuller picture of who you are.' ); // phpcs:ignore ?>
 					</h2>
 					<table class="form-table">
 						<tr>
@@ -437,14 +610,14 @@ class HSM_Global_Settings {
 				<div class="hsm-card">
 					<h2>
 						<?php esc_html_e( 'Analytics &amp; Tracking', 'homerite-schema' ); ?>
-						<?php echo self::tip( 'Add your marketing tracking codes here so you can measure how many people visit your site, where they come from, and which ads are working.' ); // phpcs:ignore ?>
+						<?php echo self::tip( 'Add your marketing tracking codes here so you can measure site visitors, traffic sources, and which ads are working.' ); // phpcs:ignore ?>
 					</h2>
 
 					<table class="form-table">
 						<tr>
 							<th>
 								<label for="tracking_gtm_id"><?php esc_html_e( 'Google Tag Manager ID', 'homerite-schema' ); ?></label>
-								<?php echo self::tip( 'Google Tag Manager is a free tool that lets you manage all your tracking codes from one dashboard without touching code. Your ID starts with "GTM-".' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'Manage all your tracking codes from one dashboard without touching code. Your ID starts with "GTM-".' ); // phpcs:ignore ?>
 							</th>
 							<td>
 								<input type="text" id="tracking_gtm_id" name="tracking_gtm_id" value="<?php echo esc_attr( get_option( 'tracking_gtm_id' ) ); ?>" class="regular-text" placeholder="GTM-XXXXXXX">
@@ -462,21 +635,21 @@ class HSM_Global_Settings {
 						<tr>
 							<th>
 								<label for="tracking_facebook_pixel_id"><?php esc_html_e( 'Facebook Pixel ID', 'homerite-schema' ); ?></label>
-								<?php echo self::tip( 'The Facebook Pixel is a small piece of code that tracks visitors who come from your Facebook or Instagram ads, so you can see what they do on your site and retarget them later.' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'Tracks visitors from Facebook/Instagram ads so you can measure results and retarget them later.' ); // phpcs:ignore ?>
 							</th>
 							<td><input type="text" id="tracking_facebook_pixel_id" name="tracking_facebook_pixel_id" value="<?php echo esc_attr( get_option( 'tracking_facebook_pixel_id' ) ); ?>" class="regular-text" placeholder="1234567890"></td>
 						</tr>
 						<tr>
 							<th>
 								<label for="tracking_linkedin_partner_id"><?php esc_html_e( 'LinkedIn Partner ID', 'homerite-schema' ); ?></label>
-								<?php echo self::tip( 'The LinkedIn Insight Tag tracks professionals who visit your site from LinkedIn. Useful if you advertise to businesses (B2B) or want to show ads to people in specific job roles.' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'Tracks professionals who visit from LinkedIn. Useful for B2B advertising to specific job roles.' ); // phpcs:ignore ?>
 							</th>
 							<td><input type="text" id="tracking_linkedin_partner_id" name="tracking_linkedin_partner_id" value="<?php echo esc_attr( get_option( 'tracking_linkedin_partner_id' ) ); ?>" class="regular-text" placeholder="123456"></td>
 						</tr>
 						<tr>
 							<th>
 								<label for="utm_form_field"><?php esc_html_e( 'UTM Form Field Name', 'homerite-schema' ); ?></label>
-								<?php echo self::tip( 'UTM parameters track which ad, email, or link brought a visitor to your site. Enter the name of the hidden form field where you want UTM data stored so it gets captured with form submissions.' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'UTM parameters track which ad, email, or link brought a visitor to your site. Enter the name of the hidden form field where you want UTM data stored.' ); // phpcs:ignore ?>
 							</th>
 							<td><input type="text" id="utm_form_field" name="utm_form_field" value="<?php echo esc_attr( get_option( 'utm_form_field' ) ); ?>" class="regular-text" placeholder="utm_source"></td>
 						</tr>
@@ -489,7 +662,7 @@ class HSM_Global_Settings {
 						<tr>
 							<th>
 								<?php esc_html_e( 'Disable All Comments', 'homerite-schema' ); ?>
-								<?php echo self::tip( 'Turns off the comment section on all posts and pages. Good for business sites that don\'t need a discussion area and want to keep things clean.' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'Turns off comments on all posts and pages. Good for business sites that want a clean, professional look.' ); // phpcs:ignore ?>
 							</th>
 							<td>
 								<label>
@@ -501,7 +674,7 @@ class HSM_Global_Settings {
 						<tr>
 							<th>
 								<?php esc_html_e( 'Disable Pingbacks', 'homerite-schema' ); ?>
-								<?php echo self::tip( 'Pingbacks are automatic notifications sent when another website links to yours. Disabling them reduces spam and unnecessary server traffic.' ); // phpcs:ignore ?>
+								<?php echo self::tip( 'Pingbacks are automatic notifications when another site links to yours. Disabling reduces spam and unnecessary server traffic.' ); // phpcs:ignore ?>
 							</th>
 							<td>
 								<label>
