@@ -83,7 +83,7 @@ class HSM_Schema_Output {
 			}
 		}
 		if ( '' === $og_image ) {
-			$og_image = self::get_logo_url();
+			$og_image = self::g( 'hsm_default_og_image' );
 		}
 
 		// Open Graph.

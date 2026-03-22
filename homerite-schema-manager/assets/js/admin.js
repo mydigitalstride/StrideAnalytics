@@ -211,16 +211,25 @@
 	// ─── Team member rows ─────────────────────────────────────────────
 	$(document).on('click', '.hsm-add-team-member', function () {
 		var $row = $(
-			'<div class="hsm-repeatable-row" style="display:grid;grid-template-columns:1fr 1fr 2fr 2fr auto;gap:8px;align-items:center;margin-bottom:8px;">' +
-			'<input type="text" name="hsm_team_name[]"      value="" class="regular-text" placeholder="Full Name">' +
-			'<input type="text" name="hsm_team_job_title[]" value="" class="regular-text" placeholder="Job Title">' +
-			'<input type="url"  name="hsm_team_linkedin[]"  value="" class="regular-text" placeholder="https://linkedin.com/in/...">' +
-			'<input type="url"  name="hsm_team_image[]"     value="" class="regular-text" placeholder="Headshot URL (optional)">' +
-			'<button type="button" class="button hsm-remove-row">Remove</button>' +
+			'<div class="hsm-repeatable-row hsm-team-row">' +
+			'<input type="text" name="hsm_team_name[]"      value="" placeholder="e.g. Jane Smith">' +
+			'<input type="text" name="hsm_team_job_title[]" value="" placeholder="e.g. CEO / Founder">' +
+			'<input type="url"  name="hsm_team_linkedin[]"  value="" placeholder="https://linkedin.com/in/...">' +
+			'<input type="url"  name="hsm_team_image[]"     value="" placeholder="optional">' +
+			'<button type="button" class="button hsm-remove-team-row">Remove</button>' +
 			'</div>'
 		);
 		$('#' + $(this).data('target')).append($row);
 		$row.find('input').first().focus();
+	});
+
+	$(document).on('click', '.hsm-remove-team-row', function () {
+		var $list = $('#hsm-team-list');
+		if ($list.find('.hsm-team-row').length > 1) {
+			$(this).closest('.hsm-team-row').remove();
+		} else {
+			$(this).closest('.hsm-team-row').find('input').val('');
+		}
 	});
 
 	// ─── FAQ rows ─────────────────────────────────────────────────────

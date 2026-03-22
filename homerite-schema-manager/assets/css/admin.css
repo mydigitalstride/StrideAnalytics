@@ -125,6 +125,19 @@ th .hsm-tooltip {
 	flex: 1;
 }
 
+/* ─── Team member rows ───────────────────────────────────────────────── */
+.hsm-team-row {
+	display: grid;
+	grid-template-columns: 160px 1fr 1fr 1fr auto;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+.hsm-team-row input {
+	width: 100%;
+	box-sizing: border-box;
+}
+
 /* ─── Secondary location blocks ──────────────────────────────────────── */
 .hsm-location-block {
 	background: #f6f7f7;

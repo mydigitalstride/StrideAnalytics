@@ -191,6 +191,7 @@ class HSM_Global_Settings {
 			'hsm_rating_value',
 			'hsm_rating_count',
 			'hsm_logo_url',
+			'hsm_default_og_image',
 			'hsm_price_range',
 			'hsm_founded_year',
 			'hsm_slogan',
@@ -606,6 +607,14 @@ class HSM_Global_Settings {
 							</td>
 						</tr>
 						<tr>
+							<th><label for="hsm_default_og_image"><?php esc_html_e( 'Default Social Image', 'homerite-schema' ); ?></label></th>
+							<td>
+								<input type="url" id="hsm_default_og_image" name="hsm_default_og_image" value="<?php echo esc_attr( get_option( 'hsm_default_og_image' ) ); ?>" class="regular-text">
+								<button type="button" class="button hsm-upload-image" data-target="hsm_default_og_image"><?php esc_html_e( 'Choose Image', 'homerite-schema' ); ?></button>
+								<p class="description"><?php esc_html_e( 'Fallback og:image used when a page has no featured image and no custom OG image. Prevents blank social previews.', 'homerite-schema' ); ?></p>
+							</td>
+						</tr>
+						<tr>
 							<th><label for="hsm_price_range"><?php esc_html_e( 'Price Range', 'homerite-schema' ); ?></label></th>
 							<td>
 								<select id="hsm_price_range" name="hsm_price_range">
@@ -633,21 +642,31 @@ class HSM_Global_Settings {
 					<?php esc_html_e( 'Team Members', 'homerite-schema' ); ?>
 					<?php echo self::tip( 'Add team members so AI and Google can identify real people behind the business. Names, job titles, and LinkedIn URLs are output as Person schema on every page.' ); // phpcs:ignore ?>
 				</h2>
+
+				<!-- Column headers -->
+				<div style="display:grid;grid-template-columns:160px 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:4px;padding:0 4px;">
+					<strong><?php esc_html_e( 'Full Name', 'homerite-schema' ); ?></strong>
+					<strong><?php esc_html_e( 'Job Title', 'homerite-schema' ); ?></strong>
+					<strong><?php esc_html_e( 'LinkedIn URL', 'homerite-schema' ); ?></strong>
+					<strong><?php esc_html_e( 'Headshot URL', 'homerite-schema' ); ?></strong>
+					<span></span>
+				</div>
+
 				<div id="hsm-team-list">
 					<?php
 					$team_to_show = ! empty( $team_members ) ? $team_members : [ [] ];
 					foreach ( $team_to_show as $member ) :
 					?>
-					<div class="hsm-repeatable-row" style="display:grid;grid-template-columns:1fr 1fr 2fr 2fr auto;gap:8px;align-items:center;margin-bottom:8px;">
-						<input type="text"  name="hsm_team_name[]"      value="<?php echo esc_attr( $member['name']      ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Full Name', 'homerite-schema' ); ?>">
-						<input type="text"  name="hsm_team_job_title[]" value="<?php echo esc_attr( $member['job_title'] ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Job Title', 'homerite-schema' ); ?>">
-						<input type="url"   name="hsm_team_linkedin[]"  value="<?php echo esc_attr( $member['linkedin']  ?? '' ); ?>" class="regular-text" placeholder="https://linkedin.com/in/...">
-						<input type="url"   name="hsm_team_image[]"     value="<?php echo esc_attr( $member['image']     ?? '' ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'Headshot URL (optional)', 'homerite-schema' ); ?>">
-						<button type="button" class="button hsm-remove-row"><?php esc_html_e( 'Remove', 'homerite-schema' ); ?></button>
+					<div class="hsm-repeatable-row hsm-team-row">
+						<input type="text" name="hsm_team_name[]"      value="<?php echo esc_attr( $member['name']      ?? '' ); ?>" placeholder="<?php esc_attr_e( 'e.g. Jane Smith', 'homerite-schema' ); ?>">
+						<input type="text" name="hsm_team_job_title[]" value="<?php echo esc_attr( $member['job_title'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'e.g. CEO / Founder', 'homerite-schema' ); ?>">
+						<input type="url"  name="hsm_team_linkedin[]"  value="<?php echo esc_attr( $member['linkedin']  ?? '' ); ?>" placeholder="https://linkedin.com/in/...">
+						<input type="url"  name="hsm_team_image[]"     value="<?php echo esc_attr( $member['image']     ?? '' ); ?>" placeholder="<?php esc_attr_e( 'optional', 'homerite-schema' ); ?>">
+						<button type="button" class="button hsm-remove-team-row"><?php esc_html_e( 'Remove', 'homerite-schema' ); ?></button>
 					</div>
 					<?php endforeach; ?>
 				</div>
-				<button type="button" class="button hsm-add-team-member" data-target="hsm-team-list"><?php esc_html_e( '+ Add Team Member', 'homerite-schema' ); ?></button>
+				<button type="button" class="button hsm-add-team-member" data-target="hsm-team-list" style="margin-top:8px;"><?php esc_html_e( '+ Add Team Member', 'homerite-schema' ); ?></button>
 			</div>
 
 			<!-- ===== Tracking ===== -->
