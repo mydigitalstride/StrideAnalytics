@@ -170,6 +170,7 @@ class HSM_Meta_Box {
 			'faqs'                => [],
 			'howto_steps'         => [],
 			'acf_fields'          => [],
+			'page_text'           => '',  // Plain text for Content Analysis keyword density.
 			'source'              => '',
 		];
 
@@ -202,6 +203,10 @@ class HSM_Meta_Box {
 
 		if ( ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) ) {
 			$html = wp_remote_retrieve_body( $response );
+
+			// Extract plain text for keyword density analysis.
+			$result['page_text'] = self::html_to_plain_text( $html );
+
 			// Use rendered HTML result only for fields still empty after post_content pass.
 			$rendered = [
 				'seo_title'           => '',
@@ -227,6 +232,9 @@ class HSM_Meta_Box {
 				$result['howto_steps'] = $rendered['howto_steps'];
 			}
 			$result['source'] = 'rendered_html';
+		} elseif ( '' === $result['page_text'] ) {
+			// Fallback: use ACF flat values as text source.
+			$result['page_text'] = implode( ' ', array_filter( $result['acf_fields'], 'is_string' ) );
 		}
 
 		wp_send_json_success( $result );
@@ -351,23 +359,64 @@ class HSM_Meta_Box {
 
 	/**
 	 * Recursively flatten ACF fields to key → scalar value for display.
-	 * Repeater rows and flexible content are serialised to JSON strings.
+	 *
+	 * Handles three ACF array types:
+	 *   - Flexible Content: array of layouts, each with an 'acf_fc_layout' key.
+	 *     Each layout is recursed individually keyed as field.layout_name[i].
+	 *     The whole layout is also stored as JSON under field.layout_name so
+	 *     hydrate_from_acf() can match it by name (e.g. 'faqs', 'how_to_steps').
+	 *   - Repeater: numeric array where every element is an associative array
+	 *     (no acf_fc_layout key). Stored as JSON under the field key.
+	 *   - Group / sub-field object: associative array (non-numeric keys).
+	 *     Recursed normally.
 	 */
 	private static function flatten_acf( array $acf, string $prefix = '' ): array {
 		$out = [];
 		foreach ( $acf as $key => $value ) {
-			$full_key = $prefix ? $prefix . '.' . $key : $key;
-			if ( is_array( $value ) ) {
-				// Check if it looks like a repeater (numeric keys, each row is array).
-				if ( isset( $value[0] ) && is_array( $value[0] ) ) {
-					$out[ $full_key ] = wp_json_encode( $value );
-				} else {
-					$nested = self::flatten_acf( $value, $full_key );
+			$full_key = $prefix ? $prefix . '.' . $key : (string) $key;
+
+			if ( ! is_array( $value ) ) {
+				if ( is_string( $value ) || is_numeric( $value ) ) {
+					$out[ $full_key ] = (string) $value;
+				}
+				continue;
+			}
+
+			// Flexible Content: first element has 'acf_fc_layout'.
+			if ( isset( $value[0] ) && is_array( $value[0] ) && array_key_exists( 'acf_fc_layout', $value[0] ) ) {
+				foreach ( $value as $i => $layout ) {
+					if ( ! is_array( $layout ) ) continue;
+					$layout_name = isset( $layout['acf_fc_layout'] ) ? (string) $layout['acf_fc_layout'] : "layout_{$i}";
+					$sub_fields  = array_diff_key( $layout, [ 'acf_fc_layout' => '' ] );
+					// Store whole layout as JSON (for name-based matching in hydrate).
+					$layout_key          = $full_key . '.' . $layout_name;
+					$out[ $layout_key ] = wp_json_encode( array_values( (array) $sub_fields ) === $sub_fields
+						? $sub_fields
+						: [ $sub_fields ]
+					);
+					// Recurse into individual sub-fields for scalar extraction.
+					$nested = self::flatten_acf( $sub_fields, $layout_key . '[' . $i . ']' );
 					$out    = array_merge( $out, $nested );
 				}
-			} elseif ( is_string( $value ) || is_numeric( $value ) ) {
-				$out[ $full_key ] = (string) $value;
+				continue;
 			}
+
+			// Repeater: numeric array of associative rows.
+			if ( isset( $value[0] ) && is_array( $value[0] ) ) {
+				$out[ $full_key ] = wp_json_encode( $value );
+				// Also recurse so scalar sub-fields are individually visible.
+				foreach ( $value as $i => $row ) {
+					if ( is_array( $row ) ) {
+						$nested = self::flatten_acf( $row, $full_key . '[' . $i . ']' );
+						$out    = array_merge( $out, $nested );
+					}
+				}
+				continue;
+			}
+
+			// Group / nested object (associative, non-numeric keys).
+			$nested = self::flatten_acf( $value, $full_key );
+			$out    = array_merge( $out, $nested );
 		}
 		return $out;
 	}
@@ -430,6 +479,19 @@ class HSM_Meta_Box {
 		return trim( preg_replace( '/\s+/u', ' ', $text ) );
 	}
 
+	/**
+	 * Strip HTML tags and scripts from a full page HTML string, returning
+	 * visible body text suitable for keyword density analysis.
+	 */
+	private static function html_to_plain_text( string $html ): string {
+		// Remove <script>, <style>, <noscript>, <nav>, <footer>, <header> blocks entirely.
+		$html = preg_replace( '#<(script|style|noscript|nav|header|footer)[^>]*>.*?</\1>#is', ' ', $html );
+		// Strip all remaining tags.
+		$text = wp_strip_all_tags( $html );
+		// Collapse whitespace.
+		return self::clean_text( $text );
+	}
+
 	// ------------------------------------------------------------------
 	// Render
 	// ------------------------------------------------------------------
@@ -454,7 +516,7 @@ class HSM_Meta_Box {
 			'https://schema.org/PreOrder'   => 'Pre-Order',
 		];
 		?>
-		<div id="hsm-meta-box-wrap">
+		<div id="hsm-meta-box-wrap" data-post-id="<?php echo esc_attr( $post->ID ); ?>">
 			<!-- Tab Nav -->
 			<ul class="hsm-tabs">
 				<li class="hsm-tab-link active" data-tab="hsm-tab-seo"><?php esc_html_e( 'SEO Meta', 'homerite-schema' ); ?></li>
