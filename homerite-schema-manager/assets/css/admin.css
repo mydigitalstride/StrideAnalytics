@@ -536,3 +536,160 @@ ul.hsm-tabs li:hover {
 		align-items: flex-start;
 	}
 }
+
+/* ─── Content Analysis tab ───────────────────────────────────────────── */
+.hsm-analysis-card {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 16px 18px;
+	margin-bottom: 16px;
+}
+
+.hsm-analysis-title {
+	margin: 0 0 12px;
+	font-size: 1em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.hsm-kd-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 14px;
+}
+
+.hsm-kd-keyword-display {
+	font-size: .9em;
+	color: #50575e;
+}
+
+.hsm-kd-keyword-display strong {
+	color: #1d2327;
+	margin-left: 4px;
+}
+
+/* Density meter */
+.hsm-meter-wrap {
+	margin-bottom: 10px;
+}
+
+.hsm-meter-track {
+	position: relative;
+	height: 14px;
+	background: #e0e0e0;
+	border-radius: 7px;
+	overflow: hidden;
+}
+
+.hsm-meter-fill {
+	height: 100%;
+	border-radius: 7px;
+	transition: width .4s ease, background .4s;
+}
+
+/* Colour states for the fill bar and badge */
+.hsm-level-none    { background: #c3c4c7; }
+.hsm-level-low     { background: #dba617; }
+.hsm-level-fair    { background: #f0b429; }
+.hsm-level-optimal { background: #00a32a; }
+.hsm-level-high    { background: #e07c00; }
+.hsm-level-over    { background: #d63638; }
+
+/* Subtle optimal-zone shading on the track */
+.hsm-meter-zone {
+	position: absolute;
+	top: 0;
+	height: 100%;
+	background: rgba(0,163,42,.15);
+	pointer-events: none;
+}
+
+.hsm-meter-labels {
+	display: flex;
+	justify-content: space-between;
+	font-size: .75em;
+	color: #8c8f94;
+	margin-top: 3px;
+}
+
+.hsm-kd-stats {
+	display: flex;
+	gap: 20px;
+	flex-wrap: wrap;
+	font-size: .875em;
+	margin-bottom: 10px;
+}
+
+.hsm-kd-badge {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 12px;
+	font-size: .8em;
+	font-weight: 600;
+	color: #fff;
+	margin-bottom: 12px;
+}
+
+/* Keyword placement checklist */
+.hsm-kd-checklist {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.hsm-check-item {
+	font-size: .85em;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.hsm-check-pass { color: #00a32a; }
+.hsm-check-fail { color: #d63638; }
+
+/* Schema suggestion cards */
+.hsm-suggestions-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.hsm-suggestion-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 14px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.hsm-suggestion-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1;
+}
+
+.hsm-suggestion-type {
+	font-size: .9em;
+	color: #2271b1;
+}
+
+.hsm-suggestion-reason {
+	font-size: .8em;
+	color: #50575e;
+}
+
+.hsm-suggestion-active {
+	color: #00a32a;
+	font-size: .85em;
+	font-weight: 600;
+}

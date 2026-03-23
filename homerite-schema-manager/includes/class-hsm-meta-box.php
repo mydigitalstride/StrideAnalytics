@@ -939,9 +939,11 @@ class HSM_Meta_Box {
 				</div>
 
 				<div id="hsm-kd-results" class="hsm-kd-results" style="display:none">
+					<!-- Density meter bar -->
 					<div class="hsm-meter-wrap">
 						<div class="hsm-meter-track">
 							<div class="hsm-meter-fill" id="hsm-kd-bar" style="width:0%"></div>
+							<!-- Optimal zone marker -->
 							<div class="hsm-meter-zone" style="left:25%;width:37.5%"></div>
 						</div>
 						<div class="hsm-meter-labels">
@@ -957,7 +959,9 @@ class HSM_Meta_Box {
 
 					<div id="hsm-kd-badge" class="hsm-kd-badge"></div>
 
-					<div class="hsm-kd-checklist" id="hsm-kd-checklist"></div>
+					<div class="hsm-kd-checklist" id="hsm-kd-checklist">
+						<!-- Filled by JS -->
+					</div>
 				</div>
 
 				<p class="description" id="hsm-kd-no-keyword" style="display:none">
