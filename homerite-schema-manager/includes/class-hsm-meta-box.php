@@ -672,19 +672,6 @@ class HSM_Meta_Box {
 			<!-- ========== TAB 2: Schema ========== -->
 			<div id="hsm-tab-schema" class="hsm-tab-panel">
 
-				<!-- ── Scan Content ── -->
-				<div class="hsm-scan-wrap">
-					<button type="button" id="hsm-scan-content" class="button button-primary"
-						data-post-id="<?php echo esc_attr( $post->ID ); ?>">
-						&#128269; <?php esc_html_e( 'Scan Content', 'homerite-schema' ); ?>
-					</button>
-					<span class="description" style="margin-left:8px;">
-						<?php esc_html_e( 'Reads ACF fields, post content, and the rendered page to auto-fill schema fields below.', 'homerite-schema' ); ?>
-					</span>
-					<div id="hsm-scan-status" style="margin-top:6px;"></div>
-					<div id="hsm-scan-results" style="display:none;margin-top:12px;"></div>
-				</div>
-
 				<h4>
 					<?php esc_html_e( 'Enable Schema Types', 'homerite-schema' ); ?>
 					<?php echo self::tip( 'Schema markup is invisible code that tells Google what your content is about — enabling rich results like star ratings, FAQ dropdowns, and how-to steps directly in search.' ); // phpcs:ignore ?>
