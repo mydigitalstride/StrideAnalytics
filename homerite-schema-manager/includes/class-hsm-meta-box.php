@@ -996,7 +996,7 @@ class HSM_Meta_Box {
 						<strong id="hsm-kd-keyword-label"><?php esc_html_e( '(none set)', 'homerite-schema' ); ?></strong>
 					</span>
 					<button type="button" class="button button-small" id="hsm-ca-scan">
-						<?php esc_html_e( '&#8635; Scan Content', 'homerite-schema' ); ?>
+						&#8635; <?php esc_html_e( 'Scan Content', 'homerite-schema' ); ?>
 					</button>
 				</div>
 

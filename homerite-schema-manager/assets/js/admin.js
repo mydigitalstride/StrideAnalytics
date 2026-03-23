@@ -482,7 +482,7 @@
 
 	/** Render keyword density and schema suggestions from a plain-text string. */
 	function hsmRenderAnalysis(text) {
-		var keyword = $('#hsm_focus_keyword').val().trim();
+		var keyword = ( $('#hsm_focus_keyword').val() || '' ).trim();
 		var wordCnt = hsmWordCount(text);
 
 		$('#hsm-kd-keyword-label').text(keyword || '(none set)');
@@ -539,53 +539,40 @@
 		}
 	}
 
-	/**
-	 * Orchestrate the scan.
-	 * For classic-editor pages: read content directly from the editor (instant).
-	 * For ACF Flexible Content pages (editor is empty/tiny): call the AJAX
-	 * scan endpoint so the rendered HTML — which includes all ACF output — is
-	 * used for keyword density and schema suggestions.
-	 */
-	function hsmRunAnalysis() {
-		var $btn       = $('#hsm-ca-scan');
+	// Use event delegation so the binding works regardless of when the meta
+	// box DOM is injected (Gutenberg loads meta boxes asynchronously).
+	$(document).on('click', '#hsm-ca-scan', function () {
+		var $btn = $(this);
+
+		// ── Step 1: give instant feedback using whatever the editor has ──
 		var editorText = hsmGetEditorText();
+		hsmRenderAnalysis(editorText);
 
-		// If the editor has enough content, use it directly — no AJAX needed.
-		if (editorText.trim().length >= 100) {
-			hsmRenderAnalysis(editorText);
-			return;
-		}
-
-		// ACF Flexible Content (or page builders) — editor will be near-empty.
-		// Fall back to the rendered page via the AJAX scan endpoint.
-		var postId = $('[data-post-id]').first().data('post-id');
-		if (!postId) {
-			hsmRenderAnalysis(editorText);
-			return;
-		}
+		// ── Step 2: try to fetch the rendered page for richer content ───
+		// WordPress always puts a hidden post_ID field in the edit form.
+		var postId = parseInt( $('input[name="post_ID"]').val() || 0, 10 );
+		if ( !postId || typeof hsmData === 'undefined' ) { return; }
 
 		$btn.prop('disabled', true).text('Scanning\u2026');
 
-		$.post(hsmData.ajaxurl, {
+		$.post( hsmData.ajaxurl, {
 			action:  'hsm_scan_content',
 			nonce:   hsmData.nonce,
 			post_id: postId,
-		})
+		} )
 		.done(function (response) {
-			var text = (response.success && response.data && response.data.page_text)
-				? response.data.page_text
-				: editorText;
-			hsmRenderAnalysis(text);
-		})
-		.fail(function () {
-			hsmRenderAnalysis(editorText);
+			if ( response && response.success && response.data && response.data.page_text ) {
+				var richText = response.data.page_text;
+				// Only replace if the rendered page gave us meaningfully more text.
+				if ( richText.length > editorText.length ) {
+					hsmRenderAnalysis( richText );
+				}
+			}
 		})
 		.always(function () {
-			$btn.prop('disabled', false).text('\u8635 Scan Content');
+			$btn.prop('disabled', false).text('\u21bb Scan Content');
 		});
-	}
-
-	$('#hsm-ca-scan').on('click', hsmRunAnalysis);
+	});
 
 	$(document).on('click', '.hsm-apply-suggestion', function () {
 		var type = $(this).data('type');
@@ -598,7 +585,7 @@
 				$('html, body').animate({ scrollTop: $section.offset().top - 40 }, 300);
 			}
 		}
-		hsmRunAnalysis();
+		hsmRenderAnalysis( hsmGetEditorText() );
 	});
 
 	// ─── Scan Content (Schema tab — AJAX) ────────────────────────────
