@@ -480,9 +480,9 @@
 		},
 	];
 
-	function hsmRunAnalysis() {
+	/** Render keyword density and schema suggestions from a plain-text string. */
+	function hsmRenderAnalysis(text) {
 		var keyword = $('#hsm_focus_keyword').val().trim();
-		var text    = hsmGetEditorText();
 		var wordCnt = hsmWordCount(text);
 
 		$('#hsm-kd-keyword-label').text(keyword || '(none set)');
@@ -537,6 +537,52 @@
 				);
 			});
 		}
+	}
+
+	/**
+	 * Orchestrate the scan.
+	 * For classic-editor pages: read content directly from the editor (instant).
+	 * For ACF Flexible Content pages (editor is empty/tiny): call the AJAX
+	 * scan endpoint so the rendered HTML — which includes all ACF output — is
+	 * used for keyword density and schema suggestions.
+	 */
+	function hsmRunAnalysis() {
+		var $btn       = $('#hsm-ca-scan');
+		var editorText = hsmGetEditorText();
+
+		// If the editor has enough content, use it directly — no AJAX needed.
+		if (editorText.trim().length >= 100) {
+			hsmRenderAnalysis(editorText);
+			return;
+		}
+
+		// ACF Flexible Content (or page builders) — editor will be near-empty.
+		// Fall back to the rendered page via the AJAX scan endpoint.
+		var postId = $('[data-post-id]').first().data('post-id');
+		if (!postId) {
+			hsmRenderAnalysis(editorText);
+			return;
+		}
+
+		$btn.prop('disabled', true).text('Scanning\u2026');
+
+		$.post(hsmData.ajaxurl, {
+			action:  'hsm_scan_content',
+			nonce:   hsmData.nonce,
+			post_id: postId,
+		})
+		.done(function (response) {
+			var text = (response.success && response.data && response.data.page_text)
+				? response.data.page_text
+				: editorText;
+			hsmRenderAnalysis(text);
+		})
+		.fail(function () {
+			hsmRenderAnalysis(editorText);
+		})
+		.always(function () {
+			$btn.prop('disabled', false).text('\u8635 Scan Content');
+		});
 	}
 
 	$('#hsm-ca-scan').on('click', hsmRunAnalysis);
