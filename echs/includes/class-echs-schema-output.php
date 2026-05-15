@@ -5,7 +5,7 @@
  * Fires on wp_head and outputs JSON-LD blocks.
  * Also outputs SEO meta tags (title override, meta description, OG, Twitter, robots).
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;

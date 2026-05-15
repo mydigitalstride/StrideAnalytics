@@ -2,7 +2,7 @@
 /**
  * Handles pushing geo-tagged job photos from WordPress to Google Business Profile.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;

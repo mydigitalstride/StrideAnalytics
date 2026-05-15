@@ -2,7 +2,7 @@
 /**
  * Admin menu registration and asset enqueuing.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -16,12 +16,12 @@ class ECHS_Admin {
 	}
 
 	/**
-	 * Add top-level "Stride Analytics" menu entry in the WP left sidebar.
+	 * Add top-level "ECHoS SEO Analytics" menu entry in the WP left sidebar.
 	 */
 	public static function register_menu(): void {
 		add_menu_page(
-			__( 'Stride Analytics', 'echs' ),
-			__( 'Stride Analytics', 'echs' ),
+			__( 'ECHoS SEO Analytics', 'echs' ),
+			__( 'ECHoS SEO Analytics', 'echs' ),
 			'manage_options',
 			'echs-settings',
 			[ 'ECHS_Global_Settings', 'render_page' ],
@@ -39,9 +39,9 @@ class ECHS_Admin {
 	public static function enqueue_assets( string $hook ): void {
 		$relevant = [
 			'toplevel_page_echs-settings',
-			'stride-analytics_page_echs-redirects',
-			'stride-analytics_page_echs-gbp',
-			'stride-analytics_page_echs-gbp-jobs',
+			'echos-seo-analytics_page_echs-redirects',
+			'echos-seo-analytics_page_echs-gbp',
+			'echos-seo-analytics_page_echs-gbp-jobs',
 			'post.php',
 			'post-new.php',
 		];
@@ -77,7 +77,7 @@ class ECHS_Admin {
 	public static function register_dashboard_widget(): void {
 		wp_add_dashboard_widget(
 			'echs_dashboard_widget',
-			'Stride Analytics',
+			'ECHoS SEO Analytics',
 			[ __CLASS__, 'render_dashboard_widget' ]
 		);
 	}
@@ -96,7 +96,7 @@ class ECHS_Admin {
 
 		echo '<p class="echs-widget-footer echs-widget-settings-link">'
 			. '<a href="' . esc_url( admin_url( 'admin.php?page=echs-settings' ) ) . '">'
-			. 'Stride Analytics Settings &rarr;</a></p>';
+			. 'ECHoS SEO Analytics Settings &rarr;</a></p>';
 
 		echo '</div>';
 	}

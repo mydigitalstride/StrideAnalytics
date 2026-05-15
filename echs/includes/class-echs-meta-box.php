@@ -2,7 +2,7 @@
 /**
  * Per-page meta box — SEO Meta tab + Schema Customizer tab.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -1074,7 +1074,7 @@ class ECHS_Meta_Box {
 			<div class="echs-analysis-card">
 				<h4 class="echs-analysis-title">
 					<?php esc_html_e( 'Schema Type Suggestions', 'echs' ); ?>
-					<?php echo self::tip( 'Stride Analytics scans your page content for common patterns and recommends relevant schema types. Click "Apply" on any suggestion to enable that schema in the Schema tab.' ); // phpcs:ignore ?>
+					<?php echo self::tip( 'ECHoS SEO Analytics scans your page content for common patterns and recommends relevant schema types. Click "Apply" on any suggestion to enable that schema in the Schema tab.' ); // phpcs:ignore ?>
 				</h4>
 
 				<div id="echs-suggestions-list" class="echs-suggestions-list">

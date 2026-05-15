@@ -3,7 +3,7 @@
  * Shared Google OAuth 2.0 authentication for Google Business Profile
  * and Google Search Console features.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;
