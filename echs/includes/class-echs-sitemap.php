@@ -2,12 +2,12 @@
 /**
  * XML sitemap generation, routing, and Google ping.
  *
- * @package HomeRite_Schema_Manager
+ * @package ECHS
  */
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_Sitemap {
+class ECHS_Sitemap {
 
 	public static function init(): void {
 		add_action( 'init', [ __CLASS__, 'add_rewrite_rules' ] );
@@ -18,28 +18,28 @@ class HSM_Sitemap {
 	}
 
 	public static function activate(): void {
-		update_option( 'hsm_sitemap_flush', 1 );
+		update_option( 'echs_sitemap_flush', 1 );
 	}
 
 	public static function add_rewrite_rules(): void {
-		add_rewrite_rule( '^sitemap\.xml$', 'index.php?hsm_sitemap=index', 'top' );
-		add_rewrite_rule( '^sitemap-([a-z0-9_-]+)\.xml$', 'index.php?hsm_sitemap=$matches[1]', 'top' );
+		add_rewrite_rule( '^sitemap\.xml$', 'index.php?echs_sitemap=index', 'top' );
+		add_rewrite_rule( '^sitemap-([a-z0-9_-]+)\.xml$', 'index.php?echs_sitemap=$matches[1]', 'top' );
 	}
 
 	public static function add_query_vars( array $vars ): array {
-		$vars[] = 'hsm_sitemap';
+		$vars[] = 'echs_sitemap';
 		return $vars;
 	}
 
 	public static function maybe_flush(): void {
-		if ( get_option( 'hsm_sitemap_flush' ) ) {
+		if ( get_option( 'echs_sitemap_flush' ) ) {
 			flush_rewrite_rules();
-			delete_option( 'hsm_sitemap_flush' );
+			delete_option( 'echs_sitemap_flush' );
 		}
 	}
 
 	public static function handle_request(): void {
-		$sitemap = get_query_var( 'hsm_sitemap' );
+		$sitemap = get_query_var( 'echs_sitemap' );
 		if ( ! $sitemap ) {
 			return;
 		}
@@ -173,7 +173,7 @@ class HSM_Sitemap {
 		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
 			return;
 		}
-		$transient = 'hsm_sitemap_pinged_' . $post_id;
+		$transient = 'echs_sitemap_pinged_' . $post_id;
 		if ( get_transient( $transient ) ) {
 			return;
 		}

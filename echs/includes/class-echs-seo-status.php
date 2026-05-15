@@ -8,12 +8,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_SEO_Status {
+class ECHS_SEO_Status {
 
 	const FEED_URL   = 'https://status.search.google.com/feed.atom';
-	const TRANSIENT  = 'hsm_google_seo_status';
+	const TRANSIENT  = 'echs_google_seo_status';
 	const CACHE_SECS = 6 * HOUR_IN_SECONDS;
-	const CRON_HOOK  = 'hsm_fetch_seo_status';
+	const CRON_HOOK  = 'echs_fetch_seo_status';
 
 	public static function init(): void {
 		add_action( self::CRON_HOOK,      [ __CLASS__, 'fetch_and_cache' ] );
@@ -23,14 +23,14 @@ class HSM_SEO_Status {
 
 	public static function schedule_cron(): void {
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
-			wp_schedule_event( time(), 'hsm_sixhours', self::CRON_HOOK );
+			wp_schedule_event( time(), 'echs_sixhours', self::CRON_HOOK );
 		}
 	}
 
 	public static function fetch_and_cache(): void {
 		$response = wp_remote_get( self::FEED_URL, [
 			'timeout'    => 10,
-			'user-agent' => 'Stride-Analytics/' . HSM_VERSION . '; ' . home_url(),
+			'user-agent' => 'Stride-Analytics/' . ECHS_VERSION . '; ' . home_url(),
 		] );
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
@@ -112,33 +112,33 @@ class HSM_SEO_Status {
 	public static function render_widget_section(): void {
 		$items = self::get_items();
 
-		echo '<h3 class="hsm-widget-section-title">'
+		echo '<h3 class="echs-widget-section-title">'
 			. '<span class="dashicons dashicons-search"></span> Google Search Status</h3>';
 
 		if ( empty( $items ) ) {
-			echo '<p class="hsm-widget-empty">Unable to load status feed. '
+			echo '<p class="echs-widget-empty">Unable to load status feed. '
 				. '<a href="' . esc_url( 'https://status.search.google.com/' ) . '" target="_blank" rel="noopener">Check manually &rarr;</a></p>';
 			return;
 		}
 
-		echo '<ul class="hsm-status-list">';
+		echo '<ul class="echs-status-list">';
 		foreach ( $items as $item ) {
-			$dot_class = $item['is_active'] ? 'hsm-dot-warning' : 'hsm-dot-ok';
+			$dot_class = $item['is_active'] ? 'echs-dot-warning' : 'echs-dot-ok';
 			$date      = $item['updated'] ? wp_date( 'M j, Y', strtotime( $item['updated'] ) ) : '';
 			$link_open = $item['link'] ? '<a href="' . esc_url( $item['link'] ) . '" target="_blank" rel="noopener">' : '';
 			$link_close = $item['link'] ? '</a>' : '';
 			printf(
-				'<li><span class="hsm-dot %s"></span>%s<span class="hsm-status-title">%s</span>%s%s</li>',
+				'<li><span class="echs-dot %s"></span>%s<span class="echs-status-title">%s</span>%s%s</li>',
 				esc_attr( $dot_class ),
 				$link_open,
 				esc_html( $item['title'] ),
 				$link_close,
-				$date ? ' <span class="hsm-status-date">' . esc_html( $date ) . '</span>' : ''
+				$date ? ' <span class="echs-status-date">' . esc_html( $date ) . '</span>' : ''
 			);
 		}
 		echo '</ul>';
 
-		echo '<p class="hsm-widget-footer">'
+		echo '<p class="echs-widget-footer">'
 			. '<a href="https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history" target="_blank" rel="noopener">Full history &rarr;</a>'
 			. '</p>';
 	}

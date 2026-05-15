@@ -2,12 +2,12 @@
 /**
  * 404 error monitoring: DB logging, email notification, and admin UI.
  *
- * @package HomeRite_Schema_Manager
+ * @package ECHS
  */
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_404_Monitor {
+class ECHS_404_Monitor {
 
 	public static function init(): void {
 		add_action( 'template_redirect', [ __CLASS__, 'log_404' ], 2 );
@@ -16,7 +16,7 @@ class HSM_404_Monitor {
 
 	public static function get_table_name(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'hsm_404_log';
+		return $wpdb->prefix . 'echs_404_log';
 	}
 
 	public static function create_table(): void {
@@ -93,7 +93,7 @@ class HSM_404_Monitor {
 		$detected_at  = wp_date( 'M j, Y g:i a', time() );
 		$suggestion   = self::get_suggestion( $url );
 
-		$redirect_manager_url = admin_url( 'admin.php?page=hsm-redirects&hsm_prefill=' . urlencode( $url ) );
+		$redirect_manager_url = admin_url( 'admin.php?page=echs-redirects&echs_prefill=' . urlencode( $url ) );
 
 		$suggestion_block = '';
 		if ( $suggestion !== '' ) {
@@ -117,7 +117,7 @@ class HSM_404_Monitor {
 		$body .= 'Search your site and any external sources linking to this URL and update them.</p>';
 		$body .= $suggestion_block;
 		$body .= '<hr>';
-		$body .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=hsm-404-monitor' ) ) . '">&#8594; View all 404 errors in Stride Analytics</a></p>';
+		$body .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=echs-404-monitor' ) ) . '">&#8594; View all 404 errors in Stride Analytics</a></p>';
 
 		add_filter( 'wp_mail_content_type', [ __CLASS__, 'set_html_content_type' ] );
 
@@ -157,11 +157,11 @@ class HSM_404_Monitor {
 
 	public static function register_menu(): void {
 		add_submenu_page(
-			'homerite-schema-settings',
+			'echs-settings',
 			'404 Monitor',
 			'404 Monitor',
 			'manage_options',
-			'hsm-404-monitor',
+			'echs-404-monitor',
 			[ __CLASS__, 'render_page' ]
 		);
 	}
@@ -174,24 +174,24 @@ class HSM_404_Monitor {
 		global $wpdb;
 		$table = self::get_table_name();
 
-		$action = isset( $_GET['hsm_action'] ) ? sanitize_key( $_GET['hsm_action'] ) : '';
+		$action = isset( $_GET['echs_action'] ) ? sanitize_key( $_GET['echs_action'] ) : '';
 
 		if ( 'dismiss' === $action ) {
 			$entry_id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
-			check_admin_referer( 'hsm_dismiss_404_' . $entry_id );
+			check_admin_referer( 'echs_dismiss_404_' . $entry_id );
 			$wpdb->update( $table, [ 'dismissed' => 1 ], [ 'id' => $entry_id ], [ '%d' ], [ '%d' ] );
-			wp_redirect( add_query_arg( 'hsm_msg', 'dismissed', admin_url( 'admin.php?page=hsm-404-monitor' ) ) );
+			wp_redirect( add_query_arg( 'echs_msg', 'dismissed', admin_url( 'admin.php?page=echs-404-monitor' ) ) );
 			exit;
 		}
 
 		if ( 'clear_all' === $action ) {
-			check_admin_referer( 'hsm_clear_404s' );
+			check_admin_referer( 'echs_clear_404s' );
 			$wpdb->delete( $table, [ 'dismissed' => 1 ], [ '%d' ] );
-			wp_redirect( add_query_arg( 'hsm_msg', 'cleared', admin_url( 'admin.php?page=hsm-404-monitor' ) ) );
+			wp_redirect( add_query_arg( 'echs_msg', 'cleared', admin_url( 'admin.php?page=echs-404-monitor' ) ) );
 			exit;
 		}
 
-		$msg = isset( $_GET['hsm_msg'] ) ? sanitize_key( $_GET['hsm_msg'] ) : '';
+		$msg = isset( $_GET['echs_msg'] ) ? sanitize_key( $_GET['echs_msg'] ) : '';
 
 		if ( 'dismissed' === $msg ) {
 			echo '<div class="notice notice-success is-dismissible"><p>Entry dismissed.</p></div>';
@@ -204,8 +204,8 @@ class HSM_404_Monitor {
 		);
 
 		$clear_all_url = wp_nonce_url(
-			admin_url( 'admin.php?page=hsm-404-monitor&hsm_action=clear_all' ),
-			'hsm_clear_404s'
+			admin_url( 'admin.php?page=echs-404-monitor&echs_action=clear_all' ),
+			'echs_clear_404s'
 		);
 
 		echo '<div class="wrap">';
@@ -240,10 +240,10 @@ class HSM_404_Monitor {
 				$first_seen = wp_date( 'M j, Y g:i a', strtotime( $row->first_seen ) );
 				$last_seen  = wp_date( 'M j, Y g:i a', strtotime( $row->last_seen ) );
 
-				$redirect_url = admin_url( 'admin.php?page=hsm-redirects&hsm_prefill=' . urlencode( $row->url ) );
+				$redirect_url = admin_url( 'admin.php?page=echs-redirects&echs_prefill=' . urlencode( $row->url ) );
 				$dismiss_url  = wp_nonce_url(
-					admin_url( 'admin.php?page=hsm-404-monitor&hsm_action=dismiss&id=' . absint( $row->id ) ),
-					'hsm_dismiss_404_' . absint( $row->id )
+					admin_url( 'admin.php?page=echs-404-monitor&echs_action=dismiss&id=' . absint( $row->id ) ),
+					'echs_dismiss_404_' . absint( $row->id )
 				);
 
 				echo '<tr>';

@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_Tracking {
+class ECHS_Tracking {
 
 	public static function init(): void {
 		// Front-end script injection.

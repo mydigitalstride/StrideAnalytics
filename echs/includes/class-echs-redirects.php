@@ -2,24 +2,24 @@
 /**
  * Redirect management: DB table, interception, and admin UI.
  *
- * @package HomeRite_Schema_Manager
+ * @package ECHS
  */
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_Redirects {
+class ECHS_Redirects {
 
 	public static function init(): void {
 		add_action( 'template_redirect',              [ __CLASS__, 'maybe_redirect' ], 1 );
 		add_action( 'admin_menu',                     [ __CLASS__, 'register_menu' ] );
-		add_action( 'admin_post_hsm_add_redirect',    [ __CLASS__, 'handle_add' ] );
-		add_action( 'admin_post_hsm_delete_redirect', [ __CLASS__, 'handle_delete' ] );
-		add_action( 'hsm_increment_redirect_hit',     [ __CLASS__, 'increment_hit' ] );
+		add_action( 'admin_post_echs_add_redirect',    [ __CLASS__, 'handle_add' ] );
+		add_action( 'admin_post_echs_delete_redirect', [ __CLASS__, 'handle_delete' ] );
+		add_action( 'echs_increment_redirect_hit',     [ __CLASS__, 'increment_hit' ] );
 	}
 
 	public static function get_table_name(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'hsm_redirects';
+		return $wpdb->prefix . 'echs_redirects';
 	}
 
 	public static function create_table(): void {
@@ -45,7 +45,7 @@ class HSM_Redirects {
 	}
 
 	private static function load_redirects(): array {
-		$cached = get_transient( 'hsm_redirects_cache' );
+		$cached = get_transient( 'echs_redirects_cache' );
 		if ( false !== $cached ) {
 			return $cached;
 		}
@@ -55,7 +55,7 @@ class HSM_Redirects {
 			ARRAY_A
 		);
 		$rows = $rows ?: [];
-		set_transient( 'hsm_redirects_cache', $rows, HOUR_IN_SECONDS );
+		set_transient( 'echs_redirects_cache', $rows, HOUR_IN_SECONDS );
 		return $rows;
 	}
 
@@ -73,7 +73,7 @@ class HSM_Redirects {
 		foreach ( $redirects as $row ) {
 			$source_norm = self::normalize( $row['source_url'] );
 			if ( $normalized === $source_norm || $no_slash === $source_norm || $normalized === rtrim( $source_norm, '/' ) ) {
-				wp_schedule_single_event( time(), 'hsm_increment_redirect_hit', [ (int) $row['id'] ] );
+				wp_schedule_single_event( time(), 'echs_increment_redirect_hit', [ (int) $row['id'] ] );
 				wp_redirect( $row['target_url'], (int) $row['redirect_type'] );
 				exit;
 			}
@@ -92,11 +92,11 @@ class HSM_Redirects {
 
 	public static function register_menu(): void {
 		add_submenu_page(
-			'homerite-schema-settings',
+			'echs-settings',
 			'Redirect Manager',
 			'Redirects',
 			'manage_options',
-			'hsm-redirects',
+			'echs-redirects',
 			[ __CLASS__, 'render_page' ]
 		);
 	}
@@ -112,7 +112,7 @@ class HSM_Redirects {
 			ARRAY_A
 		) ?: [];
 
-		$msg = sanitize_key( $_GET['hsm_msg'] ?? '' );
+		$msg = sanitize_key( $_GET['echs_msg'] ?? '' );
 		?>
 		<div class="wrap">
 			<h1>Redirect Manager</h1>
@@ -125,23 +125,23 @@ class HSM_Redirects {
 				<div class="notice notice-error is-dismissible"><p>An error occurred. Please try again.</p></div>
 			<?php endif; ?>
 
-			<div class="hsm-card" style="margin-bottom:20px;">
+			<div class="echs-card" style="margin-bottom:20px;">
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-					<input type="hidden" name="action" value="hsm_add_redirect">
-					<?php wp_nonce_field( 'hsm_add_redirect_action', 'hsm_redirect_nonce' ); ?>
+					<input type="hidden" name="action" value="echs_add_redirect">
+					<?php wp_nonce_field( 'echs_add_redirect_action', 'echs_redirect_nonce' ); ?>
 					<table class="form-table" role="presentation">
 						<tr>
-							<th scope="row"><label for="hsm_source_url">Source URL</label></th>
-							<td><input type="text" id="hsm_source_url" name="hsm_source_url" class="regular-text" placeholder="/old-page/" required value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['hsm_prefill'] ?? '' ) ) ); ?>"></td>
+							<th scope="row"><label for="echs_source_url">Source URL</label></th>
+							<td><input type="text" id="echs_source_url" name="echs_source_url" class="regular-text" placeholder="/old-page/" required value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['echs_prefill'] ?? '' ) ) ); ?>"></td>
 						</tr>
 						<tr>
-							<th scope="row"><label for="hsm_target_url">Destination URL</label></th>
-							<td><input type="text" id="hsm_target_url" name="hsm_target_url" class="regular-text" placeholder="https://… or /new-page/" required></td>
+							<th scope="row"><label for="echs_target_url">Destination URL</label></th>
+							<td><input type="text" id="echs_target_url" name="echs_target_url" class="regular-text" placeholder="https://… or /new-page/" required></td>
 						</tr>
 						<tr>
-							<th scope="row"><label for="hsm_redirect_type">Type</label></th>
+							<th scope="row"><label for="echs_redirect_type">Type</label></th>
 							<td>
-								<select id="hsm_redirect_type" name="hsm_redirect_type">
+								<select id="echs_redirect_type" name="echs_redirect_type">
 									<option value="301">301 Permanent</option>
 									<option value="302">302 Temporary</option>
 									<option value="307">307 Temporary</option>
@@ -173,9 +173,9 @@ class HSM_Redirects {
 					</tr>
 				<?php else : ?>
 					<?php foreach ( $redirects as $row ) :
-						$delete_nonce = wp_create_nonce( 'hsm_delete_redirect_' . $row['id'] );
+						$delete_nonce = wp_create_nonce( 'echs_delete_redirect_' . $row['id'] );
 						$delete_url   = admin_url(
-							'admin-post.php?action=hsm_delete_redirect&id=' . (int) $row['id'] . '&_wpnonce=' . $delete_nonce
+							'admin-post.php?action=echs_delete_redirect&id=' . (int) $row['id'] . '&_wpnonce=' . $delete_nonce
 						);
 					?>
 					<tr>
@@ -202,15 +202,15 @@ class HSM_Redirects {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( 'Unauthorized.' );
 		}
-		check_admin_referer( 'hsm_add_redirect_action', 'hsm_redirect_nonce' );
+		check_admin_referer( 'echs_add_redirect_action', 'echs_redirect_nonce' );
 
-		$source = sanitize_text_field( $_POST['hsm_source_url'] ?? '' );
+		$source = sanitize_text_field( $_POST['echs_source_url'] ?? '' );
 		$source = esc_url_raw( $source );
-		$target = sanitize_text_field( $_POST['hsm_target_url'] ?? '' );
+		$target = sanitize_text_field( $_POST['echs_target_url'] ?? '' );
 		$target = esc_url_raw( $target );
 
 		if ( '' === $source || '' === $target ) {
-			wp_redirect( admin_url( 'admin.php?page=hsm-redirects&hsm_msg=error' ) );
+			wp_redirect( admin_url( 'admin.php?page=echs-redirects&echs_msg=error' ) );
 			exit;
 		}
 
@@ -218,7 +218,7 @@ class HSM_Redirects {
 			$source = '/' . $source;
 		}
 
-		$type_raw = (int) ( $_POST['hsm_redirect_type'] ?? 301 );
+		$type_raw = (int) ( $_POST['echs_redirect_type'] ?? 301 );
 		$type     = in_array( $type_raw, [ 301, 302, 307 ], true ) ? $type_raw : 301;
 
 		global $wpdb;
@@ -232,10 +232,10 @@ class HSM_Redirects {
 			[ '%s', '%s', '%d' ]
 		);
 
-		delete_transient( 'hsm_redirects_cache' );
+		delete_transient( 'echs_redirects_cache' );
 
 		$msg = false !== $inserted ? 'added' : 'error';
-		wp_redirect( admin_url( 'admin.php?page=hsm-redirects&hsm_msg=' . $msg ) );
+		wp_redirect( admin_url( 'admin.php?page=echs-redirects&echs_msg=' . $msg ) );
 		exit;
 	}
 
@@ -246,18 +246,18 @@ class HSM_Redirects {
 
 		$id = (int) ( $_GET['id'] ?? 0 );
 		if ( $id <= 0 ) {
-			wp_redirect( admin_url( 'admin.php?page=hsm-redirects&hsm_msg=error' ) );
+			wp_redirect( admin_url( 'admin.php?page=echs-redirects&echs_msg=error' ) );
 			exit;
 		}
 
-		check_admin_referer( 'hsm_delete_redirect_' . $id );
+		check_admin_referer( 'echs_delete_redirect_' . $id );
 
 		global $wpdb;
 		$wpdb->delete( self::get_table_name(), [ 'id' => $id ], [ '%d' ] );
 
-		delete_transient( 'hsm_redirects_cache' );
+		delete_transient( 'echs_redirects_cache' );
 
-		wp_redirect( admin_url( 'admin.php?page=hsm-redirects&hsm_msg=deleted' ) );
+		wp_redirect( admin_url( 'admin.php?page=echs-redirects&echs_msg=deleted' ) );
 		exit;
 	}
 }
