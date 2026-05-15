@@ -482,7 +482,8 @@
 
 	/** Render keyword density and schema suggestions from a plain-text string. */
 	function hsmRenderAnalysis(text) {
-		var keyword = $('#hsm_focus_keyword').val().trim();
+		var keywords = hsmGetKeywords();
+		var keyword = keywords[0] || '';
 		var wordCnt = hsmWordCount(text);
 
 		$('#hsm-kd-keyword-label').text(keyword || '(none set)');
@@ -490,6 +491,7 @@
 		if (!keyword) {
 			$('#hsm-kd-results').hide();
 			$('#hsm-kd-no-keyword').show();
+			$('#hsm-cluster-results').hide();
 		} else {
 			$('#hsm-kd-no-keyword').hide();
 			$('#hsm-kd-results').show();
@@ -512,6 +514,8 @@
 					(item.pass ? '&#10003;' : '&#10007;') + ' ' + item.text + '</div>'
 				);
 			});
+
+			hsmRenderCluster(text, keywords);
 		}
 
 		var $list = $('#hsm-suggestions-list').empty();
@@ -1066,6 +1070,67 @@
 		hsmRunAnalysis();
 	});
 
+
+	// ─── Multi-keyword UI ─────────────────────────────────────────────────
+
+	function hsmGetKeywords() {
+		var keywords = [];
+		$('#hsm-keywords-list .hsm-keyword-input').each(function () {
+			var val = $(this).val().trim();
+			if (val) keywords.push(val);
+		});
+		if (!keywords.length) {
+			var legacy = ($('#hsm_focus_keyword').val() || '').trim();
+			if (legacy) keywords.push(legacy);
+		}
+		return keywords;
+	}
+
+	$('#hsm-add-keyword').on('click', function () {
+		var $list = $('#hsm-keywords-list');
+		if ($list.find('.hsm-keyword-row').length >= 5) return;
+		var $row = $(
+			'<div class="hsm-keyword-row">' +
+			'<span class="hsm-keyword-label">Secondary</span>' +
+			'<input type="text" name="hsm_focus_keywords[]" value="" class="regular-text hsm-keyword-input" placeholder="Secondary keyword">' +
+			'<button type="button" class="button button-small hsm-remove-keyword">Remove</button>' +
+			'</div>'
+		);
+		$list.append($row);
+		$row.find('input').focus();
+		if ($list.find('.hsm-keyword-row').length >= 5) {
+			$('#hsm-add-keyword').prop('disabled', true);
+		}
+	});
+
+	$(document).on('click', '.hsm-remove-keyword', function () {
+		$(this).closest('.hsm-keyword-row').remove();
+		$('#hsm-add-keyword').prop('disabled', false);
+	});
+
+	function hsmRenderCluster(text, keywords) {
+		var $c = $('#hsm-cluster-results');
+		if (!$c.length || keywords.length <= 1) { $c.hide(); return; }
+		$c.show().empty();
+		keywords.forEach(function (kw, i) {
+			var count   = hsmCountOccurrences(text, kw);
+			var wordCnt = hsmWordCount(text);
+			var density = wordCnt > 0 ? (count / wordCnt * 100) : 0;
+			var level   = hsmDensityLevel(density);
+			var barPct  = Math.min(density / 4 * 100, 100);
+			$c.append(
+				'<div class="hsm-cluster-card">' +
+				'<div class="hsm-cluster-label">' + (i === 0 ? 'Primary' : 'Secondary') + ' keyword</div>' +
+				'<div class="hsm-cluster-keyword">' + $('<span>').text(kw).html() + '</div>' +
+				'<div class="hsm-cluster-mini-bar-track"><div class="hsm-cluster-mini-bar-fill ' + level.cls + '" style="width:' + barPct.toFixed(1) + '%"></div></div>' +
+				'<div class="hsm-cluster-stats">' +
+				'<span>Density: <strong>' + density.toFixed(2) + '%</strong></span> ' +
+				'<span>Uses: <strong>' + count + '</strong></span> ' +
+				'<span class="' + level.cls + '">' + level.label + '</span>' +
+				'</div></div>'
+			);
+		});
+	}
 
 	// ─── Readability Analysis ─────────────────────────────────────────────
 

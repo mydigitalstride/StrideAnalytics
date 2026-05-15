@@ -132,7 +132,7 @@ class HSM_Redirects {
 					<table class="form-table" role="presentation">
 						<tr>
 							<th scope="row"><label for="hsm_source_url">Source URL</label></th>
-							<td><input type="text" id="hsm_source_url" name="hsm_source_url" class="regular-text" placeholder="/old-page/" required></td>
+							<td><input type="text" id="hsm_source_url" name="hsm_source_url" class="regular-text" placeholder="/old-page/" required value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['hsm_prefill'] ?? '' ) ) ); ?>"></td>
 						</tr>
 						<tr>
 							<th scope="row"><label for="hsm_target_url">Destination URL</label></th>

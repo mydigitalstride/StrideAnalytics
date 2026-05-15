@@ -808,3 +808,72 @@ ul.hsm-tabs li:hover {
 	margin-left: 18px;
 	margin-top: 2px;
 }
+
+/* ─── Multi-keyword rows ─────────────────────────────────────────────── */
+.hsm-keyword-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.hsm-keyword-label {
+	font-size: .75em;
+	font-weight: 600;
+	color: #50575e;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	width: 62px;
+	flex-shrink: 0;
+}
+
+.hsm-keyword-input {
+	flex: 1;
+}
+
+/* ─── Keyword cluster analysis ───────────────────────────────────────── */
+.hsm-cluster-card {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 14px;
+	margin-bottom: 10px;
+}
+
+.hsm-cluster-label {
+	font-size: .78em;
+	font-weight: 600;
+	color: #50575e;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	margin-bottom: 4px;
+}
+
+.hsm-cluster-keyword {
+	font-weight: 600;
+	font-size: .9em;
+	margin-bottom: 6px;
+}
+
+.hsm-cluster-mini-bar-track {
+	height: 8px;
+	background: #e0e0e0;
+	border-radius: 4px;
+	overflow: hidden;
+	margin-bottom: 4px;
+	position: relative;
+}
+
+.hsm-cluster-mini-bar-fill {
+	height: 100%;
+	border-radius: 4px;
+	transition: width .4s ease, background .4s;
+}
+
+.hsm-cluster-stats {
+	font-size: .8em;
+	color: #50575e;
+	display: flex;
+	gap: 14px;
+	flex-wrap: wrap;
+}

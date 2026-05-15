@@ -65,13 +65,26 @@ class HSM_Meta_Box {
 			'hsm_twitter_title',
 			'hsm_twitter_description',
 			'hsm_twitter_image',
-			'hsm_focus_keyword',
 		];
 
 		foreach ( $seo_text_fields as $field ) {
 			$value = isset( $_POST[ $field ] ) ? sanitize_text_field( wp_unslash( $_POST[ $field ] ) ) : '';
 			update_post_meta( $post_id, $field, $value );
 		}
+
+		// Save focus keywords array (up to 5).
+		$raw_keywords = $_POST['hsm_focus_keywords'] ?? [];
+		$keywords = [];
+		foreach ( (array) $raw_keywords as $kw ) {
+			$kw = sanitize_text_field( $kw );
+			if ( '' !== $kw ) {
+				$keywords[] = $kw;
+			}
+			if ( count( $keywords ) >= 5 ) break;
+		}
+		update_post_meta( $post_id, 'hsm_focus_keywords', $keywords );
+		// Keep legacy single-keyword meta in sync with primary keyword.
+		update_post_meta( $post_id, 'hsm_focus_keyword', $keywords[0] ?? '' );
 
 		// OG / Twitter "same as SEO Meta" flags.
 		// Checkbox present = '1' (same as meta / collapsed). Absent = '0' (custom).
@@ -577,11 +590,30 @@ class HSM_Meta_Box {
 							<?php echo self::tip( 'The single primary keyword this page is trying to rank for. Used by the Content Analysis tab to measure how well your content is optimised.' ); // phpcs:ignore ?>
 						</th>
 						<td>
-							<input type="text" id="hsm_focus_keyword" name="hsm_focus_keyword"
-								value="<?php echo esc_attr( get_post_meta( $post->ID, 'hsm_focus_keyword', true ) ); ?>"
-								class="regular-text">
+							<?php
+							$saved_keywords = get_post_meta( $post->ID, 'hsm_focus_keywords', true ) ?: [];
+							// Backward compat: if no array yet, use legacy single-keyword meta.
+							if ( empty( $saved_keywords ) ) {
+								$legacy = get_post_meta( $post->ID, 'hsm_focus_keyword', true );
+								if ( $legacy ) $saved_keywords = [ $legacy ];
+							}
+							// Ensure at least one empty slot.
+							while ( count( $saved_keywords ) < 1 ) $saved_keywords[] = '';
+							?>
+							<div id="hsm-keywords-list">
+							<?php foreach ( $saved_keywords as $i => $kw ) : ?>
+								<div class="hsm-keyword-row">
+									<span class="hsm-keyword-label"><?php echo 0 === $i ? esc_html__( 'Primary', 'homerite-schema' ) : esc_html__( 'Secondary', 'homerite-schema' ); ?></span>
+									<input type="text" name="hsm_focus_keywords[]" value="<?php echo esc_attr( $kw ); ?>" class="regular-text hsm-keyword-input" placeholder="<?php echo 0 === $i ? esc_attr__( 'Primary keyword', 'homerite-schema' ) : esc_attr__( 'Secondary keyword', 'homerite-schema' ); ?>">
+									<?php if ( $i > 0 ) : ?>
+									<button type="button" class="button button-small hsm-remove-keyword">Remove</button>
+									<?php endif; ?>
+								</div>
+							<?php endforeach; ?>
+							</div>
+							<button type="button" class="button button-small hsm-add-keyword" id="hsm-add-keyword" style="margin-top:6px;">+ Add keyword</button>
 							<p class="description hsm-best-practice">
-								&#128270; <?php esc_html_e( 'Best practice: one keyword per page. Use it in your title, meta description, first paragraph, and at least one heading.', 'homerite-schema' ); ?>
+								&#128270; <?php esc_html_e( 'Up to 5 keywords per page. The primary keyword drives content analysis. Secondary keywords form a topic cluster.', 'homerite-schema' ); ?>
 							</p>
 						</td>
 					</tr>
@@ -1026,9 +1058,16 @@ class HSM_Meta_Box {
 					</div>
 				</div>
 
+				<div id="hsm-cluster-results" style="display:none;margin-top:12px;">
+					<!-- Filled by JS — multi-keyword cluster cards -->
+				</div>
+
 				<p class="description" id="hsm-kd-no-keyword" style="display:none">
 					<?php esc_html_e( 'Set a Focus Keyword on the SEO Meta tab first, then click Scan Content.', 'homerite-schema' ); ?>
 				</p>
+
+				<!-- Keyword cluster (secondary keywords) — filled by JS -->
+				<div id="hsm-cluster-results" style="display:none;margin-top:12px;"></div>
 			</div>
 
 			<!-- ── Schema Type Suggestions ── -->
