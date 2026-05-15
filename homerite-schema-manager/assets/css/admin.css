@@ -787,3 +787,24 @@ ul.hsm-tabs li:hover {
 	font-size: .85em;
 	font-weight: 600;
 }
+
+/* ─── Readability ────────────────────────────────────────────────────── */
+.hsm-readability-score {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.hsm-readability-summary {
+	font-size: .85em;
+	color: #50575e;
+}
+
+.hsm-check-hint {
+	display: block;
+	font-size: .8em;
+	color: #50575e;
+	margin-left: 18px;
+	margin-top: 2px;
+}

@@ -553,6 +553,7 @@
 		// If the editor has enough content, use it directly — no AJAX needed.
 		if (editorText.trim().length >= 100) {
 			hsmRenderAnalysis(editorText);
+			hsmRenderReadability(editorText);
 			return;
 		}
 
@@ -561,6 +562,7 @@
 		var postId = $('[data-post-id]').first().data('post-id');
 		if (!postId) {
 			hsmRenderAnalysis(editorText);
+			hsmRenderReadability(editorText);
 			return;
 		}
 
@@ -576,9 +578,11 @@
 				? response.data.page_text
 				: editorText;
 			hsmRenderAnalysis(text);
+			hsmRenderReadability(text);
 		})
 		.fail(function () {
 			hsmRenderAnalysis(editorText);
+			hsmRenderReadability(editorText);
 		})
 		.always(function () {
 			$btn.prop('disabled', false).text('\u8635 Scan Content');
@@ -1062,4 +1066,170 @@
 		hsmRunAnalysis();
 	});
 
+
+	// ─── Readability Analysis ─────────────────────────────────────────────
+
+	function hsmSyllables(word) {
+		word = word.toLowerCase().replace(/[^a-z]/g, '');
+		if (!word) return 1;
+		if (!/le$/.test(word)) word = word.replace(/e$/, '');
+		var matches = word.match(/[aeiouy]{1,2}/g);
+		return Math.max(1, matches ? matches.length : 1);
+	}
+
+	function hsmSentences(text) {
+		return text.split(/[.!?]+(?:\s|$)/).filter(function (s) { return s.trim() !== ''; });
+	}
+
+	function hsmWords(text) {
+		return text.match(/\b[a-z']+\b/gi) || [];
+	}
+
+	function hsmFleschScore(text) {
+		var words     = hsmWords(text);
+		var sentences = hsmSentences(text);
+		if (sentences.length < 3 || words.length < 10) return null;
+		var totalSyllables = 0;
+		for (var i = 0; i < words.length; i++) totalSyllables += hsmSyllables(words[i]);
+		var score = 206.835
+			- 1.015  * (words.length / sentences.length)
+			- 84.6   * (totalSyllables / words.length);
+		return Math.min(100, Math.max(0, score));
+	}
+
+	function hsmPassivePct(sentences) {
+		if (!sentences.length) return 0;
+		var re = /\b(am|are|is|was|were|be|been|being)\s+\w+ed\b/i;
+		var count = sentences.filter(function (s) { return re.test(s); }).length;
+		return Math.round((count / sentences.length) * 100);
+	}
+
+	function hsmTransitionPct(sentences) {
+		if (!sentences.length) return 0;
+		var transitions = [
+			'however','therefore','furthermore','additionally','moreover',
+			'consequently','meanwhile','nevertheless','subsequently','alternatively',
+			'although','because','besides','conversely','eventually','finally',
+			'firstly','generally','hence','in addition','in conclusion','in contrast',
+			'in fact','in other words','in particular','in short','in summary',
+			'indeed','instead','likewise','next','nonetheless','notably','otherwise',
+			'overall','particularly','previously','rather','secondly','similarly',
+			'since','specifically','still','thirdly','thus','ultimately',
+			'whereas','while','yet'
+		];
+		var count = sentences.filter(function (s) {
+			var lower = s.toLowerCase();
+			return transitions.some(function (t) { return lower.indexOf(t) !== -1; });
+		}).length;
+		return Math.round((count / sentences.length) * 100);
+	}
+
+	function hsmLongSentPct(sentences) {
+		if (!sentences.length) return 0;
+		var count = sentences.filter(function (s) {
+			return hsmWords(s).length > 20;
+		}).length;
+		return Math.round((count / sentences.length) * 100);
+	}
+
+	function hsmLongParaPct(text) {
+		var paras = text.split(/\n\n+/).filter(function (p) { return p.trim() !== ''; });
+		if (!paras.length) return 0;
+		var count = paras.filter(function (p) { return hsmWords(p).length > 150; }).length;
+		return Math.round((count / paras.length) * 100);
+	}
+
+	function hsmRenderReadability(text) {
+		var $container = $('#hsm-readability-results');
+		if (!$container.length) return;
+
+		if (text.trim().length < 100) {
+			$container.html('<p class="description">Add more content for a readability assessment.</p>');
+			return;
+		}
+
+		var sentences    = hsmSentences(text);
+		var fleschScore  = hsmFleschScore(text);
+		var longSentPct  = hsmLongSentPct(sentences);
+		var passivePct   = hsmPassivePct(sentences);
+		var transitionPct = hsmTransitionPct(sentences);
+		var longParaPct  = hsmLongParaPct(text);
+
+		var checks = [];
+
+		if (fleschScore !== null) {
+			var fleschPass  = fleschScore >= 60;
+			var fleschLabel = fleschScore >= 70 ? 'Easy to read'
+				: fleschScore >= 60 ? 'Fairly easy'
+				: fleschScore >= 50 ? 'Standard'
+				: fleschScore >= 30 ? 'Difficult'
+				: 'Very difficult';
+			checks.push({
+				pass:    fleschPass,
+				display: 'Reading ease: ' + Math.round(fleschScore) + '/100 — ' + fleschLabel,
+				hint:    'Use shorter sentences and simpler words.'
+			});
+		}
+
+		checks.push({
+			pass:    longSentPct <= 25,
+			display: longSentPct + '% of sentences are over 20 words',
+			hint:    'Break long sentences into two.'
+		});
+
+		checks.push({
+			pass:    passivePct <= 10,
+			display: passivePct + '% of sentences use passive voice',
+			hint:    'Rewrite passive constructions in active voice.'
+		});
+
+		checks.push({
+			pass:    transitionPct >= 30,
+			display: transitionPct + '% of sentences use transition words',
+			hint:    "Add words like ‘however’, ‘therefore’, ‘additionally’."
+		});
+
+		checks.push({
+			pass:    longParaPct <= 20,
+			display: longParaPct + '% of paragraphs exceed 150 words',
+			hint:    'Break long paragraphs into shorter chunks.'
+		});
+
+		var passed = checks.filter(function (c) { return c.pass; }).length;
+		var total  = checks.length;
+		var ratio  = passed / total;
+		var badgeClass, badgeLabel;
+		if (ratio === 1) {
+			badgeClass = 'hsm-level-optimal';
+			badgeLabel = 'Good';
+		} else if (ratio >= 0.5) {
+			badgeClass = 'hsm-level-fair';
+			badgeLabel = 'Needs work';
+		} else {
+			badgeClass = 'hsm-level-low';
+			badgeLabel = 'Poor';
+		}
+
+		var html = '<div class="hsm-readability-card">'
+			+ '<span class="hsm-kd-badge ' + badgeClass + '">' + badgeLabel + '</span>'
+			+ '<span class="hsm-readability-score">' + passed + ' of ' + total + ' checks passed</span>'
+			+ '<ul class="hsm-readability-list">';
+
+		checks.forEach(function (c) {
+			var cls  = c.pass ? 'hsm-check-pass' : 'hsm-check-fail';
+			var icon = c.pass ? '✓' : '✗';
+			html += '<li class="hsm-check-item ' + cls + '">'
+				+ '<span class="hsm-check-icon">' + icon + '</span> '
+				+ '<span class="hsm-check-text">' + c.display + '</span>';
+			if (!c.pass) {
+				html += ' <span class="hsm-check-hint">' + c.hint + '</span>';
+			}
+			html += '</li>';
+		});
+
+		html += '</ul></div>';
+		$container.html(html);
+	}
+
 })(jQuery);
+

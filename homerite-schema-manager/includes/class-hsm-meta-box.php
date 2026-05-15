@@ -1043,6 +1043,17 @@ class HSM_Meta_Box {
 				</div>
 			</div>
 
+			<!-- ── Readability ── -->
+			<div class="hsm-analysis-card">
+				<h4 class="hsm-analysis-title">
+					<?php esc_html_e( 'Readability', 'homerite-schema' ); ?>
+					<?php echo self::tip( 'Readability checks assess how easy your content is for a general audience to read, based on sentence length, passive voice, transition words, paragraph size, and Flesch-Kincaid reading ease. Aim for "Good" on all checks.' ); // phpcs:ignore ?>
+				</h4>
+				<div id="hsm-readability-results">
+					<p class="description"><?php esc_html_e( 'Click "Scan Content" above to run a readability assessment.', 'homerite-schema' ); ?></p>
+				</div>
+			</div>
+
 		</div><!-- #hsm-tab-analysis -->
 		</div><!-- #hsm-meta-box-wrap -->
 		<?php
