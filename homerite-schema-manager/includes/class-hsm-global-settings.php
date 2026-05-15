@@ -751,6 +751,9 @@ class HSM_Global_Settings {
 
 				<?php submit_button( __( 'Save Settings', 'homerite-schema' ) ); ?>
 			</form>
+
+			<?php HSM_Google_Auth::render_settings_section(); ?>
+
 		</div>
 		<?php
 	}

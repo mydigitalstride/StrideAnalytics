@@ -40,6 +40,8 @@ class HSM_Admin {
 		$relevant = [
 			'toplevel_page_homerite-schema-settings',
 			'stride-analytics_page_hsm-redirects',
+			'stride-analytics_page_hsm-gbp',
+			'stride-analytics_page_hsm-gbp-jobs',
 			'post.php',
 			'post-new.php',
 		];
@@ -88,6 +90,9 @@ class HSM_Admin {
 
 		// Google Search status.
 		HSM_SEO_Status::render_widget_section();
+
+		// Google Business Profile health.
+		HSM_GBP::render_widget_section();
 
 		echo '<p class="hsm-widget-footer hsm-widget-settings-link">'
 			. '<a href="' . esc_url( admin_url( 'admin.php?page=homerite-schema-settings' ) ) . '">'
