@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       Stride Analytics
+ * Plugin Name:       ECHoS SEO Analytics
  * Plugin URI:        https://mydigitalstride.com/stride-analytics
- * Description:       All-in-one SEO, structured data (JSON-LD), and marketing analytics plugin. Manages LocalBusiness schema, XML sitemaps, redirect manager, 404 monitoring, multi-keyword clustering, readability analysis, WooCommerce integration, GTM, Facebook Pixel, LinkedIn Insight Tag, Google Search status monitoring, broadcast messages, and Google Business Profile management with geo-tagged job photo push.
+ * Description:       Engineering Construction Home Services SEO Analytics — All-in-one SEO, structured data (JSON-LD), and marketing analytics plugin. Manages LocalBusiness schema, XML sitemaps, redirect manager, 404 monitoring, multi-keyword clustering, readability analysis, WooCommerce integration, GTM, Facebook Pixel, LinkedIn Insight Tag, Google Search status monitoring, broadcast messages, and Google Business Profile management with geo-tagged job photo push.
  * Version:           2.4.0
  * Requires at least: 6.0
  * Requires PHP:      8.0

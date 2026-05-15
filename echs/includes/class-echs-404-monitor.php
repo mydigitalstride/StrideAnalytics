@@ -2,7 +2,7 @@
 /**
  * 404 error monitoring: DB logging, email notification, and admin UI.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -110,14 +110,14 @@ class ECHS_404_Monitor {
 		$body .= '<h3>How to fix this</h3>';
 		$body .= '<p><strong>Option 1 — Add a 301 Redirect (Recommended)</strong><br>';
 		$body .= 'If this page was moved or renamed, set up a redirect so visitors and search engines are sent to the right place.<br>';
-		$body .= '<a href="' . esc_url( $redirect_manager_url ) . '">&#8594; Add a redirect in Stride Analytics</a></p>';
+		$body .= '<a href="' . esc_url( $redirect_manager_url ) . '">&#8594; Add a redirect in ECHoS SEO Analytics</a></p>';
 		$body .= '<p><strong>Option 2 — Create content at this URL</strong><br>';
 		$body .= 'If this page should exist, create it in WordPress.</p>';
 		$body .= '<p><strong>Option 3 — Find and fix broken links</strong><br>';
 		$body .= 'Search your site and any external sources linking to this URL and update them.</p>';
 		$body .= $suggestion_block;
 		$body .= '<hr>';
-		$body .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=echs-404-monitor' ) ) . '">&#8594; View all 404 errors in Stride Analytics</a></p>';
+		$body .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=echs-404-monitor' ) ) . '">&#8594; View all 404 errors in ECHoS SEO Analytics</a></p>';
 
 		add_filter( 'wp_mail_content_type', [ __CLASS__, 'set_html_content_type' ] );
 

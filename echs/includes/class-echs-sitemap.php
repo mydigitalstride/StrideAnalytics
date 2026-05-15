@@ -2,7 +2,7 @@
 /**
  * XML sitemap generation, routing, and Google ping.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;

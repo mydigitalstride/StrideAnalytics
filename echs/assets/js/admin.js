@@ -1,5 +1,5 @@
 /**
- * Stride Analytics — Admin JS
+ * ECHoS SEO Analytics — Admin JS
  *
  * Handles:
  * - Tabbed interface (meta box)

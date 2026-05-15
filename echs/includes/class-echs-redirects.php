@@ -2,7 +2,7 @@
 /**
  * Redirect management: DB table, interception, and admin UI.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;

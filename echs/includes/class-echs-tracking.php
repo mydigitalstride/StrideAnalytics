@@ -2,7 +2,7 @@
 /**
  * Tracking scripts output and site behaviour controls.
  *
- * Merges features from the old "Stride Analytics - Basic" tracking plugin:
+ * Merges features from the old "ECHoS SEO Analytics - Basic" tracking plugin:
  *   - Google Tag Manager (GTM)
  *   - Facebook Pixel
  *   - LinkedIn Insight Tag
@@ -42,7 +42,7 @@ class ECHS_Tracking {
 			return;
 		}
 
-		echo '<!-- Stride Analytics Tracking -->' . "\n";
+		echo '<!-- ECHoS SEO Analytics Tracking -->' . "\n";
 
 		// Google Tag Manager — only fires after admin approval (Connect GTM).
 		if ( $gtm_id && get_option( 'gtm_approved' ) ) {

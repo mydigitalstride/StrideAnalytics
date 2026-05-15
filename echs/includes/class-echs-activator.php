@@ -2,7 +2,7 @@
 /**
  * Handles plugin activation, deactivation, and default options.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;

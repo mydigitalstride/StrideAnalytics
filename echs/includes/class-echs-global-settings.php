@@ -336,7 +336,7 @@ class ECHS_Global_Settings {
 		}
 		?>
 		<div class="wrap echs-settings-wrap">
-			<h1><?php esc_html_e( 'Stride Analytics — Global Settings', 'echs' ); ?></h1>
+			<h1><?php esc_html_e( 'ECHoS SEO Analytics — Global Settings', 'echs' ); ?></h1>
 
 			<?php if ( isset( $_GET['saved'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'echs' ); ?></p></div>

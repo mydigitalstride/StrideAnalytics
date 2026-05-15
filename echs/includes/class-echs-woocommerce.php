@@ -5,7 +5,7 @@
  * Auto-populates Product schema fields from WooCommerce data on product
  * edit screens, and outputs ItemList schema on product category archives.
  *
- * @package ECHS
+ * @package ECHoS_SEO_Analytics
  */
 
 defined( 'ABSPATH' ) || exit;
