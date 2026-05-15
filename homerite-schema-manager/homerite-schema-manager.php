@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Stride Analytics
  * Plugin URI:        https://mydigitalstride.com/stride-analytics
- * Description:       All-in-one SEO, structured data (JSON-LD), and marketing analytics plugin. Manages LocalBusiness, Service, Product, FAQPage, HowTo, Review, and BreadcrumbList schema types with per-page customization, WooCommerce integration, GTM, Facebook Pixel, LinkedIn Insight Tag, comment/pingback controls, Google Search status monitoring, and broadcast messages from Digital Stride.
- * Version:           2.1.0
+ * Description:       All-in-one SEO, structured data (JSON-LD), and marketing analytics plugin. Manages LocalBusiness, Service, Product, FAQPage, HowTo, Review, and BreadcrumbList schema types, XML sitemaps, redirect manager, WooCommerce integration, GTM, Facebook Pixel, LinkedIn Insight Tag, comment/pingback controls, Google Search status monitoring, and broadcast messages from Digital Stride.
+ * Version:           2.2.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Digital Stride
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Plugin constants.
-define( 'HSM_VERSION',     '2.1.0' );
+define( 'HSM_VERSION',     '2.2.0' );
 define( 'HSM_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'HSM_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'HSM_PLUGIN_FILE', __FILE__ );
@@ -44,6 +44,8 @@ $hsm_includes = [
 	'includes/class-hsm-woocommerce.php',
 	'includes/class-hsm-seo-status.php',
 	'includes/class-hsm-broadcast.php',
+	'includes/class-hsm-sitemap.php',
+	'includes/class-hsm-redirects.php',
 ];
 
 foreach ( $hsm_includes as $file ) {
@@ -66,5 +68,7 @@ function hsm_init(): void {
 	HSM_WooCommerce::init();
 	HSM_SEO_Status::init();
 	HSM_Broadcast::init();
+	HSM_Sitemap::init();
+	HSM_Redirects::init();
 }
 add_action( 'plugins_loaded', 'hsm_init' );

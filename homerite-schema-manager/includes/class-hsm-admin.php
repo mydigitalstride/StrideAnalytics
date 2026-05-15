@@ -28,6 +28,7 @@ class HSM_Admin {
 			'dashicons-chart-line',
 			25
 		);
+
 	}
 
 	/**
@@ -38,6 +39,7 @@ class HSM_Admin {
 	public static function enqueue_assets( string $hook ): void {
 		$relevant = [
 			'toplevel_page_homerite-schema-settings',
+			'stride-analytics_page_hsm-redirects',
 			'post.php',
 			'post-new.php',
 		];
