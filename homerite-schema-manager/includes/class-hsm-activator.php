@@ -13,6 +13,10 @@ class HSM_Activator {
 	 * Default global settings stored in wp_options.
 	 */
 	public static function activate(): void {
+		HSM_Sitemap::activate();
+		HSM_Redirects::create_table();
+		HSM_404_Monitor::create_table();
+
 		$defaults = [
 			// Business identity.
 			'hsm_business_name'   => get_bloginfo( 'name' ),

@@ -516,6 +516,100 @@ ul.hsm-tabs li:hover {
 .hsm-scan-list li { margin-bottom: 4px; }
 .hsm-scan-acf table { margin-top: 8px; }
 
+/* ─── Dashboard widget ───────────────────────────────────────────────── */
+.hsm-dashboard-widget {
+	font-size: 13px;
+}
+
+.hsm-broadcast-widget {
+	padding: 10px 14px;
+	margin-bottom: 16px;
+	background: #f6f7f7;
+	border-radius: 3px;
+}
+
+.hsm-widget-section-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	margin: 0 0 10px;
+	color: #1d2327;
+}
+
+.hsm-widget-section-title .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.hsm-status-list {
+	margin: 0 0 10px;
+	padding: 0;
+	list-style: none;
+}
+
+.hsm-status-list li {
+	display: flex;
+	align-items: baseline;
+	gap: 7px;
+	padding: 5px 0;
+	border-bottom: 1px solid #f0f0f1;
+	font-size: 12px;
+	flex-wrap: wrap;
+}
+
+.hsm-status-list li:last-child {
+	border-bottom: none;
+}
+
+.hsm-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+	position: relative;
+	top: 1px;
+}
+
+.hsm-dot-ok      { background: #00a32a; }
+.hsm-dot-warning { background: #dba617; }
+
+.hsm-status-title {
+	flex: 1;
+}
+
+.hsm-status-date {
+	color: #8c8f94;
+	font-size: .85em;
+	white-space: nowrap;
+}
+
+.hsm-widget-empty {
+	color: #50575e;
+	font-size: 12px;
+	margin: 0 0 10px;
+}
+
+.hsm-widget-footer {
+	text-align: right;
+	margin: 8px 0 0;
+	font-size: 12px;
+}
+
+.hsm-widget-settings-link {
+	border-top: 1px solid #f0f0f1;
+	padding-top: 8px;
+	margin-top: 12px;
+}
+
+/* Broadcast admin notice dismiss button positioning */
+.hsm-broadcast-notice {
+	padding-right: 38px;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 782px) {
 	.hsm-schema-types {
@@ -692,4 +786,94 @@ ul.hsm-tabs li:hover {
 	color: #00a32a;
 	font-size: .85em;
 	font-weight: 600;
+}
+
+/* ─── Readability ────────────────────────────────────────────────────── */
+.hsm-readability-score {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.hsm-readability-summary {
+	font-size: .85em;
+	color: #50575e;
+}
+
+.hsm-check-hint {
+	display: block;
+	font-size: .8em;
+	color: #50575e;
+	margin-left: 18px;
+	margin-top: 2px;
+}
+
+/* ─── Multi-keyword rows ─────────────────────────────────────────────── */
+.hsm-keyword-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.hsm-keyword-label {
+	font-size: .75em;
+	font-weight: 600;
+	color: #50575e;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	width: 62px;
+	flex-shrink: 0;
+}
+
+.hsm-keyword-input {
+	flex: 1;
+}
+
+/* ─── Keyword cluster analysis ───────────────────────────────────────── */
+.hsm-cluster-card {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 12px 14px;
+	margin-bottom: 10px;
+}
+
+.hsm-cluster-label {
+	font-size: .78em;
+	font-weight: 600;
+	color: #50575e;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	margin-bottom: 4px;
+}
+
+.hsm-cluster-keyword {
+	font-weight: 600;
+	font-size: .9em;
+	margin-bottom: 6px;
+}
+
+.hsm-cluster-mini-bar-track {
+	height: 8px;
+	background: #e0e0e0;
+	border-radius: 4px;
+	overflow: hidden;
+	margin-bottom: 4px;
+	position: relative;
+}
+
+.hsm-cluster-mini-bar-fill {
+	height: 100%;
+	border-radius: 4px;
+	transition: width .4s ease, background .4s;
+}
+
+.hsm-cluster-stats {
+	font-size: .8em;
+	color: #50575e;
+	display: flex;
+	gap: 14px;
+	flex-wrap: wrap;
 }
