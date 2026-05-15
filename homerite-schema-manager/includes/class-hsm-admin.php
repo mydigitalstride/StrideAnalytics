@@ -12,6 +12,7 @@ class HSM_Admin {
 	public static function init(): void {
 		add_action( 'admin_menu',            [ __CLASS__, 'register_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
+		add_action( 'wp_dashboard_setup',    [ __CLASS__, 'register_dashboard_widget' ] );
 	}
 
 	/**
@@ -67,5 +68,29 @@ class HSM_Admin {
 			'ajaxurl'       => admin_url( 'admin-ajax.php' ),
 			'businessTypes' => HSM_Global_Settings::get_business_categories(),
 		] );
+	}
+
+	public static function register_dashboard_widget(): void {
+		wp_add_dashboard_widget(
+			'hsm_dashboard_widget',
+			'Stride Analytics',
+			[ __CLASS__, 'render_dashboard_widget' ]
+		);
+	}
+
+	public static function render_dashboard_widget(): void {
+		echo '<div class="hsm-dashboard-widget">';
+
+		// Broadcast message (if any).
+		HSM_Broadcast::render_widget_section();
+
+		// Google Search status.
+		HSM_SEO_Status::render_widget_section();
+
+		echo '<p class="hsm-widget-footer hsm-widget-settings-link">'
+			. '<a href="' . esc_url( admin_url( 'admin.php?page=homerite-schema-settings' ) ) . '">'
+			. 'Stride Analytics Settings &rarr;</a></p>';
+
+		echo '</div>';
 	}
 }

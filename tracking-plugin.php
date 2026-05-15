@@ -1,39 +1,23 @@
 <?php
 /**
- * Plugin Name: Stride Analytics - Basic
- * Description: Automatically installs Google Tag Manager, Facebook Pixel, and LinkedIn Insight Tag. Includes UTM tracking, comment/pingback toggles, GA warning, and login/register for premium features.
- * Version: 1.1
+ * Plugin Name: Stride Analytics - Basic (Deprecated)
+ * Description: This plugin has been fully merged into Stride Analytics. Please deactivate and delete this plugin — all features are available in Stride Analytics.
+ * Version: 1.2
  * Author: Digital Stride
  */
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-define('TRACKING_PLUGIN_DIR', plugin_dir_path(__FILE__));
-
-require_once TRACKING_PLUGIN_DIR . 'includes/settings-page.php';
-require_once TRACKING_PLUGIN_DIR . 'includes/enqueue-scripts.php';
-require_once TRACKING_PLUGIN_DIR . 'includes/disable-comments.php';
-
-function tracking_plugin_activate() {
-    add_option('tracking_gtm_id', '');
-    add_option('tracking_facebook_pixel_id', '');
-    add_option('tracking_linkedin_partner_id', '');
-    add_option('utm_form_field', '');
-    add_option('disable_comments', '');
-    add_option('disable_pingbacks', '');
-    add_option('remove_ga_scripts', '');
-}
-register_activation_hook(__FILE__, 'tracking_plugin_activate');
-
-function tracking_plugin_uninstall() {
-    delete_option('tracking_gtm_id');
-    delete_option('tracking_facebook_pixel_id');
-    delete_option('tracking_linkedin_partner_id');
-    delete_option('utm_form_field');
-    delete_option('disable_comments');
-    delete_option('disable_pingbacks');
-    delete_option('remove_ga_scripts');
-}
-register_uninstall_hook(__FILE__, 'tracking_plugin_uninstall');
+add_action( 'admin_notices', static function (): void {
+	if ( ! current_user_can( 'activate_plugins' ) ) {
+		return;
+	}
+	echo '<div class="notice notice-warning">'
+		. '<p><strong>Stride Analytics - Basic</strong> is no longer needed. '
+		. 'All of its features (GTM, Facebook Pixel, LinkedIn Insight Tag, comment controls) '
+		. 'are now built into <strong>Stride Analytics</strong>. '
+		. 'Please <a href="' . esc_url( admin_url( 'plugins.php' ) ) . '">deactivate and delete</a> this plugin.</p>'
+		. '</div>';
+} );
