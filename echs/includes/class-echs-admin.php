@@ -2,12 +2,12 @@
 /**
  * Admin menu registration and asset enqueuing.
  *
- * @package HomeRite_Schema_Manager
+ * @package ECHS
  */
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_Admin {
+class ECHS_Admin {
 
 	public static function init(): void {
 		add_action( 'admin_menu',            [ __CLASS__, 'register_menu' ] );
@@ -20,11 +20,11 @@ class HSM_Admin {
 	 */
 	public static function register_menu(): void {
 		add_menu_page(
-			__( 'Stride Analytics', 'homerite-schema' ),
-			__( 'Stride Analytics', 'homerite-schema' ),
+			__( 'Stride Analytics', 'echs' ),
+			__( 'Stride Analytics', 'echs' ),
 			'manage_options',
-			'homerite-schema-settings',
-			[ 'HSM_Global_Settings', 'render_page' ],
+			'echs-settings',
+			[ 'ECHS_Global_Settings', 'render_page' ],
 			'dashicons-chart-line',
 			25
 		);
@@ -38,10 +38,10 @@ class HSM_Admin {
 	 */
 	public static function enqueue_assets( string $hook ): void {
 		$relevant = [
-			'toplevel_page_homerite-schema-settings',
-			'stride-analytics_page_hsm-redirects',
-			'stride-analytics_page_hsm-gbp',
-			'stride-analytics_page_hsm-gbp-jobs',
+			'toplevel_page_echs-settings',
+			'stride-analytics_page_echs-redirects',
+			'stride-analytics_page_echs-gbp',
+			'stride-analytics_page_echs-gbp-jobs',
 			'post.php',
 			'post-new.php',
 		];
@@ -51,51 +51,51 @@ class HSM_Admin {
 		}
 
 		wp_enqueue_style(
-			'hsm-admin',
-			HSM_PLUGIN_URL . 'assets/css/admin.css',
+			'echs-admin',
+			ECHS_PLUGIN_URL . 'assets/css/admin.css',
 			[],
-			HSM_VERSION
+			ECHS_VERSION
 		);
 
 		wp_enqueue_media(); // for image upload picker.
 
 		wp_enqueue_script(
-			'hsm-admin',
-			HSM_PLUGIN_URL . 'assets/js/admin.js',
+			'echs-admin',
+			ECHS_PLUGIN_URL . 'assets/js/admin.js',
 			[ 'jquery', 'jquery-ui-sortable' ],
-			HSM_VERSION,
+			ECHS_VERSION,
 			true
 		);
 
-		wp_localize_script( 'hsm-admin', 'hsmData', [
-			'nonce'         => wp_create_nonce( 'hsm_meta_box_nonce' ),
+		wp_localize_script( 'echs-admin', 'echsData', [
+			'nonce'         => wp_create_nonce( 'echs_meta_box_nonce' ),
 			'ajaxurl'       => admin_url( 'admin-ajax.php' ),
-			'businessTypes' => HSM_Global_Settings::get_business_categories(),
+			'businessTypes' => ECHS_Global_Settings::get_business_categories(),
 		] );
 	}
 
 	public static function register_dashboard_widget(): void {
 		wp_add_dashboard_widget(
-			'hsm_dashboard_widget',
+			'echs_dashboard_widget',
 			'Stride Analytics',
 			[ __CLASS__, 'render_dashboard_widget' ]
 		);
 	}
 
 	public static function render_dashboard_widget(): void {
-		echo '<div class="hsm-dashboard-widget">';
+		echo '<div class="echs-dashboard-widget">';
 
 		// Broadcast message (if any).
-		HSM_Broadcast::render_widget_section();
+		ECHS_Broadcast::render_widget_section();
 
 		// Google Search status.
-		HSM_SEO_Status::render_widget_section();
+		ECHS_SEO_Status::render_widget_section();
 
 		// Google Business Profile health.
-		HSM_GBP::render_widget_section();
+		ECHS_GBP::render_widget_section();
 
-		echo '<p class="hsm-widget-footer hsm-widget-settings-link">'
-			. '<a href="' . esc_url( admin_url( 'admin.php?page=homerite-schema-settings' ) ) . '">'
+		echo '<p class="echs-widget-footer echs-widget-settings-link">'
+			. '<a href="' . esc_url( admin_url( 'admin.php?page=echs-settings' ) ) . '">'
 			. 'Stride Analytics Settings &rarr;</a></p>';
 
 		echo '</div>';

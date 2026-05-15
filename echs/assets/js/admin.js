@@ -18,10 +18,10 @@
 	'use strict';
 
 	// ─── Tab switching ────────────────────────────────────────────────
-	$(document).on('click', '.hsm-tab-link', function () {
+	$(document).on('click', '.echs-tab-link', function () {
 		var target = $(this).data('tab');
-		$('.hsm-tab-link').removeClass('active');
-		$('.hsm-tab-panel').removeClass('active');
+		$('.echs-tab-link').removeClass('active');
+		$('.echs-tab-panel').removeClass('active');
 		$(this).addClass('active');
 		$('#' + target).addClass('active');
 	});
@@ -44,8 +44,8 @@
 	});
 
 	// ─── Cascading business type dropdowns ────────────────────────────
-	var $catDrop  = $('#hsm_business_category');
-	var $typeDrop = $('#hsm_schema_type');
+	var $catDrop  = $('#echs_business_category');
+	var $typeDrop = $('#echs_schema_type');
 
 	if ($catDrop.length && $typeDrop.length) {
 
@@ -111,87 +111,87 @@
 
 	// ─── OG "same as SEO Meta" sync + collapse ─────────────────────────
 	function syncOgToMeta() {
-		var title = $('#hsm_seo_title').val();
-		var desc  = $('#hsm_seo_description').val();
-		$('#hsm_og_title').val(title);
-		$('#hsm_og_description').val(desc);
+		var title = $('#echs_seo_title').val();
+		var desc  = $('#echs_seo_description').val();
+		$('#echs_og_title').val(title);
+		$('#echs_og_description').val(desc);
 	}
 
 	function applyOgSync(animate) {
-		var checked = $('#hsm_og_same_as_meta').is(':checked');
+		var checked = $('#echs_og_same_as_meta').is(':checked');
 		if (checked) {
 			syncOgToMeta();
 			if (animate) {
-				$('#hsm-og-custom-fields').slideUp(200);
+				$('#echs-og-custom-fields').slideUp(200);
 			} else {
-				$('#hsm-og-custom-fields').hide();
+				$('#echs-og-custom-fields').hide();
 			}
 		} else {
 			if (animate) {
-				$('#hsm-og-custom-fields').slideDown(200);
+				$('#echs-og-custom-fields').slideDown(200);
 			} else {
-				$('#hsm-og-custom-fields').show();
+				$('#echs-og-custom-fields').show();
 			}
 		}
 	}
 
-	$('#hsm_og_same_as_meta').on('change', function () { applyOgSync(true); });
+	$('#echs_og_same_as_meta').on('change', function () { applyOgSync(true); });
 	applyOgSync(false); // initialise on load
 
 	// Live sync when SEO fields change while OG is locked.
-	$(document).on('input', '#hsm_seo_title, #hsm_seo_description', function () {
-		if ($('#hsm_og_same_as_meta').is(':checked')) {
+	$(document).on('input', '#echs_seo_title, #echs_seo_description', function () {
+		if ($('#echs_og_same_as_meta').is(':checked')) {
 			syncOgToMeta();
 		}
 	});
 
 	// ─── Twitter (X) "same as SEO Meta" sync + collapse ──────────────
 	function syncTwitterToMeta() {
-		var title = $('#hsm_seo_title').val();
-		var desc  = $('#hsm_seo_description').val();
-		$('#hsm_twitter_title').val(title);
-		$('#hsm_twitter_description').val(desc);
+		var title = $('#echs_seo_title').val();
+		var desc  = $('#echs_seo_description').val();
+		$('#echs_twitter_title').val(title);
+		$('#echs_twitter_description').val(desc);
 	}
 
 	function applyTwitterSync(animate) {
-		var checked = $('#hsm_twitter_same_as_meta').is(':checked');
+		var checked = $('#echs_twitter_same_as_meta').is(':checked');
 		if (checked) {
 			syncTwitterToMeta();
 			if (animate) {
-				$('#hsm-twitter-custom-fields').slideUp(200);
+				$('#echs-twitter-custom-fields').slideUp(200);
 			} else {
-				$('#hsm-twitter-custom-fields').hide();
+				$('#echs-twitter-custom-fields').hide();
 			}
 		} else {
 			if (animate) {
-				$('#hsm-twitter-custom-fields').slideDown(200);
+				$('#echs-twitter-custom-fields').slideDown(200);
 			} else {
-				$('#hsm-twitter-custom-fields').show();
+				$('#echs-twitter-custom-fields').show();
 			}
 		}
 	}
 
-	$('#hsm_twitter_same_as_meta').on('change', function () { applyTwitterSync(true); });
+	$('#echs_twitter_same_as_meta').on('change', function () { applyTwitterSync(true); });
 	applyTwitterSync(false); // initialise on load
 
 	// Live sync Twitter when SEO fields change while Twitter is locked.
-	$(document).on('input', '#hsm_seo_title, #hsm_seo_description', function () {
-		if ($('#hsm_twitter_same_as_meta').is(':checked')) {
+	$(document).on('input', '#echs_seo_title, #echs_seo_description', function () {
+		if ($('#echs_twitter_same_as_meta').is(':checked')) {
 			syncTwitterToMeta();
 		}
 	});
 
 	// ─── Repeatable rows (service areas, sameAs) ──────────────────────
-	$(document).on('click', '.hsm-add-area', function () {
+	$(document).on('click', '.echs-add-area', function () {
 		var target      = $(this).data('target');
 		var name        = $(this).data('name');
 		var type        = $(this).data('type') || 'text';
 		var placeholder = type === 'url' ? 'https://' : '';
 
 		var $row = $(
-			'<div class="hsm-repeatable-row">' +
+			'<div class="echs-repeatable-row">' +
 			'<input type="' + type + '" name="' + name + '" value="" class="regular-text" placeholder="' + placeholder + '">' +
-			'<button type="button" class="button hsm-remove-row">Remove</button>' +
+			'<button type="button" class="button echs-remove-row">Remove</button>' +
 			'</div>'
 		);
 
@@ -199,140 +199,140 @@
 		$row.find('input').focus();
 	});
 
-	$(document).on('click', '.hsm-remove-row', function () {
+	$(document).on('click', '.echs-remove-row', function () {
 		var $list = $(this).closest('[id]');
-		if ($list.find('.hsm-repeatable-row').length > 1) {
-			$(this).closest('.hsm-repeatable-row').remove();
+		if ($list.find('.echs-repeatable-row').length > 1) {
+			$(this).closest('.echs-repeatable-row').remove();
 		} else {
-			$(this).closest('.hsm-repeatable-row').find('input').val('');
+			$(this).closest('.echs-repeatable-row').find('input').val('');
 		}
 	});
 
 	// ─── Team member rows ─────────────────────────────────────────────
-	$(document).on('click', '.hsm-add-team-member', function () {
+	$(document).on('click', '.echs-add-team-member', function () {
 		var $row = $(
-			'<div class="hsm-repeatable-row hsm-team-row">' +
-			'<input type="text" name="hsm_team_name[]"      value="" placeholder="e.g. Jane Smith">' +
-			'<input type="text" name="hsm_team_job_title[]" value="" placeholder="e.g. CEO / Founder">' +
-			'<input type="url"  name="hsm_team_linkedin[]"  value="" placeholder="https://linkedin.com/in/...">' +
-			'<input type="url"  name="hsm_team_image[]"     value="" placeholder="optional">' +
-			'<button type="button" class="button hsm-remove-team-row">Remove</button>' +
+			'<div class="echs-repeatable-row echs-team-row">' +
+			'<input type="text" name="echs_team_name[]"      value="" placeholder="e.g. Jane Smith">' +
+			'<input type="text" name="echs_team_job_title[]" value="" placeholder="e.g. CEO / Founder">' +
+			'<input type="url"  name="echs_team_linkedin[]"  value="" placeholder="https://linkedin.com/in/...">' +
+			'<input type="url"  name="echs_team_image[]"     value="" placeholder="optional">' +
+			'<button type="button" class="button echs-remove-team-row">Remove</button>' +
 			'</div>'
 		);
 		$('#' + $(this).data('target')).append($row);
 		$row.find('input').first().focus();
 	});
 
-	$(document).on('click', '.hsm-remove-team-row', function () {
-		var $list = $('#hsm-team-list');
-		if ($list.find('.hsm-team-row').length > 1) {
-			$(this).closest('.hsm-team-row').remove();
+	$(document).on('click', '.echs-remove-team-row', function () {
+		var $list = $('#echs-team-list');
+		if ($list.find('.echs-team-row').length > 1) {
+			$(this).closest('.echs-team-row').remove();
 		} else {
-			$(this).closest('.hsm-team-row').find('input').val('');
+			$(this).closest('.echs-team-row').find('input').val('');
 		}
 	});
 
 	// ─── FAQ rows ─────────────────────────────────────────────────────
-	$('#hsm-add-faq-row').on('click', function () {
+	$('#echs-add-faq-row').on('click', function () {
 		var $row = $(
-			'<div class="hsm-faq-row">' +
-			'<div class="hsm-faq-handle">&#9776;</div>' +
-			'<div class="hsm-faq-fields">' +
-			'<input type="text" name="hsm_faq_question[]" placeholder="Question" class="large-text">' +
-			'<textarea name="hsm_faq_answer[]" rows="2" class="large-text" placeholder="Answer"></textarea>' +
+			'<div class="echs-faq-row">' +
+			'<div class="echs-faq-handle">&#9776;</div>' +
+			'<div class="echs-faq-fields">' +
+			'<input type="text" name="echs_faq_question[]" placeholder="Question" class="large-text">' +
+			'<textarea name="echs_faq_answer[]" rows="2" class="large-text" placeholder="Answer"></textarea>' +
 			'</div>' +
-			'<button type="button" class="button hsm-remove-faq-row">Remove</button>' +
+			'<button type="button" class="button echs-remove-faq-row">Remove</button>' +
 			'</div>'
 		);
-		$('#hsm-faq-list').append($row);
+		$('#echs-faq-list').append($row);
 		$row.find('input').first().focus();
 	});
 
-	$(document).on('click', '.hsm-remove-faq-row', function () {
-		if ($('#hsm-faq-list .hsm-faq-row').length > 1) {
-			$(this).closest('.hsm-faq-row').remove();
+	$(document).on('click', '.echs-remove-faq-row', function () {
+		if ($('#echs-faq-list .echs-faq-row').length > 1) {
+			$(this).closest('.echs-faq-row').remove();
 		} else {
-			$(this).closest('.hsm-faq-row').find('input, textarea').val('');
+			$(this).closest('.echs-faq-row').find('input, textarea').val('');
 		}
 	});
 
 	if (typeof $.fn.sortable !== 'undefined') {
-		$('#hsm-faq-list').sortable({ handle: '.hsm-faq-handle', axis: 'y', tolerance: 'pointer' });
+		$('#echs-faq-list').sortable({ handle: '.echs-faq-handle', axis: 'y', tolerance: 'pointer' });
 	}
 
 	// ─── HowTo step rows ──────────────────────────────────────────────
-	$('#hsm-add-howto-row').on('click', function () {
+	$('#echs-add-howto-row').on('click', function () {
 		var $row = $(
-			'<div class="hsm-howto-row">' +
-			'<div class="hsm-faq-handle">&#9776;</div>' +
-			'<div class="hsm-faq-fields">' +
-			'<input type="text" name="hsm_howto_step_name[]" placeholder="Step title (e.g. Remove damaged shingle)" class="large-text">' +
-			'<textarea name="hsm_howto_step_text[]" rows="2" class="large-text" placeholder="Step instructions\u2026"></textarea>' +
+			'<div class="echs-howto-row">' +
+			'<div class="echs-faq-handle">&#9776;</div>' +
+			'<div class="echs-faq-fields">' +
+			'<input type="text" name="echs_howto_step_name[]" placeholder="Step title (e.g. Remove damaged shingle)" class="large-text">' +
+			'<textarea name="echs_howto_step_text[]" rows="2" class="large-text" placeholder="Step instructions\u2026"></textarea>' +
 			'</div>' +
-			'<button type="button" class="button hsm-remove-howto-row">Remove</button>' +
+			'<button type="button" class="button echs-remove-howto-row">Remove</button>' +
 			'</div>'
 		);
-		$('#hsm-howto-list').append($row);
+		$('#echs-howto-list').append($row);
 		$row.find('input').first().focus();
 	});
 
-	$(document).on('click', '.hsm-remove-howto-row', function () {
-		if ($('#hsm-howto-list .hsm-howto-row').length > 1) {
-			$(this).closest('.hsm-howto-row').remove();
+	$(document).on('click', '.echs-remove-howto-row', function () {
+		if ($('#echs-howto-list .echs-howto-row').length > 1) {
+			$(this).closest('.echs-howto-row').remove();
 		} else {
-			$(this).closest('.hsm-howto-row').find('input, textarea').val('');
+			$(this).closest('.echs-howto-row').find('input, textarea').val('');
 		}
 	});
 
 	if (typeof $.fn.sortable !== 'undefined') {
-		$('#hsm-howto-list').sortable({ handle: '.hsm-faq-handle', axis: 'y', tolerance: 'pointer' });
+		$('#echs-howto-list').sortable({ handle: '.echs-faq-handle', axis: 'y', tolerance: 'pointer' });
 	}
 
 	// ─── Secondary location blocks ────────────────────────────────────
-	$('#hsm-add-location').on('click', function () {
+	$('#echs-add-location').on('click', function () {
 		var $block = $(
-			'<div class="hsm-location-block">' +
-			'<div class="hsm-location-block-header">' +
-			'<input type="text" name="hsm_loc_label[]" value="" class="regular-text hsm-location-label-input" placeholder="Location name (e.g. Boalsburg Office)">' +
-			'<button type="button" class="button hsm-remove-location">Remove</button>' +
+			'<div class="echs-location-block">' +
+			'<div class="echs-location-block-header">' +
+			'<input type="text" name="echs_loc_label[]" value="" class="regular-text echs-location-label-input" placeholder="Location name (e.g. Boalsburg Office)">' +
+			'<button type="button" class="button echs-remove-location">Remove</button>' +
 			'</div>' +
-			'<div class="hsm-location-block-fields">' +
-			'<input type="text" name="hsm_loc_street[]" value="" class="regular-text" placeholder="Street Address">' +
-			'<input type="text" name="hsm_loc_city[]"   value="" class="regular-text" placeholder="City">' +
-			'<input type="text" name="hsm_loc_state[]"  value="" class="small-text"   placeholder="State">' +
-			'<input type="text" name="hsm_loc_zip[]"    value="" class="small-text"   placeholder="ZIP">' +
+			'<div class="echs-location-block-fields">' +
+			'<input type="text" name="echs_loc_street[]" value="" class="regular-text" placeholder="Street Address">' +
+			'<input type="text" name="echs_loc_city[]"   value="" class="regular-text" placeholder="City">' +
+			'<input type="text" name="echs_loc_state[]"  value="" class="small-text"   placeholder="State">' +
+			'<input type="text" name="echs_loc_zip[]"    value="" class="small-text"   placeholder="ZIP">' +
 			'</div>' +
 			'</div>'
 		);
-		$('#hsm-locations-list').append($block);
-		$block.find('.hsm-location-label-input').focus();
+		$('#echs-locations-list').append($block);
+		$block.find('.echs-location-label-input').focus();
 	});
 
-	$(document).on('click', '.hsm-remove-location', function () {
-		var $list = $('#hsm-locations-list');
-		if ($list.find('.hsm-location-block').length > 1) {
-			$(this).closest('.hsm-location-block').remove();
+	$(document).on('click', '.echs-remove-location', function () {
+		var $list = $('#echs-locations-list');
+		if ($list.find('.echs-location-block').length > 1) {
+			$(this).closest('.echs-location-block').remove();
 		} else {
-			$(this).closest('.hsm-location-block').find('input').val('');
+			$(this).closest('.echs-location-block').find('input').val('');
 		}
 	});
 
 	// ─── Address → Lat/Long geocoding ─────────────────────────────────
-	$('#hsm-find-coords').on('click', function () {
-		var street = $('#hsm_street').val().trim();
-		var city   = $('#hsm_city').val().trim();
-		var state  = $('#hsm_state').val().trim();
-		var zip    = $('#hsm_zip').val().trim();
+	$('#echs-find-coords').on('click', function () {
+		var street = $('#echs_street').val().trim();
+		var city   = $('#echs_city').val().trim();
+		var state  = $('#echs_state').val().trim();
+		var zip    = $('#echs_zip').val().trim();
 
 		var parts  = [street, city, state, zip].filter(Boolean);
 		if (!parts.length) {
-			$('#hsm-geo-status').text('Please fill in an address first.');
+			$('#echs-geo-status').text('Please fill in an address first.');
 			return;
 		}
 
 		var query   = parts.join(', ');
 		var $btn    = $(this);
-		var $status = $('#hsm-geo-status');
+		var $status = $('#echs-geo-status');
 
 		$btn.prop('disabled', true).text('Searching\u2026');
 		$status.text('');
@@ -345,8 +345,8 @@
 		.then(function (r) { return r.json(); })
 		.then(function (data) {
 			if (data && data.length > 0) {
-				$('#hsm_latitude').val(parseFloat(data[0].lat).toFixed(6));
-				$('#hsm_longitude').val(parseFloat(data[0].lon).toFixed(6));
+				$('#echs_latitude').val(parseFloat(data[0].lat).toFixed(6));
+				$('#echs_longitude').val(parseFloat(data[0].lon).toFixed(6));
 				$status.css('color', '#00a32a').text('\u2713 Coordinates found! Save settings to keep them.');
 			} else {
 				$status.css('color', '#d63638').text('Address not found. Try a more specific address.');
@@ -362,17 +362,17 @@
 
 	// ─── Character counter for meta description ────────────────────────
 	function updateCharCount($textarea) {
-		var $counter = $textarea.closest('td').find('.hsm-char-count');
+		var $counter = $textarea.closest('td').find('.echs-char-count');
 		if (!$counter.length) return;
 
 		var current = $textarea.val().length;
 		var max     = parseInt($counter.data('max'), 10) || 160;
 
 		$counter.text(current + ' / ' + max + ' characters');
-		$counter.toggleClass('hsm-over-limit', current > max);
+		$counter.toggleClass('echs-over-limit', current > max);
 	}
 
-	$('#hsm_seo_description').on('input', function () {
+	$('#echs_seo_description').on('input', function () {
 		updateCharCount($(this));
 	}).trigger('input');
 
@@ -382,7 +382,7 @@
 	 * Get the post body as plain text from whichever editor is active.
 	 * Handles Gutenberg, TinyMCE, and plain textarea.
 	 */
-	function hsmGetEditorText() {
+	function echsGetEditorText() {
 		if (
 			typeof wp !== 'undefined' &&
 			wp.data &&
@@ -405,38 +405,38 @@
 		return ($('#content').val() || '').replace(/<[^>]+>/g, ' ');
 	}
 
-	function hsmCountOccurrences(haystack, needle) {
+	function echsCountOccurrences(haystack, needle) {
 		if (!needle) return 0;
 		var escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		var matches = haystack.match(new RegExp('\\b' + escaped + '\\b', 'gi'));
 		return matches ? matches.length : 0;
 	}
 
-	function hsmWordCount(text) {
+	function echsWordCount(text) {
 		var trimmed = text.replace(/\s+/g, ' ').trim();
 		return trimmed ? trimmed.split(' ').length : 0;
 	}
 
-	function hsmDensityLevel(pct) {
-		if (pct === 0) return { label: 'Not found',     cls: 'hsm-level-none' };
-		if (pct < 0.5) return { label: 'Too low',       cls: 'hsm-level-low' };
-		if (pct < 1)   return { label: 'Could be more', cls: 'hsm-level-fair' };
-		if (pct <= 3)  return { label: 'Optimal',       cls: 'hsm-level-optimal' };
-		if (pct <= 5)  return { label: 'High',          cls: 'hsm-level-high' };
-		return               { label: 'Over-optimised', cls: 'hsm-level-over' };
+	function echsDensityLevel(pct) {
+		if (pct === 0) return { label: 'Not found',     cls: 'echs-level-none' };
+		if (pct < 0.5) return { label: 'Too low',       cls: 'echs-level-low' };
+		if (pct < 1)   return { label: 'Could be more', cls: 'echs-level-fair' };
+		if (pct <= 3)  return { label: 'Optimal',       cls: 'echs-level-optimal' };
+		if (pct <= 5)  return { label: 'High',          cls: 'echs-level-high' };
+		return               { label: 'Over-optimised', cls: 'echs-level-over' };
 	}
 
-	function hsmPlacementChecklist(keyword) {
+	function echsPlacementChecklist(keyword) {
 		if (!keyword) return [];
 		var re    = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
 		var items = [];
-		items.push({ pass: re.test($('#hsm_seo_title').val() || document.title || ''), text: 'In page title' });
-		items.push({ pass: re.test($('#hsm_seo_description').val() || ''), text: 'In meta description' });
+		items.push({ pass: re.test($('#echs_seo_title').val() || document.title || ''), text: 'In page title' });
+		items.push({ pass: re.test($('#echs_seo_description').val() || ''), text: 'In meta description' });
 		items.push({ pass: true, text: 'Focus keyword is set' });
 		return items;
 	}
 
-	var hsmSuggestionRules = [
+	var echsSuggestionRules = [
 		{
 			type: 'FAQPage', label: 'FAQPage',
 			reason: 'Page contains question-and-answer patterns (multiple "?" or Q&A headings).',
@@ -481,61 +481,61 @@
 	];
 
 	/** Render keyword density and schema suggestions from a plain-text string. */
-	function hsmRenderAnalysis(text) {
-		var keywords = hsmGetKeywords();
+	function echsRenderAnalysis(text) {
+		var keywords = echsGetKeywords();
 		var keyword = keywords[0] || '';
-		var wordCnt = hsmWordCount(text);
+		var wordCnt = echsWordCount(text);
 
-		$('#hsm-kd-keyword-label').text(keyword || '(none set)');
+		$('#echs-kd-keyword-label').text(keyword || '(none set)');
 
 		if (!keyword) {
-			$('#hsm-kd-results').hide();
-			$('#hsm-kd-no-keyword').show();
-			$('#hsm-cluster-results').hide();
+			$('#echs-kd-results').hide();
+			$('#echs-kd-no-keyword').show();
+			$('#echs-cluster-results').hide();
 		} else {
-			$('#hsm-kd-no-keyword').hide();
-			$('#hsm-kd-results').show();
+			$('#echs-kd-no-keyword').hide();
+			$('#echs-kd-results').show();
 
-			var count   = hsmCountOccurrences(text, keyword);
+			var count   = echsCountOccurrences(text, keyword);
 			var density = wordCnt > 0 ? (count / wordCnt * 100) : 0;
-			var level   = hsmDensityLevel(density);
+			var level   = echsDensityLevel(density);
 			var barPct  = Math.min(density / 4 * 100, 100);
 
-			$('#hsm-kd-bar').css('width', barPct + '%').attr('class', 'hsm-meter-fill ' + level.cls);
-			$('#hsm-kd-density').text(density.toFixed(2) + '%');
-			$('#hsm-kd-count').text(count);
-			$('#hsm-kd-words').text(wordCnt.toLocaleString());
-			$('#hsm-kd-badge').text(level.label).attr('class', 'hsm-kd-badge ' + level.cls);
+			$('#echs-kd-bar').css('width', barPct + '%').attr('class', 'echs-meter-fill ' + level.cls);
+			$('#echs-kd-density').text(density.toFixed(2) + '%');
+			$('#echs-kd-count').text(count);
+			$('#echs-kd-words').text(wordCnt.toLocaleString());
+			$('#echs-kd-badge').text(level.label).attr('class', 'echs-kd-badge ' + level.cls);
 
-			var $cl = $('#hsm-kd-checklist').empty();
-			$.each(hsmPlacementChecklist(keyword), function (i, item) {
+			var $cl = $('#echs-kd-checklist').empty();
+			$.each(echsPlacementChecklist(keyword), function (i, item) {
 				$cl.append(
-					'<div class="hsm-check-item ' + (item.pass ? 'hsm-check-pass' : 'hsm-check-fail') + '">' +
+					'<div class="echs-check-item ' + (item.pass ? 'echs-check-pass' : 'echs-check-fail') + '">' +
 					(item.pass ? '&#10003;' : '&#10007;') + ' ' + item.text + '</div>'
 				);
 			});
 
-			hsmRenderCluster(text, keywords);
+			echsRenderCluster(text, keywords);
 		}
 
-		var $list = $('#hsm-suggestions-list').empty();
-		var found = $.grep(hsmSuggestionRules, function (rule) { return rule.test(text); });
+		var $list = $('#echs-suggestions-list').empty();
+		var found = $.grep(echsSuggestionRules, function (rule) { return rule.test(text); });
 
 		if (!found.length) {
 			$list.html('<p class="description">No strong pattern signals found. Try adding more content, then scan again.</p>');
 		} else {
 			$.each(found, function (i, rule) {
-				var alreadyOn = $('[name="hsm_schema_enable_' + rule.type + '"]').is(':checked');
+				var alreadyOn = $('[name="echs_schema_enable_' + rule.type + '"]').is(':checked');
 				$list.append(
-					'<div class="hsm-suggestion-card">' +
-					'<div class="hsm-suggestion-info">' +
-					'<strong class="hsm-suggestion-type">' + rule.label + '</strong>' +
-					'<span class="hsm-suggestion-reason">' + rule.reason + '</span>' +
+					'<div class="echs-suggestion-card">' +
+					'<div class="echs-suggestion-info">' +
+					'<strong class="echs-suggestion-type">' + rule.label + '</strong>' +
+					'<span class="echs-suggestion-reason">' + rule.reason + '</span>' +
 					'</div>' +
-					'<div class="hsm-suggestion-action">' +
+					'<div class="echs-suggestion-action">' +
 					(alreadyOn
-						? '<span class="hsm-suggestion-active">&#10003; Already enabled</span>'
-						: '<button type="button" class="button button-small hsm-apply-suggestion" data-type="' + rule.type + '">Apply</button>'
+						? '<span class="echs-suggestion-active">&#10003; Already enabled</span>'
+						: '<button type="button" class="button button-small echs-apply-suggestion" data-type="' + rule.type + '">Apply</button>'
 					) +
 					'</div></div>'
 				);
@@ -550,14 +550,14 @@
 	 * scan endpoint so the rendered HTML — which includes all ACF output — is
 	 * used for keyword density and schema suggestions.
 	 */
-	function hsmRunAnalysis() {
-		var $btn       = $('#hsm-ca-scan');
-		var editorText = hsmGetEditorText();
+	function echsRunAnalysis() {
+		var $btn       = $('#echs-ca-scan');
+		var editorText = echsGetEditorText();
 
 		// If the editor has enough content, use it directly — no AJAX needed.
 		if (editorText.trim().length >= 100) {
-			hsmRenderAnalysis(editorText);
-			hsmRenderReadability(editorText);
+			echsRenderAnalysis(editorText);
+			echsRenderReadability(editorText);
 			return;
 		}
 
@@ -565,167 +565,167 @@
 		// Fall back to the rendered page via the AJAX scan endpoint.
 		var postId = $('[data-post-id]').first().data('post-id');
 		if (!postId) {
-			hsmRenderAnalysis(editorText);
-			hsmRenderReadability(editorText);
+			echsRenderAnalysis(editorText);
+			echsRenderReadability(editorText);
 			return;
 		}
 
 		$btn.prop('disabled', true).text('Scanning\u2026');
 
-		$.post(hsmData.ajaxurl, {
-			action:  'hsm_scan_content',
-			nonce:   hsmData.nonce,
+		$.post(echsData.ajaxurl, {
+			action:  'echs_scan_content',
+			nonce:   echsData.nonce,
 			post_id: postId,
 		})
 		.done(function (response) {
 			var text = (response.success && response.data && response.data.page_text)
 				? response.data.page_text
 				: editorText;
-			hsmRenderAnalysis(text);
-			hsmRenderReadability(text);
+			echsRenderAnalysis(text);
+			echsRenderReadability(text);
 		})
 		.fail(function () {
-			hsmRenderAnalysis(editorText);
-			hsmRenderReadability(editorText);
+			echsRenderAnalysis(editorText);
+			echsRenderReadability(editorText);
 		})
 		.always(function () {
 			$btn.prop('disabled', false).text('\u8635 Scan Content');
 		});
 	}
 
-	$('#hsm-ca-scan').on('click', hsmRunAnalysis);
+	$('#echs-ca-scan').on('click', echsRunAnalysis);
 
-	$(document).on('click', '.hsm-apply-suggestion', function () {
+	$(document).on('click', '.echs-apply-suggestion', function () {
 		var type = $(this).data('type');
-		var $cb  = $('[name="hsm_schema_enable_' + type + '"]');
+		var $cb  = $('[name="echs_schema_enable_' + type + '"]');
 		if ($cb.length) {
 			$cb.prop('checked', true).trigger('change');
-			$('[data-tab="hsm-tab-schema"]').trigger('click');
-			var $section = $('#hsm-schema-section-' + type.toLowerCase());
+			$('[data-tab="echs-tab-schema"]').trigger('click');
+			var $section = $('#echs-schema-section-' + type.toLowerCase());
 			if ($section.length) {
 				$('html, body').animate({ scrollTop: $section.offset().top - 40 }, 300);
 			}
 		}
-		hsmRunAnalysis();
+		echsRunAnalysis();
 	});
 
 	// ─── Scan Content (Schema tab — AJAX) ────────────────────────────
 
-	function hsmEsc(str) {
+	function echsEsc(str) {
 		return $('<div>').text(String(str)).html();
 	}
 
-	function hsmScanField(label, value, targetSelector) {
+	function echsScanField(label, value, targetSelector) {
 		var display = value.length > 200 ? value.substring(0, 200) + '…' : value;
-		return '<div class="hsm-scan-field">' +
-			'<div class="hsm-scan-field-label">' + hsmEsc(label) + '</div>' +
-			'<div class="hsm-scan-field-value">' + hsmEsc(display) + '</div>' +
-			'<button type="button" class="button button-small hsm-apply-field" ' +
-				'data-target="' + hsmEsc(targetSelector) + '" ' +
-				'data-value="' + hsmEsc(value) + '">' +
+		return '<div class="echs-scan-field">' +
+			'<div class="echs-scan-field-label">' + echsEsc(label) + '</div>' +
+			'<div class="echs-scan-field-value">' + echsEsc(display) + '</div>' +
+			'<button type="button" class="button button-small echs-apply-field" ' +
+				'data-target="' + echsEsc(targetSelector) + '" ' +
+				'data-value="' + echsEsc(value) + '">' +
 				'Apply to field' +
 			'</button>' +
 		'</div>';
 	}
 
-	$('#hsm-scan-content').on('click', function () {
+	$('#echs-scan-content').on('click', function () {
 		var $btn     = $(this);
-		var $status  = $('#hsm-scan-status');
-		var $results = $('#hsm-scan-results');
+		var $status  = $('#echs-scan-status');
+		var $results = $('#echs-scan-results');
 		var postId   = $btn.data('post-id');
 
 		$btn.prop('disabled', true).text('Scanning\u2026');
-		$status.removeClass('hsm-scan-ok hsm-scan-err').text('');
+		$status.removeClass('echs-scan-ok echs-scan-err').text('');
 		$results.hide().html('');
 
-		$.post(hsmData.ajaxurl, {
-			action:  'hsm_scan_content',
-			nonce:   hsmData.nonce,
+		$.post(echsData.ajaxurl, {
+			action:  'echs_scan_content',
+			nonce:   echsData.nonce,
 			post_id: postId
 		})
 		.done(function (response) {
 			$btn.prop('disabled', false).text('\uD83D\uDD0D Scan Content');
 
 			if (!response.success) {
-				$status.addClass('hsm-scan-err').text(response.data || 'Scan failed.');
+				$status.addClass('echs-scan-err').text(response.data || 'Scan failed.');
 				return;
 			}
 
 			var d    = response.data;
-			var html = '<div class="hsm-scan-panel">';
-			html += '<p class="hsm-scan-source">Source: <strong>' + hsmEsc(d.source || 'post content') + '</strong></p>';
+			var html = '<div class="echs-scan-panel">';
+			html += '<p class="echs-scan-source">Source: <strong>' + echsEsc(d.source || 'post content') + '</strong></p>';
 
 			// ── SEO fields ──
 			var seoHtml = '';
-			if (d.seo_title)       seoHtml += hsmScanField('SEO Title',        d.seo_title,       '#hsm_seo_title');
-			if (d.seo_description) seoHtml += hsmScanField('Meta Description',  d.seo_description, '#hsm_seo_description');
-			if (seoHtml) html += '<div class="hsm-scan-group"><h4>SEO</h4>' + seoHtml + '</div>';
+			if (d.seo_title)       seoHtml += echsScanField('SEO Title',        d.seo_title,       '#echs_seo_title');
+			if (d.seo_description) seoHtml += echsScanField('Meta Description',  d.seo_description, '#echs_seo_description');
+			if (seoHtml) html += '<div class="echs-scan-group"><h4>SEO</h4>' + seoHtml + '</div>';
 
 			// ── Service fields ──
 			var svcHtml = '';
-			if (d.service_name)        svcHtml += hsmScanField('Service Name',        d.service_name,        '#hsm_service_name');
-			if (d.service_description) svcHtml += hsmScanField('Service Description', d.service_description, '#hsm_service_description');
-			if (svcHtml) html += '<div class="hsm-scan-group"><h4>Service</h4>' + svcHtml + '</div>';
+			if (d.service_name)        svcHtml += echsScanField('Service Name',        d.service_name,        '#echs_service_name');
+			if (d.service_description) svcHtml += echsScanField('Service Description', d.service_description, '#echs_service_description');
+			if (svcHtml) html += '<div class="echs-scan-group"><h4>Service</h4>' + svcHtml + '</div>';
 
 			// ── Product fields ──
 			var prodHtml = '';
-			if (d.product_name)        prodHtml += hsmScanField('Product Name',        d.product_name,        '#hsm_product_name');
-			if (d.product_description) prodHtml += hsmScanField('Product Description', d.product_description, '#hsm_product_description');
-			if (prodHtml) html += '<div class="hsm-scan-group"><h4>Product</h4>' + prodHtml + '</div>';
+			if (d.product_name)        prodHtml += echsScanField('Product Name',        d.product_name,        '#echs_product_name');
+			if (d.product_description) prodHtml += echsScanField('Product Description', d.product_description, '#echs_product_description');
+			if (prodHtml) html += '<div class="echs-scan-group"><h4>Product</h4>' + prodHtml + '</div>';
 
 			// ── FAQs ──
 			if (d.faqs && d.faqs.length) {
-				html += '<div class="hsm-scan-group">';
+				html += '<div class="echs-scan-group">';
 				html += '<h4>FAQs found (' + d.faqs.length + ')' +
-					' <button type="button" class="button button-small hsm-apply-faqs">Apply all FAQs</button></h4>';
-				html += '<ol class="hsm-scan-list">';
+					' <button type="button" class="button button-small echs-apply-faqs">Apply all FAQs</button></h4>';
+				html += '<ol class="echs-scan-list">';
 				$.each(d.faqs, function (i, faq) {
-					html += '<li><em>' + hsmEsc(faq.question) + '</em></li>';
+					html += '<li><em>' + echsEsc(faq.question) + '</em></li>';
 				});
 				html += '</ol></div>';
 			}
 
 			// ── HowTo steps ──
 			if (d.howto_steps && d.howto_steps.length) {
-				html += '<div class="hsm-scan-group">';
+				html += '<div class="echs-scan-group">';
 				html += '<h4>HowTo Steps found (' + d.howto_steps.length + ')' +
-					' <button type="button" class="button button-small hsm-apply-steps">Apply all Steps</button></h4>';
-				html += '<ol class="hsm-scan-list">';
+					' <button type="button" class="button button-small echs-apply-steps">Apply all Steps</button></h4>';
+				html += '<ol class="echs-scan-list">';
 				$.each(d.howto_steps, function (i, step) {
-					html += '<li>' + hsmEsc(step.name) + '</li>';
+					html += '<li>' + echsEsc(step.name) + '</li>';
 				});
 				html += '</ol></div>';
 			}
 
 			// ── ACF fields ──
 			if (d.acf_fields && Object.keys(d.acf_fields).length) {
-				html += '<div class="hsm-scan-group hsm-scan-acf">';
+				html += '<div class="echs-scan-group echs-scan-acf">';
 				html += '<h4>ACF Fields detected</h4>';
 				html += '<table class="widefat striped"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>';
 				$.each(d.acf_fields, function (key, value) {
 					var display = String(value).length > 120 ? String(value).substring(0, 120) + '…' : value;
-					html += '<tr><td><code>' + hsmEsc(key) + '</code></td><td>' + hsmEsc(display) + '</td></tr>';
+					html += '<tr><td><code>' + echsEsc(key) + '</code></td><td>' + echsEsc(display) + '</td></tr>';
 				});
 				html += '</tbody></table></div>';
 			}
 
-			if (html === '<div class="hsm-scan-panel"><p class="hsm-scan-source">Source: <strong>' + hsmEsc(d.source || 'post content') + '</strong></p>') {
+			if (html === '<div class="echs-scan-panel"><p class="echs-scan-source">Source: <strong>' + echsEsc(d.source || 'post content') + '</strong></p>') {
 				html += '<p>No content patterns detected. The page may not be published yet or uses a custom layout not readable by the scanner.</p>';
 			}
 
 			html += '</div>';
 
 			$results.data('scan-data', d).html(html).show();
-			$status.addClass('hsm-scan-ok').text('\u2713 Scan complete');
+			$status.addClass('echs-scan-ok').text('\u2713 Scan complete');
 		})
 		.fail(function () {
 			$btn.prop('disabled', false).text('\uD83D\uDD0D Scan Content');
-			$status.addClass('hsm-scan-err').text('Request failed. Check your connection.');
+			$status.addClass('echs-scan-err').text('Request failed. Check your connection.');
 		});
 	});
 
 	// Apply single field value.
-	$(document).on('click', '.hsm-apply-field', function () {
+	$(document).on('click', '.echs-apply-field', function () {
 		var $target = $($(this).data('target'));
 		var value   = $(this).data('value');
 		if ($target.length) {
@@ -734,62 +734,62 @@
 		}
 	});
 
-	// Apply all FAQs — enables FAQPage toggle, populates #hsm-faq-list.
-	$(document).on('click', '.hsm-apply-faqs', function () {
-		var d = $('#hsm-scan-results').data('scan-data');
+	// Apply all FAQs — enables FAQPage toggle, populates #echs-faq-list.
+	$(document).on('click', '.echs-apply-faqs', function () {
+		var d = $('#echs-scan-results').data('scan-data');
 		if (!d || !d.faqs || !d.faqs.length) return;
 
-		$('[name="hsm_schema_enable_FAQPage"]').prop('checked', true).trigger('change');
-		$('#hsm-faq-list').empty();
+		$('[name="echs_schema_enable_FAQPage"]').prop('checked', true).trigger('change');
+		$('#echs-faq-list').empty();
 
 		$.each(d.faqs, function (i, faq) {
 			var $row = $(
-				'<div class="hsm-faq-row">' +
-				'<div class="hsm-faq-handle">&#9776;</div>' +
-				'<div class="hsm-faq-fields">' +
-				'<input type="text" name="hsm_faq_question[]" class="large-text">' +
-				'<textarea name="hsm_faq_answer[]" rows="2" class="large-text"></textarea>' +
+				'<div class="echs-faq-row">' +
+				'<div class="echs-faq-handle">&#9776;</div>' +
+				'<div class="echs-faq-fields">' +
+				'<input type="text" name="echs_faq_question[]" class="large-text">' +
+				'<textarea name="echs_faq_answer[]" rows="2" class="large-text"></textarea>' +
 				'</div>' +
-				'<button type="button" class="button hsm-remove-faq-row">Remove</button>' +
+				'<button type="button" class="button echs-remove-faq-row">Remove</button>' +
 				'</div>'
 			);
-			$row.find('[name="hsm_faq_question[]"]').val(faq.question);
-			$row.find('[name="hsm_faq_answer[]"]').val(faq.answer);
-			$('#hsm-faq-list').append($row);
+			$row.find('[name="echs_faq_question[]"]').val(faq.question);
+			$row.find('[name="echs_faq_answer[]"]').val(faq.answer);
+			$('#echs-faq-list').append($row);
 		});
 
 		$(this).text('\u2713 Applied').prop('disabled', true);
 	});
 
-	// Apply all HowTo steps — enables HowTo toggle, populates #hsm-howto-list.
-	$(document).on('click', '.hsm-apply-steps', function () {
-		var d = $('#hsm-scan-results').data('scan-data');
+	// Apply all HowTo steps — enables HowTo toggle, populates #echs-howto-list.
+	$(document).on('click', '.echs-apply-steps', function () {
+		var d = $('#echs-scan-results').data('scan-data');
 		if (!d || !d.howto_steps || !d.howto_steps.length) return;
 
-		$('[name="hsm_schema_enable_HowTo"]').prop('checked', true).trigger('change');
-		$('#hsm-howto-list').empty();
+		$('[name="echs_schema_enable_HowTo"]').prop('checked', true).trigger('change');
+		$('#echs-howto-list').empty();
 
 		$.each(d.howto_steps, function (i, step) {
 			var $row = $(
-				'<div class="hsm-howto-row">' +
-				'<div class="hsm-faq-handle">&#9776;</div>' +
-				'<div class="hsm-faq-fields">' +
-				'<input type="text" name="hsm_howto_step_name[]" class="large-text" placeholder="Step title">' +
-				'<textarea name="hsm_howto_step_text[]" rows="2" class="large-text" placeholder="Step instructions\u2026"></textarea>' +
+				'<div class="echs-howto-row">' +
+				'<div class="echs-faq-handle">&#9776;</div>' +
+				'<div class="echs-faq-fields">' +
+				'<input type="text" name="echs_howto_step_name[]" class="large-text" placeholder="Step title">' +
+				'<textarea name="echs_howto_step_text[]" rows="2" class="large-text" placeholder="Step instructions\u2026"></textarea>' +
 				'</div>' +
-				'<button type="button" class="button hsm-remove-howto-row">Remove</button>' +
+				'<button type="button" class="button echs-remove-howto-row">Remove</button>' +
 				'</div>'
 			);
-			$row.find('[name="hsm_howto_step_name[]"]').val(step.name);
-			$row.find('[name="hsm_howto_step_text[]"]').val(step.text);
-			$('#hsm-howto-list').append($row);
+			$row.find('[name="echs_howto_step_name[]"]').val(step.name);
+			$row.find('[name="echs_howto_step_text[]"]').val(step.text);
+			$('#echs-howto-list').append($row);
 		});
 
 		$(this).text('\u2713 Applied').prop('disabled', true);
 	});
 
 	// ─── WP Media Picker ──────────────────────────────────────────────
-	$(document).on('click', '.hsm-upload-image', function (e) {
+	$(document).on('click', '.echs-upload-image', function (e) {
 		e.preventDefault();
 
 		var $btn     = $(this);
@@ -816,7 +816,7 @@
 	 * Handles Gutenberg (block editor), TinyMCE (classic editor), and
 	 * plain textarea fallback.
 	 */
-	function hsmGetEditorText() {
+	function echsGetEditorText() {
 		// Gutenberg block editor.
 		if (
 			typeof wp !== 'undefined' &&
@@ -846,7 +846,7 @@
 	/**
 	 * Count non-overlapping case-insensitive occurrences of needle in haystack.
 	 */
-	function hsmCountOccurrences(haystack, needle) {
+	function echsCountOccurrences(haystack, needle) {
 		if (!needle) return 0;
 		var escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 		var re = new RegExp('\\b' + escaped + '\\b', 'gi');
@@ -857,7 +857,7 @@
 	/**
 	 * Count words in a string.
 	 */
-	function hsmWordCount(text) {
+	function echsWordCount(text) {
 		var trimmed = text.replace(/\s+/g, ' ').trim();
 		return trimmed ? trimmed.split(' ').length : 0;
 	}
@@ -865,20 +865,20 @@
 	/**
 	 * Return a density level label + CSS modifier class.
 	 */
-	function hsmDensityLevel(pct) {
-		if (pct === 0)    return { label: 'Not found',      cls: 'hsm-level-none' };
-		if (pct < 0.5)    return { label: 'Too low',        cls: 'hsm-level-low' };
-		if (pct < 1)      return { label: 'Could be more',  cls: 'hsm-level-fair' };
-		if (pct <= 3)     return { label: 'Optimal',        cls: 'hsm-level-optimal' };
-		if (pct <= 5)     return { label: 'High',           cls: 'hsm-level-high' };
-		return              { label: 'Over-optimised',   cls: 'hsm-level-over' };
+	function echsDensityLevel(pct) {
+		if (pct === 0)    return { label: 'Not found',      cls: 'echs-level-none' };
+		if (pct < 0.5)    return { label: 'Too low',        cls: 'echs-level-low' };
+		if (pct < 1)      return { label: 'Could be more',  cls: 'echs-level-fair' };
+		if (pct <= 3)     return { label: 'Optimal',        cls: 'echs-level-optimal' };
+		if (pct <= 5)     return { label: 'High',           cls: 'echs-level-high' };
+		return              { label: 'Over-optimised',   cls: 'echs-level-over' };
 	}
 
 	/**
 	 * Schema suggestion rules.
 	 * Each rule: { type, label, reason, test(text) → boolean }
 	 */
-	var hsmSuggestionRules = [
+	var echsSuggestionRules = [
 		{
 			type: 'FAQPage',
 			label: 'FAQPage',
@@ -934,21 +934,21 @@
 	/**
 	 * Build a keyword placement checklist (in title, meta desc, first para, headings).
 	 */
-	function hsmPlacementChecklist(keyword) {
+	function echsPlacementChecklist(keyword) {
 		if (!keyword) return [];
 		var kw  = keyword.toLowerCase();
 		var re  = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
 		var items = [];
 
 		// Title tag override.
-		var titleVal = $('#hsm_seo_title').val() || document.title || '';
+		var titleVal = $('#echs_seo_title').val() || document.title || '';
 		items.push({
 			pass: re.test(titleVal),
 			text: 'In page title',
 		});
 
 		// Meta description.
-		var descVal = $('#hsm_seo_description').val();
+		var descVal = $('#echs_seo_description').val();
 		items.push({
 			pass: re.test(descVal),
 			text: 'In meta description',
@@ -966,45 +966,45 @@
 	/**
 	 * Run the full content analysis and update the UI.
 	 */
-	function hsmRunAnalysis() {
-		var keyword  = $('#hsm_focus_keyword').val().trim();
-		var text     = hsmGetEditorText();
-		var wordCnt  = hsmWordCount(text);
+	function echsRunAnalysis() {
+		var keyword  = $('#echs_focus_keyword').val().trim();
+		var text     = echsGetEditorText();
+		var wordCnt  = echsWordCount(text);
 
 		// ── Keyword label ──
-		$('#hsm-kd-keyword-label').text(keyword || '(none set)');
+		$('#echs-kd-keyword-label').text(keyword || '(none set)');
 
 		if (!keyword) {
-			$('#hsm-kd-results').hide();
-			$('#hsm-kd-no-keyword').show();
+			$('#echs-kd-results').hide();
+			$('#echs-kd-no-keyword').show();
 		} else {
-			$('#hsm-kd-no-keyword').hide();
-			$('#hsm-kd-results').show();
+			$('#echs-kd-no-keyword').hide();
+			$('#echs-kd-results').show();
 
-			var count   = hsmCountOccurrences(text, keyword);
+			var count   = echsCountOccurrences(text, keyword);
 			var density = wordCnt > 0 ? (count / wordCnt * 100) : 0;
-			var level   = hsmDensityLevel(density);
+			var level   = echsDensityLevel(density);
 
 			// Bar: clamp at 4 % = 100 % visual width.
 			var barPct  = Math.min(density / 4 * 100, 100);
-			$('#hsm-kd-bar')
+			$('#echs-kd-bar')
 				.css('width', barPct + '%')
-				.attr('class', 'hsm-meter-fill ' + level.cls);
+				.attr('class', 'echs-meter-fill ' + level.cls);
 
-			$('#hsm-kd-density').text(density.toFixed(2) + '%');
-			$('#hsm-kd-count').text(count);
-			$('#hsm-kd-words').text(wordCnt.toLocaleString());
+			$('#echs-kd-density').text(density.toFixed(2) + '%');
+			$('#echs-kd-count').text(count);
+			$('#echs-kd-words').text(wordCnt.toLocaleString());
 
-			$('#hsm-kd-badge')
+			$('#echs-kd-badge')
 				.text(level.label)
-				.attr('class', 'hsm-kd-badge ' + level.cls);
+				.attr('class', 'echs-kd-badge ' + level.cls);
 
 			// Placement checklist.
-			var checkItems = hsmPlacementChecklist(keyword);
-			var $cl = $('#hsm-kd-checklist').empty();
+			var checkItems = echsPlacementChecklist(keyword);
+			var $cl = $('#echs-kd-checklist').empty();
 			$.each(checkItems, function (i, item) {
 				$cl.append(
-					'<div class="hsm-check-item ' + (item.pass ? 'hsm-check-pass' : 'hsm-check-fail') + '">' +
+					'<div class="echs-check-item ' + (item.pass ? 'echs-check-pass' : 'echs-check-fail') + '">' +
 					(item.pass ? '&#10003;' : '&#10007;') + ' ' + item.text +
 					'</div>'
 				);
@@ -1012,10 +1012,10 @@
 		}
 
 		// ── Schema suggestions ──
-		var $list = $('#hsm-suggestions-list').empty();
+		var $list = $('#echs-suggestions-list').empty();
 		var found = [];
 
-		$.each(hsmSuggestionRules, function (i, rule) {
+		$.each(echsSuggestionRules, function (i, rule) {
 			if (rule.test(text)) {
 				found.push(rule);
 			}
@@ -1029,17 +1029,17 @@
 			);
 		} else {
 			$.each(found, function (i, rule) {
-				var alreadyOn = $('[name="hsm_schema_enable_' + rule.type + '"]').is(':checked');
+				var alreadyOn = $('[name="echs_schema_enable_' + rule.type + '"]').is(':checked');
 				var $card = $(
-					'<div class="hsm-suggestion-card">' +
-					'<div class="hsm-suggestion-info">' +
-					'<strong class="hsm-suggestion-type">' + rule.label + '</strong>' +
-					'<span class="hsm-suggestion-reason">' + rule.reason + '</span>' +
+					'<div class="echs-suggestion-card">' +
+					'<div class="echs-suggestion-info">' +
+					'<strong class="echs-suggestion-type">' + rule.label + '</strong>' +
+					'<span class="echs-suggestion-reason">' + rule.reason + '</span>' +
 					'</div>' +
-					'<div class="hsm-suggestion-action">' +
+					'<div class="echs-suggestion-action">' +
 					( alreadyOn
-						? '<span class="hsm-suggestion-active">&#10003; Already enabled</span>'
-						: '<button type="button" class="button button-small hsm-apply-suggestion" data-type="' + rule.type + '">Apply</button>'
+						? '<span class="echs-suggestion-active">&#10003; Already enabled</span>'
+						: '<button type="button" class="button button-small echs-apply-suggestion" data-type="' + rule.type + '">Apply</button>'
 					) +
 					'</div>' +
 					'</div>'
@@ -1050,80 +1050,80 @@
 	}
 
 	// Scan button click.
-	$('#hsm-ca-scan').on('click', hsmRunAnalysis);
+	$('#echs-ca-scan').on('click', echsRunAnalysis);
 
 	// Apply suggestion → enable schema checkbox + switch to Schema tab.
-	$(document).on('click', '.hsm-apply-suggestion', function () {
+	$(document).on('click', '.echs-apply-suggestion', function () {
 		var type = $(this).data('type');
-		var $cb  = $('[name="hsm_schema_enable_' + type + '"]');
+		var $cb  = $('[name="echs_schema_enable_' + type + '"]');
 		if ($cb.length) {
 			$cb.prop('checked', true).trigger('change');
 			// Switch to Schema tab.
-			$('[data-tab="hsm-tab-schema"]').trigger('click');
+			$('[data-tab="echs-tab-schema"]').trigger('click');
 			// Scroll to the section.
-			var $section = $('#hsm-schema-section-' + type.toLowerCase());
+			var $section = $('#echs-schema-section-' + type.toLowerCase());
 			if ($section.length) {
 				$('html, body').animate({ scrollTop: $section.offset().top - 40 }, 300);
 			}
 		}
 		// Refresh the suggestion card to show "Already enabled".
-		hsmRunAnalysis();
+		echsRunAnalysis();
 	});
 
 
 	// ─── Multi-keyword UI ─────────────────────────────────────────────────
 
-	function hsmGetKeywords() {
+	function echsGetKeywords() {
 		var keywords = [];
-		$('#hsm-keywords-list .hsm-keyword-input').each(function () {
+		$('#echs-keywords-list .echs-keyword-input').each(function () {
 			var val = $(this).val().trim();
 			if (val) keywords.push(val);
 		});
 		if (!keywords.length) {
-			var legacy = ($('#hsm_focus_keyword').val() || '').trim();
+			var legacy = ($('#echs_focus_keyword').val() || '').trim();
 			if (legacy) keywords.push(legacy);
 		}
 		return keywords;
 	}
 
-	$('#hsm-add-keyword').on('click', function () {
-		var $list = $('#hsm-keywords-list');
-		if ($list.find('.hsm-keyword-row').length >= 5) return;
+	$('#echs-add-keyword').on('click', function () {
+		var $list = $('#echs-keywords-list');
+		if ($list.find('.echs-keyword-row').length >= 5) return;
 		var $row = $(
-			'<div class="hsm-keyword-row">' +
-			'<span class="hsm-keyword-label">Secondary</span>' +
-			'<input type="text" name="hsm_focus_keywords[]" value="" class="regular-text hsm-keyword-input" placeholder="Secondary keyword">' +
-			'<button type="button" class="button button-small hsm-remove-keyword">Remove</button>' +
+			'<div class="echs-keyword-row">' +
+			'<span class="echs-keyword-label">Secondary</span>' +
+			'<input type="text" name="echs_focus_keywords[]" value="" class="regular-text echs-keyword-input" placeholder="Secondary keyword">' +
+			'<button type="button" class="button button-small echs-remove-keyword">Remove</button>' +
 			'</div>'
 		);
 		$list.append($row);
 		$row.find('input').focus();
-		if ($list.find('.hsm-keyword-row').length >= 5) {
-			$('#hsm-add-keyword').prop('disabled', true);
+		if ($list.find('.echs-keyword-row').length >= 5) {
+			$('#echs-add-keyword').prop('disabled', true);
 		}
 	});
 
-	$(document).on('click', '.hsm-remove-keyword', function () {
-		$(this).closest('.hsm-keyword-row').remove();
-		$('#hsm-add-keyword').prop('disabled', false);
+	$(document).on('click', '.echs-remove-keyword', function () {
+		$(this).closest('.echs-keyword-row').remove();
+		$('#echs-add-keyword').prop('disabled', false);
 	});
 
-	function hsmRenderCluster(text, keywords) {
-		var $c = $('#hsm-cluster-results');
+	function echsRenderCluster(text, keywords) {
+		var $c = $('#echs-cluster-results');
 		if (!$c.length || keywords.length <= 1) { $c.hide(); return; }
 		$c.show().empty();
 		keywords.forEach(function (kw, i) {
-			var count   = hsmCountOccurrences(text, kw);
-			var wordCnt = hsmWordCount(text);
+			var count   = echsCountOccurrences(text, kw);
+			var wordCnt = echsWordCount(text);
 			var density = wordCnt > 0 ? (count / wordCnt * 100) : 0;
-			var level   = hsmDensityLevel(density);
+			var level   = echsDensityLevel(density);
 			var barPct  = Math.min(density / 4 * 100, 100);
 			$c.append(
-				'<div class="hsm-cluster-card">' +
-				'<div class="hsm-cluster-label">' + (i === 0 ? 'Primary' : 'Secondary') + ' keyword</div>' +
-				'<div class="hsm-cluster-keyword">' + $('<span>').text(kw).html() + '</div>' +
-				'<div class="hsm-cluster-mini-bar-track"><div class="hsm-cluster-mini-bar-fill ' + level.cls + '" style="width:' + barPct.toFixed(1) + '%"></div></div>' +
-				'<div class="hsm-cluster-stats">' +
+				'<div class="echs-cluster-card">' +
+				'<div class="echs-cluster-label">' + (i === 0 ? 'Primary' : 'Secondary') + ' keyword</div>' +
+				'<div class="echs-cluster-keyword">' + $('<span>').text(kw).html() + '</div>' +
+				'<div class="echs-cluster-mini-bar-track"><div class="echs-cluster-mini-bar-fill ' + level.cls + '" style="width:' + barPct.toFixed(1) + '%"></div></div>' +
+				'<div class="echs-cluster-stats">' +
 				'<span>Density: <strong>' + density.toFixed(2) + '%</strong></span> ' +
 				'<span>Uses: <strong>' + count + '</strong></span> ' +
 				'<span class="' + level.cls + '">' + level.label + '</span>' +
@@ -1134,7 +1134,7 @@
 
 	// ─── Readability Analysis ─────────────────────────────────────────────
 
-	function hsmSyllables(word) {
+	function echsSyllables(word) {
 		word = word.toLowerCase().replace(/[^a-z]/g, '');
 		if (!word) return 1;
 		if (!/le$/.test(word)) word = word.replace(/e$/, '');
@@ -1142,34 +1142,34 @@
 		return Math.max(1, matches ? matches.length : 1);
 	}
 
-	function hsmSentences(text) {
+	function echsSentences(text) {
 		return text.split(/[.!?]+(?:\s|$)/).filter(function (s) { return s.trim() !== ''; });
 	}
 
-	function hsmWords(text) {
+	function echsWords(text) {
 		return text.match(/\b[a-z']+\b/gi) || [];
 	}
 
-	function hsmFleschScore(text) {
-		var words     = hsmWords(text);
-		var sentences = hsmSentences(text);
+	function echsFleschScore(text) {
+		var words     = echsWords(text);
+		var sentences = echsSentences(text);
 		if (sentences.length < 3 || words.length < 10) return null;
 		var totalSyllables = 0;
-		for (var i = 0; i < words.length; i++) totalSyllables += hsmSyllables(words[i]);
+		for (var i = 0; i < words.length; i++) totalSyllables += echsSyllables(words[i]);
 		var score = 206.835
 			- 1.015  * (words.length / sentences.length)
 			- 84.6   * (totalSyllables / words.length);
 		return Math.min(100, Math.max(0, score));
 	}
 
-	function hsmPassivePct(sentences) {
+	function echsPassivePct(sentences) {
 		if (!sentences.length) return 0;
 		var re = /\b(am|are|is|was|were|be|been|being)\s+\w+ed\b/i;
 		var count = sentences.filter(function (s) { return re.test(s); }).length;
 		return Math.round((count / sentences.length) * 100);
 	}
 
-	function hsmTransitionPct(sentences) {
+	function echsTransitionPct(sentences) {
 		if (!sentences.length) return 0;
 		var transitions = [
 			'however','therefore','furthermore','additionally','moreover',
@@ -1189,23 +1189,23 @@
 		return Math.round((count / sentences.length) * 100);
 	}
 
-	function hsmLongSentPct(sentences) {
+	function echsLongSentPct(sentences) {
 		if (!sentences.length) return 0;
 		var count = sentences.filter(function (s) {
-			return hsmWords(s).length > 20;
+			return echsWords(s).length > 20;
 		}).length;
 		return Math.round((count / sentences.length) * 100);
 	}
 
-	function hsmLongParaPct(text) {
+	function echsLongParaPct(text) {
 		var paras = text.split(/\n\n+/).filter(function (p) { return p.trim() !== ''; });
 		if (!paras.length) return 0;
-		var count = paras.filter(function (p) { return hsmWords(p).length > 150; }).length;
+		var count = paras.filter(function (p) { return echsWords(p).length > 150; }).length;
 		return Math.round((count / paras.length) * 100);
 	}
 
-	function hsmRenderReadability(text) {
-		var $container = $('#hsm-readability-results');
+	function echsRenderReadability(text) {
+		var $container = $('#echs-readability-results');
 		if (!$container.length) return;
 
 		if (text.trim().length < 100) {
@@ -1213,12 +1213,12 @@
 			return;
 		}
 
-		var sentences    = hsmSentences(text);
-		var fleschScore  = hsmFleschScore(text);
-		var longSentPct  = hsmLongSentPct(sentences);
-		var passivePct   = hsmPassivePct(sentences);
-		var transitionPct = hsmTransitionPct(sentences);
-		var longParaPct  = hsmLongParaPct(text);
+		var sentences    = echsSentences(text);
+		var fleschScore  = echsFleschScore(text);
+		var longSentPct  = echsLongSentPct(sentences);
+		var passivePct   = echsPassivePct(sentences);
+		var transitionPct = echsTransitionPct(sentences);
+		var longParaPct  = echsLongParaPct(text);
 
 		var checks = [];
 
@@ -1265,29 +1265,29 @@
 		var ratio  = passed / total;
 		var badgeClass, badgeLabel;
 		if (ratio === 1) {
-			badgeClass = 'hsm-level-optimal';
+			badgeClass = 'echs-level-optimal';
 			badgeLabel = 'Good';
 		} else if (ratio >= 0.5) {
-			badgeClass = 'hsm-level-fair';
+			badgeClass = 'echs-level-fair';
 			badgeLabel = 'Needs work';
 		} else {
-			badgeClass = 'hsm-level-low';
+			badgeClass = 'echs-level-low';
 			badgeLabel = 'Poor';
 		}
 
-		var html = '<div class="hsm-readability-card">'
-			+ '<span class="hsm-kd-badge ' + badgeClass + '">' + badgeLabel + '</span>'
-			+ '<span class="hsm-readability-score">' + passed + ' of ' + total + ' checks passed</span>'
-			+ '<ul class="hsm-readability-list">';
+		var html = '<div class="echs-readability-card">'
+			+ '<span class="echs-kd-badge ' + badgeClass + '">' + badgeLabel + '</span>'
+			+ '<span class="echs-readability-score">' + passed + ' of ' + total + ' checks passed</span>'
+			+ '<ul class="echs-readability-list">';
 
 		checks.forEach(function (c) {
-			var cls  = c.pass ? 'hsm-check-pass' : 'hsm-check-fail';
+			var cls  = c.pass ? 'echs-check-pass' : 'echs-check-fail';
 			var icon = c.pass ? '✓' : '✗';
-			html += '<li class="hsm-check-item ' + cls + '">'
-				+ '<span class="hsm-check-icon">' + icon + '</span> '
-				+ '<span class="hsm-check-text">' + c.display + '</span>';
+			html += '<li class="echs-check-item ' + cls + '">'
+				+ '<span class="echs-check-icon">' + icon + '</span> '
+				+ '<span class="echs-check-text">' + c.display + '</span>';
 			if (!c.pass) {
-				html += ' <span class="hsm-check-hint">' + c.hint + '</span>';
+				html += ' <span class="echs-check-hint">' + c.hint + '</span>';
 			}
 			html += '</li>';
 		});

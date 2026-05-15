@@ -5,12 +5,12 @@
  * Fires on wp_head and outputs JSON-LD blocks.
  * Also outputs SEO meta tags (title override, meta description, OG, Twitter, robots).
  *
- * @package HomeRite_Schema_Manager
+ * @package ECHS
  */
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_Schema_Output {
+class ECHS_Schema_Output {
 
 	public static function init(): void {
 		add_action( 'wp_head', [ __CLASS__, 'output_seo_meta' ],    1 );
@@ -32,7 +32,7 @@ class HSM_Schema_Output {
 
 	public static function filter_title( string $title ): string {
 		if ( ! is_singular() ) return $title;
-		$override = get_post_meta( get_the_ID(), 'hsm_seo_title', true );
+		$override = get_post_meta( get_the_ID(), 'echs_seo_title', true );
 		return ( '' !== $override ) ? $override : $title;
 	}
 
@@ -46,20 +46,20 @@ class HSM_Schema_Output {
 		$post_id = get_the_ID();
 
 		// Meta description.
-		$desc = get_post_meta( $post_id, 'hsm_seo_description', true );
+		$desc = get_post_meta( $post_id, 'echs_seo_description', true );
 		if ( '' !== $desc ) {
 			echo '<meta name="description" content="' . esc_attr( $desc ) . '">' . "\n";
 		}
 
 		// Canonical.
-		$canonical = get_post_meta( $post_id, 'hsm_canonical_url', true );
+		$canonical = get_post_meta( $post_id, 'echs_canonical_url', true );
 		if ( '' !== $canonical ) {
 			echo '<link rel="canonical" href="' . esc_url( $canonical ) . '">' . "\n";
 		}
 
 		// Robots — always explicit; noindex/nofollow override the default index, follow.
-		$noindex  = '1' === get_post_meta( $post_id, 'hsm_noindex',  true );
-		$nofollow = '1' === get_post_meta( $post_id, 'hsm_nofollow', true );
+		$noindex  = '1' === get_post_meta( $post_id, 'echs_noindex',  true );
+		$nofollow = '1' === get_post_meta( $post_id, 'echs_nofollow', true );
 		if ( $noindex || $nofollow ) {
 			$robots = [];
 			if ( $noindex )  $robots[] = 'noindex';
@@ -70,11 +70,11 @@ class HSM_Schema_Output {
 		echo '<meta name="robots" content="' . esc_attr( implode( ', ', $robots ) ) . '">' . "\n";
 
 		// Resolved SEO title (used as fallback for OG/Twitter when synced).
-		$seo_title = get_post_meta( $post_id, 'hsm_seo_title', true ) ?: get_the_title( $post_id );
+		$seo_title = get_post_meta( $post_id, 'echs_seo_title', true ) ?: get_the_title( $post_id );
 
 		// Resolve og:image: per-page custom → featured image → global logo.
-		$og_synced = ( '0' !== get_post_meta( $post_id, 'hsm_og_same_as_meta', true ) );
-		$og_image  = $og_synced ? '' : get_post_meta( $post_id, 'hsm_og_image', true );
+		$og_synced = ( '0' !== get_post_meta( $post_id, 'echs_og_same_as_meta', true ) );
+		$og_image  = $og_synced ? '' : get_post_meta( $post_id, 'echs_og_image', true );
 		if ( '' === $og_image ) {
 			$thumb_id = get_post_thumbnail_id( $post_id );
 			if ( $thumb_id ) {
@@ -83,13 +83,13 @@ class HSM_Schema_Output {
 			}
 		}
 		if ( '' === $og_image ) {
-			$og_image = self::g( 'hsm_default_og_image' );
+			$og_image = self::g( 'echs_default_og_image' );
 		}
 
 		// Open Graph.
 		$og_fields = [
-			'og:title'       => $og_synced ? $seo_title : ( get_post_meta( $post_id, 'hsm_og_title', true )       ?: $seo_title ),
-			'og:description' => $og_synced ? $desc      : ( get_post_meta( $post_id, 'hsm_og_description', true ) ?: $desc ),
+			'og:title'       => $og_synced ? $seo_title : ( get_post_meta( $post_id, 'echs_og_title', true )       ?: $seo_title ),
+			'og:description' => $og_synced ? $desc      : ( get_post_meta( $post_id, 'echs_og_description', true ) ?: $desc ),
 			'og:url'         => get_permalink( $post_id ),
 			'og:type'        => 'website',
 		];
@@ -103,10 +103,10 @@ class HSM_Schema_Output {
 		}
 
 		// Resolve twitter:image: per-page custom → same fallback chain as OG.
-		$tw_synced = ( '0' !== get_post_meta( $post_id, 'hsm_twitter_same_as_meta', true ) );
-		$tw_title  = $tw_synced ? $seo_title : ( get_post_meta( $post_id, 'hsm_twitter_title', true )       ?: $seo_title );
-		$tw_desc   = $tw_synced ? $desc      : ( get_post_meta( $post_id, 'hsm_twitter_description', true ) ?: $desc );
-		$tw_image  = $tw_synced ? $og_image  : ( get_post_meta( $post_id, 'hsm_twitter_image', true ) ?: $og_image );
+		$tw_synced = ( '0' !== get_post_meta( $post_id, 'echs_twitter_same_as_meta', true ) );
+		$tw_title  = $tw_synced ? $seo_title : ( get_post_meta( $post_id, 'echs_twitter_title', true )       ?: $seo_title );
+		$tw_desc   = $tw_synced ? $desc      : ( get_post_meta( $post_id, 'echs_twitter_description', true ) ?: $desc );
+		$tw_image  = $tw_synced ? $og_image  : ( get_post_meta( $post_id, 'echs_twitter_image', true ) ?: $og_image );
 
 		// Twitter (X) card.
 		echo '<meta name="twitter:card" content="summary_large_image">' . "\n";
@@ -126,7 +126,7 @@ class HSM_Schema_Output {
 		$is_front      = is_front_page();
 		$is_singular   = is_singular();
 		$post_id       = $is_singular ? get_the_ID() : 0;
-		$enabled_types = $post_id ? ( get_post_meta( $post_id, 'hsm_schema_enabled_types', true ) ?: [] ) : [];
+		$enabled_types = $post_id ? ( get_post_meta( $post_id, 'echs_schema_enabled_types', true ) ?: [] ) : [];
 
 		// --- Sitewide: Organization + WebSite on every page ---
 		// Gives AI crawlers and Google a consistent entity anchor across the entire site.
@@ -145,7 +145,7 @@ class HSM_Schema_Output {
 
 		// --- Person: output for each configured team member (sitewide) ---
 		// Allows AI to associate names/titles/LinkedIn with the business entity.
-		$team_members = self::g( 'hsm_team_members', [] );
+		$team_members = self::g( 'echs_team_members', [] );
 		foreach ( (array) $team_members as $member ) {
 			if ( ! empty( $member['name'] ) ) {
 				$schemas[] = self::build_person( $member );
@@ -235,7 +235,7 @@ class HSM_Schema_Output {
 	// ------------------------------------------------------------------
 
 	private static function get_logo_url(): string {
-		$logo = self::g( 'hsm_logo_url' );
+		$logo = self::g( 'echs_logo_url' );
 		if ( '' !== $logo ) return $logo;
 
 		// Auto-pull from WP site logo.
@@ -248,21 +248,21 @@ class HSM_Schema_Output {
 	}
 
 	private static function get_address(): array {
-		$street = self::g( 'hsm_street' );
+		$street = self::g( 'echs_street' );
 		if ( '' === $street ) return [];
 
 		return [
 			'@type'           => 'PostalAddress',
 			'streetAddress'   => $street,
-			'addressLocality' => self::g( 'hsm_city' ),
-			'addressRegion'   => self::g( 'hsm_state' ),
-			'postalCode'      => self::g( 'hsm_zip' ),
+			'addressLocality' => self::g( 'echs_city' ),
+			'addressRegion'   => self::g( 'echs_state' ),
+			'postalCode'      => self::g( 'echs_zip' ),
 			'addressCountry'  => 'US',
 		];
 	}
 
 	private static function get_secondary_addresses(): array {
-		$locations = self::g( 'hsm_secondary_locations', [] );
+		$locations = self::g( 'echs_secondary_locations', [] );
 		$addresses = [];
 		foreach ( (array) $locations as $loc ) {
 			if ( ! empty( $loc['street'] ) ) {
@@ -280,7 +280,7 @@ class HSM_Schema_Output {
 	}
 
 	private static function get_opening_hours(): array {
-		$hours  = self::g( 'hsm_hours', [] );
+		$hours  = self::g( 'echs_hours', [] );
 		$specs  = [];
 		$day_map = [
 			'Monday'    => 'Monday',
@@ -305,22 +305,22 @@ class HSM_Schema_Output {
 	}
 
 	private static function build_local_business( int $post_id = 0 ): array {
-		$type        = self::g( 'hsm_schema_type', 'HomeAndConstructionBusiness' );
-		$description = $post_id ? ( get_post_meta( $post_id, 'hsm_lb_description', true ) ?: self::g( 'hsm_slogan' ) ) : self::g( 'hsm_slogan' );
-		$phone       = $post_id ? ( get_post_meta( $post_id, 'hsm_lb_phone', true ) ?: self::g( 'hsm_phone' ) ) : self::g( 'hsm_phone' );
+		$type        = self::g( 'echs_schema_type', 'HomeAndConstructionBusiness' );
+		$description = $post_id ? ( get_post_meta( $post_id, 'echs_lb_description', true ) ?: self::g( 'echs_slogan' ) ) : self::g( 'echs_slogan' );
+		$phone       = $post_id ? ( get_post_meta( $post_id, 'echs_lb_phone', true ) ?: self::g( 'echs_phone' ) ) : self::g( 'echs_phone' );
 
 		$schema = [
 			'@context' => 'https://schema.org',
 			'@type'    => $type,
-			'name'     => self::g( 'hsm_business_name' ),
-			'url'      => self::g( 'hsm_primary_url', home_url() ),
+			'name'     => self::g( 'echs_business_name' ),
+			'url'      => self::g( 'echs_primary_url', home_url() ),
 		];
 
 		if ( '' !== $description )               $schema['description']  = $description;
 		if ( '' !== $phone )                     $schema['telephone']    = $phone;
-		if ( '' !== self::g( 'hsm_email' ) )     $schema['email']        = self::g( 'hsm_email' );
-		if ( '' !== self::g( 'hsm_price_range' ) ) $schema['priceRange'] = self::g( 'hsm_price_range' );
-		if ( '' !== self::g( 'hsm_founded_year' ) ) $schema['foundingDate'] = self::g( 'hsm_founded_year' );
+		if ( '' !== self::g( 'echs_email' ) )     $schema['email']        = self::g( 'echs_email' );
+		if ( '' !== self::g( 'echs_price_range' ) ) $schema['priceRange'] = self::g( 'echs_price_range' );
+		if ( '' !== self::g( 'echs_founded_year' ) ) $schema['foundingDate'] = self::g( 'echs_founded_year' );
 
 		// Logo.
 		$logo_url = self::get_logo_url();
@@ -337,8 +337,8 @@ class HSM_Schema_Output {
 		}
 
 		// Geo.
-		$lat = self::g( 'hsm_latitude' );
-		$lng = self::g( 'hsm_longitude' );
+		$lat = self::g( 'echs_latitude' );
+		$lng = self::g( 'echs_longitude' );
 		if ( '' !== $lat && '' !== $lng ) {
 			$schema['geo'] = [
 				'@type'     => 'GeoCoordinates',
@@ -348,7 +348,7 @@ class HSM_Schema_Output {
 		}
 
 		// Service areas.
-		$areas = self::g( 'hsm_service_areas', [] );
+		$areas = self::g( 'echs_service_areas', [] );
 		if ( ! empty( $areas ) ) {
 			$schema['areaServed'] = array_map( fn( $a ) => [ '@type' => 'City', 'name' => $a ], $areas );
 		}
@@ -358,12 +358,12 @@ class HSM_Schema_Output {
 		if ( ! empty( $hours ) ) $schema['openingHoursSpecification'] = $hours;
 
 		// sameAs.
-		$same_as = self::g( 'hsm_same_as', [] );
+		$same_as = self::g( 'echs_same_as', [] );
 		if ( ! empty( $same_as ) ) $schema['sameAs'] = $same_as;
 
 		// Aggregate rating.
-		$rating_val   = self::g( 'hsm_rating_value' );
-		$rating_count = self::g( 'hsm_rating_count' );
+		$rating_val   = self::g( 'echs_rating_value' );
+		$rating_count = self::g( 'echs_rating_count' );
 		if ( '' !== $rating_val && '' !== $rating_count ) {
 			$schema['aggregateRating'] = [
 				'@type'       => 'AggregateRating',
@@ -373,7 +373,7 @@ class HSM_Schema_Output {
 		}
 
 		// Legal name.
-		$legal = self::g( 'hsm_legal_name' );
+		$legal = self::g( 'echs_legal_name' );
 		if ( '' !== $legal ) $schema['legalName'] = $legal;
 
 		return $schema;
@@ -383,8 +383,8 @@ class HSM_Schema_Output {
 		$schema = [
 			'@context' => 'https://schema.org',
 			'@type'    => 'Organization',
-			'name'     => self::g( 'hsm_business_name' ),
-			'url'      => self::g( 'hsm_primary_url', home_url() ),
+			'name'     => self::g( 'echs_business_name' ),
+			'url'      => self::g( 'echs_primary_url', home_url() ),
 		];
 
 		$logo_url = self::get_logo_url();
@@ -392,10 +392,10 @@ class HSM_Schema_Output {
 			$schema['logo'] = [ '@type' => 'ImageObject', 'url' => $logo_url ];
 		}
 
-		$same_as = self::g( 'hsm_same_as', [] );
+		$same_as = self::g( 'echs_same_as', [] );
 		if ( ! empty( $same_as ) ) $schema['sameAs'] = $same_as;
 
-		$slogan = self::g( 'hsm_slogan' );
+		$slogan = self::g( 'echs_slogan' );
 		if ( '' !== $slogan ) $schema['slogan'] = $slogan;
 
 		return $schema;
@@ -405,7 +405,7 @@ class HSM_Schema_Output {
 		return [
 			'@context'        => 'https://schema.org',
 			'@type'           => 'WebSite',
-			'name'            => self::g( 'hsm_business_name' ),
+			'name'            => self::g( 'echs_business_name' ),
 			'url'             => home_url(),
 			'potentialAction' => [
 				'@type'       => 'SearchAction',
@@ -421,7 +421,7 @@ class HSM_Schema_Output {
 	/**
 	 * Build a Person schema block for a team member.
 	 *
-	 * Stored in global option hsm_team_members as an array of:
+	 * Stored in global option echs_team_members as an array of:
 	 *   [ 'name' => '', 'job_title' => '', 'linkedin' => '', 'image' => '' ]
 	 */
 	private static function build_person( array $member ): array {
@@ -431,7 +431,7 @@ class HSM_Schema_Output {
 			'name'     => $member['name'],
 			'worksFor' => [
 				'@type' => 'Organization',
-				'name'  => self::g( 'hsm_business_name' ),
+				'name'  => self::g( 'echs_business_name' ),
 			],
 		];
 
@@ -447,7 +447,7 @@ class HSM_Schema_Output {
 	}
 
 	private static function build_service( int $post_id ): ?array {
-		$name = get_post_meta( $post_id, 'hsm_service_name', true ) ?: get_the_title( $post_id );
+		$name = get_post_meta( $post_id, 'echs_service_name', true ) ?: get_the_title( $post_id );
 		if ( '' === $name ) return null;
 
 		$schema = [
@@ -455,22 +455,22 @@ class HSM_Schema_Output {
 			'@type'       => 'Service',
 			'name'        => $name,
 			'provider'    => [
-				'@type' => self::g( 'hsm_schema_type', 'LocalBusiness' ),
-				'name'  => self::g( 'hsm_business_name' ),
+				'@type' => self::g( 'echs_schema_type', 'LocalBusiness' ),
+				'name'  => self::g( 'echs_business_name' ),
 			],
 		];
 
-		$desc = get_post_meta( $post_id, 'hsm_service_description', true );
+		$desc = get_post_meta( $post_id, 'echs_service_description', true );
 		if ( '' !== $desc ) $schema['description'] = $desc;
 
-		$svc_type = get_post_meta( $post_id, 'hsm_service_type', true );
+		$svc_type = get_post_meta( $post_id, 'echs_service_type', true );
 		if ( '' !== $svc_type ) $schema['serviceType'] = $svc_type;
 
-		$area_override = get_post_meta( $post_id, 'hsm_service_area_override', true );
+		$area_override = get_post_meta( $post_id, 'echs_service_area_override', true );
 		if ( '' !== $area_override ) {
 			$schema['areaServed'] = $area_override;
 		} else {
-			$areas = self::g( 'hsm_service_areas', [] );
+			$areas = self::g( 'echs_service_areas', [] );
 			if ( ! empty( $areas ) ) {
 				$schema['areaServed'] = array_map( fn( $a ) => [ '@type' => 'City', 'name' => $a ], $areas );
 			}
@@ -480,7 +480,7 @@ class HSM_Schema_Output {
 	}
 
 	private static function build_product( int $post_id ): ?array {
-		$name = get_post_meta( $post_id, 'hsm_product_name', true ) ?: get_the_title( $post_id );
+		$name = get_post_meta( $post_id, 'echs_product_name', true ) ?: get_the_title( $post_id );
 
 		$schema = [
 			'@context' => 'https://schema.org',
@@ -488,15 +488,15 @@ class HSM_Schema_Output {
 			'name'     => $name,
 		];
 
-		$desc = get_post_meta( $post_id, 'hsm_product_description', true );
+		$desc = get_post_meta( $post_id, 'echs_product_description', true );
 		if ( '' !== $desc ) $schema['description'] = $desc;
 
-		$brand = get_post_meta( $post_id, 'hsm_product_brand', true );
+		$brand = get_post_meta( $post_id, 'echs_product_brand', true );
 		if ( '' !== $brand ) $schema['brand'] = [ '@type' => 'Brand', 'name' => $brand ];
 
-		$price        = get_post_meta( $post_id, 'hsm_product_price', true );
-		$currency     = get_post_meta( $post_id, 'hsm_product_currency', true ) ?: 'USD';
-		$availability = get_post_meta( $post_id, 'hsm_product_availability', true ) ?: 'https://schema.org/InStock';
+		$price        = get_post_meta( $post_id, 'echs_product_price', true );
+		$currency     = get_post_meta( $post_id, 'echs_product_currency', true ) ?: 'USD';
+		$availability = get_post_meta( $post_id, 'echs_product_availability', true ) ?: 'https://schema.org/InStock';
 
 		if ( '' !== $price ) {
 			$schema['offers'] = [
@@ -507,7 +507,7 @@ class HSM_Schema_Output {
 			];
 		}
 
-		$warranty = get_post_meta( $post_id, 'hsm_product_warranty', true );
+		$warranty = get_post_meta( $post_id, 'echs_product_warranty', true );
 		if ( '' !== $warranty ) {
 			$schema['warranty'] = [ '@type' => 'WarrantyPromise', 'description' => $warranty ];
 		}
@@ -516,7 +516,7 @@ class HSM_Schema_Output {
 	}
 
 	private static function build_faq( int $post_id ): ?array {
-		$entries = get_post_meta( $post_id, 'hsm_faq_entries', true ) ?: [];
+		$entries = get_post_meta( $post_id, 'echs_faq_entries', true ) ?: [];
 		if ( empty( $entries ) ) return null;
 
 		$items = [];
@@ -592,15 +592,15 @@ class HSM_Schema_Output {
 			'@type'       => $type,
 			'name'        => get_the_title( $post_id ),
 			'url'         => get_permalink( $post_id ),
-			'description' => get_post_meta( $post_id, 'hsm_seo_description', true ),
+			'description' => get_post_meta( $post_id, 'echs_seo_description', true ),
 		];
 	}
 
 	private static function build_howto( int $post_id ): ?array {
-		$steps = get_post_meta( $post_id, 'hsm_howto_steps', true ) ?: [];
+		$steps = get_post_meta( $post_id, 'echs_howto_steps', true ) ?: [];
 		if ( empty( $steps ) ) return null;
 
-		$name = get_post_meta( $post_id, 'hsm_howto_name', true ) ?: get_the_title( $post_id );
+		$name = get_post_meta( $post_id, 'echs_howto_name', true ) ?: get_the_title( $post_id );
 
 		$schema = [
 			'@context' => 'https://schema.org',
@@ -608,10 +608,10 @@ class HSM_Schema_Output {
 			'name'     => $name,
 		];
 
-		$desc = get_post_meta( $post_id, 'hsm_howto_description', true );
+		$desc = get_post_meta( $post_id, 'echs_howto_description', true );
 		if ( '' !== $desc ) $schema['description'] = $desc;
 
-		$total_time = get_post_meta( $post_id, 'hsm_howto_total_time', true );
+		$total_time = get_post_meta( $post_id, 'echs_howto_total_time', true );
 		if ( '' !== $total_time ) $schema['totalTime'] = $total_time;
 
 		$schema['step'] = array_map( function ( array $step, int $i ): array {
@@ -627,11 +627,11 @@ class HSM_Schema_Output {
 	}
 
 	private static function build_review( int $post_id ): ?array {
-		$item_name = get_post_meta( $post_id, 'hsm_review_item_name', true );
-		$author    = get_post_meta( $post_id, 'hsm_review_author', true );
+		$item_name = get_post_meta( $post_id, 'echs_review_item_name', true );
+		$author    = get_post_meta( $post_id, 'echs_review_author', true );
 		if ( '' === $item_name || '' === $author ) return null;
 
-		$rating = get_post_meta( $post_id, 'hsm_review_rating', true ) ?: '5';
+		$rating = get_post_meta( $post_id, 'echs_review_rating', true ) ?: '5';
 		$schema = [
 			'@context'     => 'https://schema.org',
 			'@type'        => 'Review',
@@ -651,10 +651,10 @@ class HSM_Schema_Output {
 			],
 		];
 
-		$name = get_post_meta( $post_id, 'hsm_review_name', true );
+		$name = get_post_meta( $post_id, 'echs_review_name', true );
 		if ( '' !== $name ) $schema['name'] = $name;
 
-		$body = get_post_meta( $post_id, 'hsm_review_body', true );
+		$body = get_post_meta( $post_id, 'echs_review_body', true );
 		if ( '' !== $body ) $schema['reviewBody'] = $body;
 
 		return $schema;

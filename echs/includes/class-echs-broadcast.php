@@ -20,20 +20,20 @@
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_Broadcast {
+class ECHS_Broadcast {
 
 	const SOURCE_URL  = 'https://mydigitalstride.com/stride-broadcast.json';
-	const TRANSIENT   = 'hsm_broadcast_message';
+	const TRANSIENT   = 'echs_broadcast_message';
 	const CACHE_SECS  = 12 * HOUR_IN_SECONDS;
-	const CRON_HOOK   = 'hsm_fetch_broadcast';
-	const DISMISS_KEY = 'hsm_dismissed_broadcast';
+	const CRON_HOOK   = 'echs_fetch_broadcast';
+	const DISMISS_KEY = 'echs_dismissed_broadcast';
 
 	public static function init(): void {
 		add_action( self::CRON_HOOK,                    [ __CLASS__, 'fetch_and_cache' ] );
 		add_action( 'admin_init',                       [ __CLASS__, 'schedule_cron' ] );
 		add_action( 'admin_notices',                    [ __CLASS__, 'maybe_show_notice' ] );
 		add_action( 'admin_footer',                     [ __CLASS__, 'output_dismiss_script' ] );
-		add_action( 'wp_ajax_hsm_dismiss_broadcast',    [ __CLASS__, 'ajax_dismiss' ] );
+		add_action( 'wp_ajax_echs_dismiss_broadcast',    [ __CLASS__, 'ajax_dismiss' ] );
 	}
 
 	public static function schedule_cron(): void {
@@ -45,7 +45,7 @@ class HSM_Broadcast {
 	public static function fetch_and_cache(): void {
 		$response = wp_remote_get( self::SOURCE_URL, [
 			'timeout'    => 8,
-			'user-agent' => 'Stride-Analytics/' . HSM_VERSION . '; ' . home_url(),
+			'user-agent' => 'Stride-Analytics/' . ECHS_VERSION . '; ' . home_url(),
 		] );
 
 		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
@@ -105,9 +105,9 @@ class HSM_Broadcast {
 		}
 
 		printf(
-			'<div class="notice notice-%s hsm-broadcast-notice" data-id="%s">'
+			'<div class="notice notice-%s echs-broadcast-notice" data-id="%s">'
 				. '<p>%s%s%s</p>'
-				. '<button type="button" class="notice-dismiss hsm-dismiss-broadcast">'
+				. '<button type="button" class="notice-dismiss echs-dismiss-broadcast">'
 				. '<span class="screen-reader-text">Dismiss</span></button>'
 				. '</div>',
 			esc_attr( $type ),
@@ -119,7 +119,7 @@ class HSM_Broadcast {
 	}
 
 	public static function ajax_dismiss(): void {
-		check_ajax_referer( 'hsm_broadcast_dismiss', 'nonce' );
+		check_ajax_referer( 'echs_broadcast_dismiss', 'nonce' );
 		$id = sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) );
 		if ( $id ) {
 			update_user_meta( get_current_user_id(), self::DISMISS_KEY, $id );
@@ -139,13 +139,13 @@ class HSM_Broadcast {
 		?>
 		<script>
 		(function($){
-			$(document).on('click','.hsm-dismiss-broadcast',function(){
-				var $notice=$(this).closest('.hsm-broadcast-notice');
+			$(document).on('click','.echs-dismiss-broadcast',function(){
+				var $notice=$(this).closest('.echs-broadcast-notice');
 				var id=$notice.data('id');
 				$notice.fadeTo(200,0,function(){ $notice.slideUp(150); });
 				$.post(ajaxurl,{
-					action:'hsm_dismiss_broadcast',
-					nonce:'<?php echo esc_js( wp_create_nonce( 'hsm_broadcast_dismiss' ) ); ?>',
+					action:'echs_dismiss_broadcast',
+					nonce:'<?php echo esc_js( wp_create_nonce( 'echs_broadcast_dismiss' ) ); ?>',
 					id:id
 				});
 			});
@@ -181,8 +181,8 @@ class HSM_Broadcast {
 				. esc_html( $link_text ) . ' &rarr;</a>';
 		}
 
-		echo '<div class="hsm-broadcast-widget" style="border-left:4px solid ' . esc_attr( $color ) . ';">';
-		echo '<h3 class="hsm-widget-section-title"><span class="dashicons dashicons-megaphone"></span> '
+		echo '<div class="echs-broadcast-widget" style="border-left:4px solid ' . esc_attr( $color ) . ';">';
+		echo '<h3 class="echs-widget-section-title"><span class="dashicons dashicons-megaphone"></span> '
 			. ( ! empty( $msg['title'] ) ? esc_html( $msg['title'] ) : 'From Digital Stride' ) . '</h3>';
 		echo '<p>' . esc_html( $msg['message'] ) . $link_html . '</p>';
 		echo '</div>';

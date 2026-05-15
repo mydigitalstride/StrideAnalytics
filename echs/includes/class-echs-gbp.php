@@ -8,7 +8,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-class HSM_GBP {
+class ECHS_GBP {
 
 	const ACCOUNT_API = 'https://mybusinessaccountmanagement.googleapis.com/v1/';
 	const INFO_API    = 'https://mybusinessbusinessinformation.googleapis.com/v1/';
@@ -17,27 +17,27 @@ class HSM_GBP {
 
 	public static function init(): void {
 		add_action( 'admin_menu',                       [ __CLASS__, 'register_menu' ] );
-		add_action( 'admin_post_hsm_gbp_save_location', [ __CLASS__, 'save_location' ] );
+		add_action( 'admin_post_echs_gbp_save_location', [ __CLASS__, 'save_location' ] );
 		add_action( 'wp_dashboard_setup',               [ __CLASS__, 'register_dashboard_section' ] );
 	}
 
 	public static function register_menu(): void {
 		add_submenu_page(
-			'homerite-schema-settings',
-			__( 'Google Business Profile', 'homerite-schema' ),
-			__( 'GBP', 'homerite-schema' ),
+			'echs-settings',
+			__( 'Google Business Profile', 'echs' ),
+			__( 'GBP', 'echs' ),
 			'manage_options',
-			'hsm-gbp',
+			'echs-gbp',
 			[ __CLASS__, 'render_page' ]
 		);
 	}
 
 	public static function register_dashboard_section(): void {
-		HSM_Admin::register_dashboard_widget();
+		ECHS_Admin::register_dashboard_widget();
 	}
 
 	public static function get_accounts(): array {
-		$result = HSM_Google_Auth::request( self::ACCOUNT_API . 'accounts' );
+		$result = ECHS_Google_Auth::request( self::ACCOUNT_API . 'accounts' );
 		if ( is_wp_error( $result ) ) {
 			return [];
 		}
@@ -45,7 +45,7 @@ class HSM_GBP {
 	}
 
 	public static function get_locations( string $account_name ): array {
-		$result = HSM_Google_Auth::request( self::ACCOUNT_API . $account_name . '/locations' );
+		$result = ECHS_Google_Auth::request( self::ACCOUNT_API . $account_name . '/locations' );
 		if ( is_wp_error( $result ) ) {
 			return [];
 		}
@@ -53,7 +53,7 @@ class HSM_GBP {
 	}
 
 	public static function get_location_detail( string $location_name ): array {
-		$result = HSM_Google_Auth::request(
+		$result = ECHS_Google_Auth::request(
 			self::INFO_API . $location_name . '?readMask=name,title,phoneNumbers,websiteUri,regularHours,categories,profile'
 		);
 		if ( is_wp_error( $result ) ) {
@@ -63,17 +63,17 @@ class HSM_GBP {
 	}
 
 	public static function save_location(): void {
-		check_admin_referer( 'hsm_gbp_save_location' );
+		check_admin_referer( 'echs_gbp_save_location' );
 
-		$location = sanitize_text_field( wp_unslash( $_POST['hsm_gbp_location'] ?? '' ) );
-		update_option( 'hsm_gbp_location_name', $location );
+		$location = sanitize_text_field( wp_unslash( $_POST['echs_gbp_location'] ?? '' ) );
+		update_option( 'echs_gbp_location_name', $location );
 
-		wp_redirect( admin_url( 'admin.php?page=hsm-gbp&hsm_msg=location_saved' ) );
+		wp_redirect( admin_url( 'admin.php?page=echs-gbp&echs_msg=location_saved' ) );
 		exit;
 	}
 
 	public static function get_reviews( string $location_name ): array {
-		$result = HSM_Google_Auth::request( self::LEGACY_API . $location_name . '/reviews?pageSize=10' );
+		$result = ECHS_Google_Auth::request( self::LEGACY_API . $location_name . '/reviews?pageSize=10' );
 		if ( is_wp_error( $result ) ) {
 			return [];
 		}
@@ -81,7 +81,7 @@ class HSM_GBP {
 	}
 
 	public static function get_questions( string $location_name ): array {
-		$result = HSM_Google_Auth::request(
+		$result = ECHS_Google_Auth::request(
 			self::QA_API . $location_name . '/questions?pageSize=10&answersPerQuestion=1'
 		);
 		if ( is_wp_error( $result ) ) {
@@ -183,24 +183,24 @@ class HSM_GBP {
 			return;
 		}
 
-		$connected     = HSM_Google_Auth::is_connected();
-		$location_name = get_option( 'hsm_gbp_location_name', '' );
+		$connected     = ECHS_Google_Auth::is_connected();
+		$location_name = get_option( 'echs_gbp_location_name', '' );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Google Business Profile', 'homerite-schema' ); ?></h1>
+			<h1><?php esc_html_e( 'Google Business Profile', 'echs' ); ?></h1>
 
-			<?php if ( isset( $_GET['hsm_msg'] ) && 'location_saved' === $_GET['hsm_msg'] ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
+			<?php if ( isset( $_GET['echs_msg'] ) && 'location_saved' === $_GET['echs_msg'] ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Location saved successfully.', 'homerite-schema' ); ?></p>
+					<p><?php esc_html_e( 'Location saved successfully.', 'echs' ); ?></p>
 				</div>
 			<?php endif; ?>
 
 			<?php if ( ! $connected ) : ?>
 				<div class="notice notice-warning">
 					<p>
-						<?php esc_html_e( 'Connect your Google account first.', 'homerite-schema' ); ?>
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=homerite-schema-settings&tab=google' ) ); ?>">
-							<?php esc_html_e( 'Go to Google Settings →', 'homerite-schema' ); ?>
+						<?php esc_html_e( 'Connect your Google account first.', 'echs' ); ?>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=echs-settings&tab=google' ) ); ?>">
+							<?php esc_html_e( 'Go to Google Settings →', 'echs' ); ?>
 						</a>
 					</p>
 				</div>
@@ -215,23 +215,23 @@ class HSM_GBP {
 					$locations = self::get_locations( $accounts[0]['name'] );
 				}
 				?>
-				<div class="hsm-card">
-					<h2><?php esc_html_e( 'Select Your Business Location', 'homerite-schema' ); ?></h2>
+				<div class="echs-card">
+					<h2><?php esc_html_e( 'Select Your Business Location', 'echs' ); ?></h2>
 					<?php if ( empty( $locations ) ) : ?>
-						<p><?php esc_html_e( 'No locations found on your Google account. Make sure your Google account has access to a Business Profile.', 'homerite-schema' ); ?></p>
+						<p><?php esc_html_e( 'No locations found on your Google account. Make sure your Google account has access to a Business Profile.', 'echs' ); ?></p>
 					<?php else : ?>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-							<input type="hidden" name="action" value="hsm_gbp_save_location">
-							<?php wp_nonce_field( 'hsm_gbp_save_location' ); ?>
+							<input type="hidden" name="action" value="echs_gbp_save_location">
+							<?php wp_nonce_field( 'echs_gbp_save_location' ); ?>
 							<table class="form-table">
 								<tr>
 									<th>
-										<label for="hsm_gbp_location">
-											<?php esc_html_e( 'Business Location', 'homerite-schema' ); ?>
+										<label for="echs_gbp_location">
+											<?php esc_html_e( 'Business Location', 'echs' ); ?>
 										</label>
 									</th>
 									<td>
-										<select id="hsm_gbp_location" name="hsm_gbp_location">
+										<select id="echs_gbp_location" name="echs_gbp_location">
 											<?php foreach ( $locations as $loc ) : ?>
 												<option value="<?php echo esc_attr( $loc['name'] ?? '' ); ?>">
 													<?php echo esc_html( $loc['title'] ?? $loc['name'] ?? '' ); ?>
@@ -241,7 +241,7 @@ class HSM_GBP {
 									</td>
 								</tr>
 							</table>
-							<?php submit_button( __( 'Save Location', 'homerite-schema' ) ); ?>
+							<?php submit_button( __( 'Save Location', 'echs' ) ); ?>
 						</form>
 					<?php endif; ?>
 				</div>
@@ -261,11 +261,11 @@ class HSM_GBP {
 			$passing_count = count( array_filter( $checks, fn( $c ) => $c['pass'] ) );
 
 			if ( $score >= 80 ) {
-				$level_class = 'hsm-level-optimal';
+				$level_class = 'echs-level-optimal';
 			} elseif ( $score >= 60 ) {
-				$level_class = 'hsm-level-fair';
+				$level_class = 'echs-level-fair';
 			} else {
-				$level_class = 'hsm-level-low';
+				$level_class = 'echs-level-low';
 			}
 
 			$location_title = $detail['title'] ?? $location_name;
@@ -273,19 +273,19 @@ class HSM_GBP {
 
 			<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;">
 
-				<div class="hsm-card" style="flex:1;min-width:300px;">
-					<h2><?php esc_html_e( 'Profile Health', 'homerite-schema' ); ?></h2>
+				<div class="echs-card" style="flex:1;min-width:300px;">
+					<h2><?php esc_html_e( 'Profile Health', 'echs' ); ?></h2>
 					<p style="font-size:13px;color:#646970;margin-top:-8px;">
 						<?php echo esc_html( $location_title ); ?>
 					</p>
 
-					<div class="hsm-meter-track">
-						<div class="hsm-meter-fill <?php echo esc_attr( $level_class ); ?>" style="width:<?php echo esc_attr( (string) $score ); ?>%"></div>
+					<div class="echs-meter-track">
+						<div class="echs-meter-fill <?php echo esc_attr( $level_class ); ?>" style="width:<?php echo esc_attr( (string) $score ); ?>%"></div>
 					</div>
 					<p style="font-size:12px;margin:4px 0 12px;">
 						<?php
 						printf(
-							esc_html__( '%1$d/100 — %2$d of 5 checks passing', 'homerite-schema' ),
+							esc_html__( '%1$d/100 — %2$d of 5 checks passing', 'echs' ),
 							(int) $score,
 							(int) $passing_count
 						);
@@ -294,7 +294,7 @@ class HSM_GBP {
 
 					<ul style="margin:0 0 16px;padding:0;list-style:none;">
 						<?php foreach ( $checks as $check ) : ?>
-							<li class="hsm-check-item" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;">
+							<li class="echs-check-item" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;">
 								<span style="color:<?php echo $check['pass'] ? '#00a32a' : '#d63638'; ?>;font-size:16px;">
 									<?php echo $check['pass'] ? '&#10003;' : '&#10007;'; ?>
 								</span>
@@ -307,7 +307,7 @@ class HSM_GBP {
 					</ul>
 
 					<?php if ( ! empty( $suggestions ) ) : ?>
-						<h3 style="font-size:13px;margin:0 0 8px;"><?php esc_html_e( 'Recommendations', 'homerite-schema' ); ?></h3>
+						<h3 style="font-size:13px;margin:0 0 8px;"><?php esc_html_e( 'Recommendations', 'echs' ); ?></h3>
 						<ul style="margin:0;padding-left:18px;font-size:12px;color:#3c434a;">
 							<?php foreach ( $suggestions as $suggestion ) : ?>
 								<li style="margin-bottom:6px;"><?php echo esc_html( $suggestion ); ?></li>
@@ -316,15 +316,15 @@ class HSM_GBP {
 					<?php endif; ?>
 				</div>
 
-				<div class="hsm-card" style="flex:1;min-width:300px;">
-					<h2><?php esc_html_e( 'Recent Reviews', 'homerite-schema' ); ?></h2>
+				<div class="echs-card" style="flex:1;min-width:300px;">
+					<h2><?php esc_html_e( 'Recent Reviews', 'echs' ); ?></h2>
 					<?php if ( empty( $reviews ) ) : ?>
-						<p><?php esc_html_e( 'No reviews found.', 'homerite-schema' ); ?></p>
+						<p><?php esc_html_e( 'No reviews found.', 'echs' ); ?></p>
 					<?php else : ?>
 						<ul style="margin:0;padding:0;list-style:none;">
 							<?php foreach ( array_slice( $reviews, 0, 5 ) as $review ) :
 								$star_rating  = $review['starRating'] ?? '';
-								$author       = $review['reviewer']['displayName'] ?? __( 'Anonymous', 'homerite-schema' );
+								$author       = $review['reviewer']['displayName'] ?? __( 'Anonymous', 'echs' );
 								$comment      = $review['comment'] ?? '';
 								$excerpt      = mb_strlen( $comment ) > 80 ? mb_substr( $comment, 0, 80 ) . '…' : $comment;
 								$update_time  = $review['updateTime'] ?? '';
@@ -344,7 +344,7 @@ class HSM_GBP {
 										<strong style="font-size:13px;"><?php echo esc_html( $author ); ?></strong>
 										<?php if ( ! $has_reply ) : ?>
 											<span style="background:#d63638;color:#fff;font-size:10px;padding:2px 6px;border-radius:3px;">
-												<?php esc_html_e( 'Needs reply', 'homerite-schema' ); ?>
+												<?php esc_html_e( 'Needs reply', 'echs' ); ?>
 											</span>
 										<?php endif; ?>
 										<?php if ( $date_display ) : ?>
@@ -359,16 +359,16 @@ class HSM_GBP {
 						</ul>
 						<p style="margin-top:12px;">
 							<a href="https://business.google.com/" target="_blank" rel="noopener">
-								<?php esc_html_e( 'View all on Google →', 'homerite-schema' ); ?>
+								<?php esc_html_e( 'View all on Google →', 'echs' ); ?>
 							</a>
 						</p>
 					<?php endif; ?>
 				</div>
 
-				<div class="hsm-card" style="flex:1;min-width:300px;">
-					<h2><?php esc_html_e( 'Q&amp;A', 'homerite-schema' ); ?></h2>
+				<div class="echs-card" style="flex:1;min-width:300px;">
+					<h2><?php esc_html_e( 'Q&amp;A', 'echs' ); ?></h2>
 					<?php if ( empty( $questions ) ) : ?>
-						<p><?php esc_html_e( 'No questions found.', 'homerite-schema' ); ?></p>
+						<p><?php esc_html_e( 'No questions found.', 'echs' ); ?></p>
 					<?php else : ?>
 						<ul style="margin:0;padding:0;list-style:none;">
 							<?php foreach ( array_slice( $questions, 0, 5 ) as $question ) :
@@ -380,7 +380,7 @@ class HSM_GBP {
 										<span style="font-size:13px;flex:1;"><?php echo esc_html( $question_text ); ?></span>
 										<?php if ( ! $has_answer ) : ?>
 											<span style="background:#d63638;color:#fff;font-size:10px;padding:2px 6px;border-radius:3px;white-space:nowrap;">
-												<?php esc_html_e( 'Unanswered', 'homerite-schema' ); ?>
+												<?php esc_html_e( 'Unanswered', 'echs' ); ?>
 											</span>
 										<?php endif; ?>
 									</div>
@@ -390,30 +390,30 @@ class HSM_GBP {
 					<?php endif; ?>
 				</div>
 
-				<div class="hsm-card" style="flex:1;min-width:300px;">
-					<h2><?php esc_html_e( 'Quick Actions', 'homerite-schema' ); ?></h2>
+				<div class="echs-card" style="flex:1;min-width:300px;">
+					<h2><?php esc_html_e( 'Quick Actions', 'echs' ); ?></h2>
 					<ul style="margin:0;padding:0;list-style:none;">
 						<li style="margin-bottom:12px;">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hsm-gbp-jobs' ) ); ?>" class="button button-secondary">
-								<?php esc_html_e( 'Push Job Photo', 'homerite-schema' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=echs-gbp-jobs' ) ); ?>" class="button button-secondary">
+								<?php esc_html_e( 'Push Job Photo', 'echs' ); ?>
 							</a>
 						</li>
 						<li style="margin-bottom:12px;">
 							<a href="https://business.google.com/" target="_blank" rel="noopener" class="button button-secondary">
-								<?php esc_html_e( 'GBP Dashboard on Google ↗', 'homerite-schema' ); ?>
+								<?php esc_html_e( 'GBP Dashboard on Google ↗', 'echs' ); ?>
 							</a>
 						</li>
 						<li>
 							<a href="<?php echo esc_url(
 								add_query_arg(
 									[
-										'action'   => 'hsm_gbp_clear_location',
-										'_wpnonce' => wp_create_nonce( 'hsm_gbp_clear_location' ),
+										'action'   => 'echs_gbp_clear_location',
+										'_wpnonce' => wp_create_nonce( 'echs_gbp_clear_location' ),
 									],
 									admin_url( 'admin-post.php' )
 								)
 							); ?>" class="button button-link">
-								<?php esc_html_e( 'Change Selected Location', 'homerite-schema' ); ?>
+								<?php esc_html_e( 'Change Selected Location', 'echs' ); ?>
 							</a>
 						</li>
 					</ul>
@@ -425,16 +425,16 @@ class HSM_GBP {
 	}
 
 	public static function render_widget_section(): void {
-		if ( ! HSM_Google_Auth::is_connected() ) {
+		if ( ! ECHS_Google_Auth::is_connected() ) {
 			return;
 		}
 
-		$location_name = get_option( 'hsm_gbp_location_name', '' );
+		$location_name = get_option( 'echs_gbp_location_name', '' );
 		if ( empty( $location_name ) ) {
 			return;
 		}
 
-		$transient_key = 'hsm_gbp_health_' . md5( $location_name );
+		$transient_key = 'echs_gbp_health_' . md5( $location_name );
 		$health        = get_transient( $transient_key );
 
 		if ( false === $health ) {
@@ -447,32 +447,32 @@ class HSM_GBP {
 		$passing_count = count( array_filter( $checks, fn( $c ) => $c['pass'] ) );
 
 		if ( $score >= 80 ) {
-			$level_class = 'hsm-level-optimal';
+			$level_class = 'echs-level-optimal';
 		} elseif ( $score >= 60 ) {
-			$level_class = 'hsm-level-fair';
+			$level_class = 'echs-level-fair';
 		} else {
-			$level_class = 'hsm-level-low';
+			$level_class = 'echs-level-low';
 		}
 
-		echo '<h3 class="hsm-widget-section-title"><span class="dashicons dashicons-building"></span> '
-			. esc_html__( 'GBP Health', 'homerite-schema' ) . '</h3>';
+		echo '<h3 class="echs-widget-section-title"><span class="dashicons dashicons-building"></span> '
+			. esc_html__( 'GBP Health', 'echs' ) . '</h3>';
 
-		echo '<div class="hsm-meter-track">'
-			. '<div class="hsm-meter-fill ' . esc_attr( $level_class ) . '" style="width:' . esc_attr( (string) $score ) . '%"></div>'
+		echo '<div class="echs-meter-track">'
+			. '<div class="echs-meter-fill ' . esc_attr( $level_class ) . '" style="width:' . esc_attr( (string) $score ) . '%"></div>'
 			. '</div>';
 
 		printf(
 			'<p style="font-size:12px;margin:4px 0 0;">%s</p>',
 			esc_html(
 				sprintf(
-					__( '%1$d/100 — %2$d of 5 checks passing', 'homerite-schema' ),
+					__( '%1$d/100 — %2$d of 5 checks passing', 'echs' ),
 					$score,
 					$passing_count
 				)
 			)
 		);
 
-		echo '<p class="hsm-widget-footer"><a href="' . esc_url( admin_url( 'admin.php?page=hsm-gbp' ) ) . '">'
-			. esc_html__( 'View GBP Dashboard →', 'homerite-schema' ) . '</a></p>';
+		echo '<p class="echs-widget-footer"><a href="' . esc_url( admin_url( 'admin.php?page=echs-gbp' ) ) . '">'
+			. esc_html__( 'View GBP Dashboard →', 'echs' ) . '</a></p>';
 	}
 }
