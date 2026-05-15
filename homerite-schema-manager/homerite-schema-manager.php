@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Stride Analytics
  * Plugin URI:        https://mydigitalstride.com/stride-analytics
- * Description:       All-in-one SEO, structured data (JSON-LD), and marketing analytics plugin. Manages LocalBusiness schema, XML sitemaps, redirect manager, 404 monitoring, multi-keyword clustering, readability analysis, WooCommerce integration, GTM, Facebook Pixel, LinkedIn Insight Tag, Google Search status monitoring, and broadcast messages.
- * Version:           2.3.0
+ * Description:       All-in-one SEO, structured data (JSON-LD), and marketing analytics plugin. Manages LocalBusiness schema, XML sitemaps, redirect manager, 404 monitoring, multi-keyword clustering, readability analysis, WooCommerce integration, GTM, Facebook Pixel, LinkedIn Insight Tag, Google Search status monitoring, broadcast messages, and Google Business Profile management with geo-tagged job photo push.
+ * Version:           2.4.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Digital Stride
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Plugin constants.
-define( 'HSM_VERSION',     '2.3.0' );
+define( 'HSM_VERSION',     '2.4.0' );
 define( 'HSM_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'HSM_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'HSM_PLUGIN_FILE', __FILE__ );
@@ -47,6 +47,9 @@ $hsm_includes = [
 	'includes/class-hsm-sitemap.php',
 	'includes/class-hsm-redirects.php',
 	'includes/class-hsm-404-monitor.php',
+	'includes/class-hsm-google-auth.php',
+	'includes/class-hsm-gbp.php',
+	'includes/class-hsm-gbp-jobs.php',
 ];
 
 foreach ( $hsm_includes as $file ) {
@@ -72,5 +75,8 @@ function hsm_init(): void {
 	HSM_Sitemap::init();
 	HSM_Redirects::init();
 	HSM_404_Monitor::init();
+	HSM_Google_Auth::init();
+	HSM_GBP::init();
+	HSM_GBP_Jobs::init();
 }
 add_action( 'plugins_loaded', 'hsm_init' );
