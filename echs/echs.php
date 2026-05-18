@@ -50,6 +50,7 @@ $echs_includes = [
 	'includes/class-echs-google-auth.php',
 	'includes/class-echs-gbp.php',
 	'includes/class-echs-gbp-jobs.php',
+	'includes/class-echs-yoast-migrator.php',
 ];
 
 foreach ( $echs_includes as $file ) {
@@ -78,5 +79,6 @@ function echs_init(): void {
 	ECHS_Google_Auth::init();
 	ECHS_GBP::init();
 	ECHS_GBP_Jobs::init();
+	ECHS_Yoast_Migrator::init();
 }
 add_action( 'plugins_loaded', 'echs_init' );
