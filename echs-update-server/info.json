@@ -1,0 +1,24 @@
+{
+  "name": "ECHoS SEO Analytics",
+  "slug": "echs",
+  "version": "2.4.0",
+  "download_url": "https://mydigitalstride.com/echos-updates/echs-2.4.0.zip",
+  "url": "https://mydigitalstride.com/echos-seo-analytics",
+  "requires": "6.0",
+  "requires_php": "8.0",
+  "tested": "6.7",
+  "last_updated": "2026-05-18",
+  "upgrade_notice": "",
+  "icons": {
+    "1x": "https://mydigitalstride.com/echos-updates/icon-128x128.png",
+    "2x": "https://mydigitalstride.com/echos-updates/icon-256x256.png"
+  },
+  "banners": {
+    "low": "https://mydigitalstride.com/echos-updates/banner-772x250.png",
+    "high": "https://mydigitalstride.com/echos-updates/banner-1544x500.png"
+  },
+  "sections": {
+    "description": "<p>Engineering, Construction, Home Services SEO Analytics. All-in-one SEO, structured data, redirect manager, 404 monitoring, multi-keyword clustering, Google Business Profile integration, and more.</p>",
+    "changelog": "<h4>2.4.0</h4><ul><li>Google Business Profile OAuth integration with profile health, reviews, Q&amp;A, and job photo push</li><li>Yoast SEO one-click migration tool</li><li>SEO Tasks dashboard with actionable checklist</li><li>Remote update support</li></ul>"
+  }
+}

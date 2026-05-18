@@ -752,6 +752,8 @@ class ECHS_Global_Settings {
 				<?php submit_button( __( 'Save Settings', 'echs' ) ); ?>
 			</form>
 
+			<?php ECHS_License::render_settings_section(); ?>
+
 			<?php ECHS_Google_Auth::render_settings_section(); ?>
 
 		</div>
