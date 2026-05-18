@@ -13,9 +13,9 @@ defined( 'ABSPATH' ) || exit;
 
 class ECHS_Updater {
 
-	const UPDATE_URL = 'https://mydigitalstride.com/echos-updates/info.json';
-	const CACHE_KEY  = 'echs_update_info';
-	const CACHE_TTL  = 12 * HOUR_IN_SECONDS;
+	const UPDATE_URL  = 'https://mydigitalstride.com/echos-updates/api.php';
+	const CACHE_KEY   = 'echs_update_info';
+	const CACHE_TTL   = 12 * HOUR_IN_SECONDS;
 	const PLUGIN_FILE = 'echs/echs.php';
 
 	public static function init(): void {
@@ -31,7 +31,16 @@ class ECHS_Updater {
 			return $cached;
 		}
 
-		$response = wp_remote_get( self::UPDATE_URL, [
+		$license = ECHS_License::get_key();
+		$url     = add_query_arg( [
+			'action'     => 'info',
+			'license'    => $license,
+			'site'       => home_url(),
+			'version'    => ECHS_VERSION,
+			'wp_version' => get_bloginfo( 'version' ),
+		], self::UPDATE_URL );
+
+		$response = wp_remote_get( $url, [
 			'timeout'    => 10,
 			'user-agent' => 'ECHoS/' . ECHS_VERSION . '; ' . home_url(),
 		] );
