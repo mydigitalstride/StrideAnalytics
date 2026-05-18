@@ -85,6 +85,9 @@ class ECHS_Admin {
 	public static function render_dashboard_widget(): void {
 		echo '<div class="echs-dashboard-widget">';
 
+		// SEO task list (top 3 incomplete tasks).
+		ECHS_Tasks::render_widget_section();
+
 		// Broadcast message (if any).
 		ECHS_Broadcast::render_widget_section();
 

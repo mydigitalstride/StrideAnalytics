@@ -51,6 +51,7 @@ $echs_includes = [
 	'includes/class-echs-gbp.php',
 	'includes/class-echs-gbp-jobs.php',
 	'includes/class-echs-yoast-migrator.php',
+	'includes/class-echs-tasks.php',
 ];
 
 foreach ( $echs_includes as $file ) {
@@ -80,5 +81,6 @@ function echs_init(): void {
 	ECHS_GBP::init();
 	ECHS_GBP_Jobs::init();
 	ECHS_Yoast_Migrator::init();
+	ECHS_Tasks::init();
 }
 add_action( 'plugins_loaded', 'echs_init' );
