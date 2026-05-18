@@ -52,6 +52,7 @@ $echs_includes = [
 	'includes/class-echs-gbp-jobs.php',
 	'includes/class-echs-yoast-migrator.php',
 	'includes/class-echs-tasks.php',
+	'includes/class-echs-updater.php',
 ];
 
 foreach ( $echs_includes as $file ) {
@@ -82,5 +83,7 @@ function echs_init(): void {
 	ECHS_GBP_Jobs::init();
 	ECHS_Yoast_Migrator::init();
 	ECHS_Tasks::init();
+	ECHS_Updater::init();
+	add_action( 'wp_ajax_echs_dismiss_update_notice', [ 'ECHS_Updater', 'ajax_dismiss_notice' ] );
 }
 add_action( 'plugins_loaded', 'echs_init' );
