@@ -1030,7 +1030,15 @@ class ECHS_Meta_Box {
 					<button type="button" class="button button-small" id="echs-ca-scan">
 						<?php esc_html_e( '&#8635; Scan Content', 'echs' ); ?>
 					</button>
+					<button type="button" class="button button-small" id="echs-scan-content"
+						data-post-id="<?php echo esc_attr( $post->ID ); ?>"
+						style="margin-left:6px"
+						title="<?php esc_attr_e( 'Deep scan: fetches the rendered page to extract field suggestions (SEO, Service, FAQ, HowTo, ACF)', 'echs' ); ?>">
+						&#128269; <?php esc_html_e( 'Deep Scan', 'echs' ); ?>
+					</button>
 				</div>
+				<div id="echs-scan-status" style="margin-top:4px;font-size:12px;"></div>
+				<div id="echs-scan-results" style="display:none;margin-top:10px;"></div>
 
 				<div id="echs-kd-results" class="echs-kd-results" style="display:none">
 					<!-- Density meter bar -->
