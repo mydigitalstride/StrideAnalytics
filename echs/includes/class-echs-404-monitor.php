@@ -9,9 +9,13 @@ defined( 'ABSPATH' ) || exit;
 
 class ECHS_404_Monitor {
 
+	const CRON_HOOK = 'echs_404_daily_summary';
+
 	public static function init(): void {
-		add_action( 'template_redirect', [ __CLASS__, 'log_404' ], 2 );
-		add_action( 'admin_menu',        [ __CLASS__, 'register_menu' ] );
+		add_action( 'template_redirect',    [ __CLASS__, 'log_404' ], 2 );
+		add_action( 'admin_menu',           [ __CLASS__, 'register_menu' ] );
+		add_action( self::CRON_HOOK,        [ __CLASS__, 'send_daily_summary' ] );
+		self::schedule_cron();
 	}
 
 	public static function get_table_name(): string {
@@ -37,6 +41,27 @@ class ECHS_404_Monitor {
 		) {$charset};";
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
+	}
+
+	/**
+	 * Schedule the daily summary cron if not already scheduled.
+	 */
+	public static function schedule_cron(): void {
+		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
+			// Fire once per day starting at the next midnight (site time).
+			$midnight = strtotime( 'tomorrow midnight', current_time( 'timestamp' ) );
+			wp_schedule_event( $midnight, 'daily', self::CRON_HOOK );
+		}
+	}
+
+	/**
+	 * Remove the scheduled cron event (called on plugin deactivation).
+	 */
+	public static function clear_cron(): void {
+		$timestamp = wp_next_scheduled( self::CRON_HOOK );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, self::CRON_HOOK );
+		}
 	}
 
 	public static function log_404(): void {
@@ -79,51 +104,76 @@ class ECHS_404_Monitor {
 				],
 				[ '%s', '%s', '%d', '%d', '%d' ]
 			);
-			self::send_notification( $url, $referrer );
+			// No immediate email — the daily cron will batch all new 404s.
 		}
 	}
 
-	public static function send_notification( string $url, string $referrer ): void {
-		$site_name    = get_bloginfo( 'name' );
-		$site_url     = get_bloginfo( 'url' );
-		$admin_email  = get_bloginfo( 'admin_email' );
-		$subject      = '[' . $site_name . '] 404 Error Detected: ' . $url;
-		$full_url     = trailingslashit( $site_url ) . ltrim( $url, '/' );
-		$referred_by  = $referrer !== '' ? esc_html( $referrer ) : 'Direct / unknown';
-		$detected_at  = wp_date( 'M j, Y g:i a', time() );
-		$suggestion   = self::get_suggestion( $url );
+	/**
+	 * Send one summary email listing all unnotified 404 errors, then mark them notified.
+	 * Runs daily via WP-Cron; sends nothing when there are no new errors.
+	 */
+	public static function send_daily_summary(): void {
+		global $wpdb;
 
-		$redirect_manager_url = admin_url( 'admin.php?page=echs-redirects&echs_prefill=' . urlencode( $url ) );
+		$table = self::get_table_name();
+		$rows  = $wpdb->get_results(
+			"SELECT * FROM {$table} WHERE notified = 0 ORDER BY last_seen DESC"
+		);
 
-		$suggestion_block = '';
-		if ( $suggestion !== '' ) {
-			$suggestion_block = '<h3>Suggested content</h3><p>' . $suggestion . '</p>';
+		if ( empty( $rows ) ) {
+			return;
 		}
 
-		$body  = '<h2>404 Error Detected</h2>';
-		$body .= '<p>A visitor hit a missing page on <strong>' . esc_html( $site_url ) . '</strong>.</p>';
-		$body .= '<table>';
-		$body .= '<tr><th>URL not found</th><td>' . esc_html( $full_url ) . '</td></tr>';
-		$body .= '<tr><th>Referred from</th><td>' . $referred_by . '</td></tr>';
-		$body .= '<tr><th>Detected</th><td>' . esc_html( $detected_at ) . '</td></tr>';
-		$body .= '</table>';
-		$body .= '<h3>How to fix this</h3>';
-		$body .= '<p><strong>Option 1 — Add a 301 Redirect (Recommended)</strong><br>';
-		$body .= 'If this page was moved or renamed, set up a redirect so visitors and search engines are sent to the right place.<br>';
-		$body .= '<a href="' . esc_url( $redirect_manager_url ) . '">&#8594; Add a redirect in ECHoS SEO Analytics</a></p>';
-		$body .= '<p><strong>Option 2 — Create content at this URL</strong><br>';
-		$body .= 'If this page should exist, create it in WordPress.</p>';
-		$body .= '<p><strong>Option 3 — Find and fix broken links</strong><br>';
-		$body .= 'Search your site and any external sources linking to this URL and update them.</p>';
-		$body .= $suggestion_block;
+		$site_name   = get_bloginfo( 'name' );
+		$site_url    = get_bloginfo( 'url' );
+		$admin_email = get_bloginfo( 'admin_email' );
+		$count       = count( $rows );
+		$subject     = '[' . $site_name . '] Daily 404 Summary: ' . $count . ' error' . ( $count > 1 ? 's' : '' ) . ' detected';
+		$date_label  = wp_date( 'M j, Y' );
+
+		$body  = '<h2>Daily 404 Error Summary — ' . esc_html( $date_label ) . '</h2>';
+		$body .= '<p><strong>' . $count . '</strong> new 404 error' . ( $count > 1 ? 's were' : ' was' ) . ' recorded on <strong>' . esc_html( $site_url ) . '</strong> since the last report.</p>';
+
+		$body .= '<table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;width:100%">';
+		$body .= '<thead style="background:#f0f0f0"><tr>';
+		$body .= '<th style="text-align:left">URL not found</th>';
+		$body .= '<th style="text-align:left">Hits</th>';
+		$body .= '<th style="text-align:left">Referred from</th>';
+		$body .= '<th style="text-align:left">First seen</th>';
+		$body .= '<th style="text-align:left">Last seen</th>';
+		$body .= '</tr></thead><tbody>';
+
+		foreach ( $rows as $row ) {
+			$full_url    = trailingslashit( $site_url ) . ltrim( $row->url, '/' );
+			$referred_by = $row->referrer !== '' ? esc_html( $row->referrer ) : 'Direct / unknown';
+			$first_seen  = wp_date( 'M j, Y g:i a', strtotime( $row->first_seen ) );
+			$last_seen   = wp_date( 'M j, Y g:i a', strtotime( $row->last_seen ) );
+
+			$redirect_url = admin_url( 'admin.php?page=echs-redirects&echs_prefill=' . urlencode( $row->url ) );
+
+			$body .= '<tr>';
+			$body .= '<td><a href="' . esc_url( $redirect_url ) . '">' . esc_html( $full_url ) . '</a></td>';
+			$body .= '<td>' . absint( $row->hit_count ) . '</td>';
+			$body .= '<td>' . $referred_by . '</td>';
+			$body .= '<td>' . esc_html( $first_seen ) . '</td>';
+			$body .= '<td>' . esc_html( $last_seen ) . '</td>';
+			$body .= '</tr>';
+		}
+
+		$body .= '</tbody></table>';
+		$body .= '<br>';
+		$body .= '<p><strong>How to fix these errors</strong><br>';
+		$body .= 'Click any URL in the table above to open the redirect manager and add a 301 redirect, or visit your site to create the missing content.</p>';
 		$body .= '<hr>';
 		$body .= '<p><a href="' . esc_url( admin_url( 'admin.php?page=echs-404-monitor' ) ) . '">&#8594; View all 404 errors in ECHoS SEO Analytics</a></p>';
 
 		add_filter( 'wp_mail_content_type', [ __CLASS__, 'set_html_content_type' ] );
-
 		wp_mail( $admin_email, $subject, $body );
-
 		remove_filter( 'wp_mail_content_type', [ __CLASS__, 'set_html_content_type' ] );
+
+		// Mark all reported rows as notified.
+		$ids = implode( ',', array_map( 'absint', wp_list_pluck( $rows, 'id' ) ) );
+		$wpdb->query( "UPDATE {$table} SET notified = 1 WHERE id IN ({$ids})" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	public static function get_suggestion( string $url ): string {

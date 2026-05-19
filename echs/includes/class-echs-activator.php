@@ -16,6 +16,7 @@ class ECHS_Activator {
 		ECHS_Sitemap::activate();
 		ECHS_Redirects::create_table();
 		ECHS_404_Monitor::create_table();
+		ECHS_404_Monitor::schedule_cron();
 
 		$defaults = [
 			// Business identity.
@@ -65,7 +66,9 @@ class ECHS_Activator {
 	}
 
 	/**
-	 * Nothing to clean on deactivation (preserve data).
+	 * Preserve data on deactivation but clear the scheduled cron event.
 	 */
-	public static function deactivate(): void {}
+	public static function deactivate(): void {
+		ECHS_404_Monitor::clear_cron();
+	}
 }
