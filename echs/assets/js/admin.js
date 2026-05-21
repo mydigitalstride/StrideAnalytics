@@ -809,6 +809,268 @@
 		frame.open();
 	});
 
+	// ─── Content Analysis ─────────────────────────────────────────────
+
+	/**
+	 * Get the post content as plain text from whichever editor is active.
+	 * Handles Gutenberg (block editor), TinyMCE (classic editor), and
+	 * plain textarea fallback.
+	 */
+	function echsGetEditorText() {
+		// Gutenberg block editor.
+		if (
+			typeof wp !== 'undefined' &&
+			wp.data &&
+			wp.data.select &&
+			wp.data.select('core/editor')
+		) {
+			try {
+				var gb = wp.data.select('core/editor').getEditedPostContent();
+				if (gb) return gb.replace(/<[^>]+>/g, ' ');
+			} catch (e) {}
+		}
+
+		// TinyMCE classic editor.
+		if (typeof tinymce !== 'undefined') {
+			var ed = tinymce.get('content');
+			if (ed && !ed.isHidden()) {
+				return ed.getContent({ format: 'text' });
+			}
+		}
+
+		// Plain textarea fallback.
+		var raw = $('#content').val() || '';
+		return raw.replace(/<[^>]+>/g, ' ');
+	}
+
+	/**
+	 * Count non-overlapping case-insensitive occurrences of needle in haystack.
+	 */
+	function echsCountOccurrences(haystack, needle) {
+		if (!needle) return 0;
+		var escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		var re = new RegExp('\\b' + escaped + '\\b', 'gi');
+		var matches = haystack.match(re);
+		return matches ? matches.length : 0;
+	}
+
+	/**
+	 * Count words in a string.
+	 */
+	function echsWordCount(text) {
+		var trimmed = text.replace(/\s+/g, ' ').trim();
+		return trimmed ? trimmed.split(' ').length : 0;
+	}
+
+	/**
+	 * Return a density level label + CSS modifier class.
+	 */
+	function echsDensityLevel(pct) {
+		if (pct === 0)    return { label: 'Not found',      cls: 'echs-level-none' };
+		if (pct < 0.5)    return { label: 'Too low',        cls: 'echs-level-low' };
+		if (pct < 1)      return { label: 'Could be more',  cls: 'echs-level-fair' };
+		if (pct <= 3)     return { label: 'Optimal',        cls: 'echs-level-optimal' };
+		if (pct <= 5)     return { label: 'High',           cls: 'echs-level-high' };
+		return              { label: 'Over-optimised',   cls: 'echs-level-over' };
+	}
+
+	/**
+	 * Schema suggestion rules.
+	 * Each rule: { type, label, reason, test(text) → boolean }
+	 */
+	var echsSuggestionRules = [
+		{
+			type: 'FAQPage',
+			label: 'FAQPage',
+			reason: 'Page contains question-and-answer patterns (multiple "?" or Q&A headings).',
+			test: function (t) {
+				var questions = (t.match(/\?/g) || []).length;
+				return questions >= 3;
+			},
+		},
+		{
+			type: 'HowTo',
+			label: 'HowTo',
+			reason: 'Page contains step-by-step instructions (numbered steps or "Step N" patterns).',
+			test: function (t) {
+				return /step\s+\d|^\s*\d+\.\s+\w/im.test(t) ||
+					/(first|second|third|then|next|finally)[,\s]/i.test(t);
+			},
+		},
+		{
+			type: 'Product',
+			label: 'Product',
+			reason: 'Page mentions prices, availability, or product-buying language.',
+			test: function (t) {
+				return /\$\s*[\d,]+(\.\d{2})?|\bprice\b|\bbuy\b|\bpurchase\b|\badd to cart\b|\bin stock\b/i.test(t);
+			},
+		},
+		{
+			type: 'Review',
+			label: 'Review',
+			reason: 'Page contains review or rating language.',
+			test: function (t) {
+				return /\b(stars?|rated|rating|review|recommend|out of 5|[1-5]\/5)\b/i.test(t);
+			},
+		},
+		{
+			type: 'Service',
+			label: 'Service',
+			reason: 'Page describes a service offering (service keywords detected).',
+			test: function (t) {
+				return /\b(service|repair|installation|replacement|cleaning|inspection|consultation|estimate|quote)\b/i.test(t);
+			},
+		},
+		{
+			type: 'LocalBusiness',
+			label: 'LocalBusiness',
+			reason: 'Page mentions business location, phone, or contact details.',
+			test: function (t) {
+				return /\b(call us|contact us|visit us|located at|serving|phone|address|\d{3}[-.\s]\d{3}[-.\s]\d{4})\b/i.test(t);
+			},
+		},
+	];
+
+	/**
+	 * Build a keyword placement checklist (in title, meta desc, first para, headings).
+	 */
+	function echsPlacementChecklist(keyword) {
+		if (!keyword) return [];
+		var kw  = keyword.toLowerCase();
+		var re  = new RegExp('\\b' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+		var items = [];
+
+		// Title tag override.
+		var titleVal = $('#echs_seo_title').val() || document.title || '';
+		items.push({
+			pass: re.test(titleVal),
+			text: 'In page title',
+		});
+
+		// Meta description.
+		var descVal = $('#echs_seo_description').val();
+		items.push({
+			pass: re.test(descVal),
+			text: 'In meta description',
+		});
+
+		// Focus keyword field itself is set.
+		items.push({
+			pass: !!keyword,
+			text: 'Focus keyword is set',
+		});
+
+		return items;
+	}
+
+	/**
+	 * Run the full content analysis and update the UI.
+	 */
+	function echsRunAnalysis() {
+		var keyword  = $('#echs_focus_keyword').val().trim();
+		var text     = echsGetEditorText();
+		var wordCnt  = echsWordCount(text);
+
+		// ── Keyword label ──
+		$('#echs-kd-keyword-label').text(keyword || '(none set)');
+
+		if (!keyword) {
+			$('#echs-kd-results').hide();
+			$('#echs-kd-no-keyword').show();
+		} else {
+			$('#echs-kd-no-keyword').hide();
+			$('#echs-kd-results').show();
+
+			var count   = echsCountOccurrences(text, keyword);
+			var density = wordCnt > 0 ? (count / wordCnt * 100) : 0;
+			var level   = echsDensityLevel(density);
+
+			// Bar: clamp at 4 % = 100 % visual width.
+			var barPct  = Math.min(density / 4 * 100, 100);
+			$('#echs-kd-bar')
+				.css('width', barPct + '%')
+				.attr('class', 'echs-meter-fill ' + level.cls);
+
+			$('#echs-kd-density').text(density.toFixed(2) + '%');
+			$('#echs-kd-count').text(count);
+			$('#echs-kd-words').text(wordCnt.toLocaleString());
+
+			$('#echs-kd-badge')
+				.text(level.label)
+				.attr('class', 'echs-kd-badge ' + level.cls);
+
+			// Placement checklist.
+			var checkItems = echsPlacementChecklist(keyword);
+			var $cl = $('#echs-kd-checklist').empty();
+			$.each(checkItems, function (i, item) {
+				$cl.append(
+					'<div class="echs-check-item ' + (item.pass ? 'echs-check-pass' : 'echs-check-fail') + '">' +
+					(item.pass ? '&#10003;' : '&#10007;') + ' ' + item.text +
+					'</div>'
+				);
+			});
+		}
+
+		// ── Schema suggestions ──
+		var $list = $('#echs-suggestions-list').empty();
+		var found = [];
+
+		$.each(echsSuggestionRules, function (i, rule) {
+			if (rule.test(text)) {
+				found.push(rule);
+			}
+		});
+
+		if (!found.length) {
+			$list.html(
+				'<p class="description">' +
+				'No strong pattern signals found. Try adding more content, then scan again.' +
+				'</p>'
+			);
+		} else {
+			$.each(found, function (i, rule) {
+				var alreadyOn = $('[name="echs_schema_enable_' + rule.type + '"]').is(':checked');
+				var $card = $(
+					'<div class="echs-suggestion-card">' +
+					'<div class="echs-suggestion-info">' +
+					'<strong class="echs-suggestion-type">' + rule.label + '</strong>' +
+					'<span class="echs-suggestion-reason">' + rule.reason + '</span>' +
+					'</div>' +
+					'<div class="echs-suggestion-action">' +
+					( alreadyOn
+						? '<span class="echs-suggestion-active">&#10003; Already enabled</span>'
+						: '<button type="button" class="button button-small echs-apply-suggestion" data-type="' + rule.type + '">Apply</button>'
+					) +
+					'</div>' +
+					'</div>'
+				);
+				$list.append($card);
+			});
+		}
+	}
+
+	// Scan button click.
+	$('#echs-ca-scan').on('click', echsRunAnalysis);
+
+	// Apply suggestion → enable schema checkbox + switch to Schema tab.
+	$(document).on('click', '.echs-apply-suggestion', function () {
+		var type = $(this).data('type');
+		var $cb  = $('[name="echs_schema_enable_' + type + '"]');
+		if ($cb.length) {
+			$cb.prop('checked', true).trigger('change');
+			// Switch to Schema tab.
+			$('[data-tab="echs-tab-schema"]').trigger('click');
+			// Scroll to the section.
+			var $section = $('#echs-schema-section-' + type.toLowerCase());
+			if ($section.length) {
+				$('html, body').animate({ scrollTop: $section.offset().top - 40 }, 300);
+			}
+		}
+		// Refresh the suggestion card to show "Already enabled".
+		echsRunAnalysis();
+	});
+
+
 	// ─── Multi-keyword UI ─────────────────────────────────────────────────
 
 	function echsGetKeywords() {
