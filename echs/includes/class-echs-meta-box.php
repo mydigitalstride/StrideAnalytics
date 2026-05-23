@@ -174,17 +174,18 @@ class ECHS_Meta_Box {
 		}
 
 		$result = [
-			'seo_title'           => '',
-			'seo_description'     => '',
-			'service_name'        => '',
-			'service_description' => '',
-			'product_name'        => '',
-			'product_description' => '',
-			'faqs'                => [],
-			'howto_steps'         => [],
-			'acf_fields'          => [],
-			'page_text'           => '',  // Plain text for Content Analysis keyword density.
-			'source'              => '',
+			'seo_title'            => '',
+			'seo_description'      => '',
+			'seo_descriptions'     => [],
+			'service_name'         => '',
+			'service_description'  => '',
+			'product_name'         => '',
+			'product_description'  => '',
+			'faqs'                 => [],
+			'howto_steps'          => [],
+			'suggested_keywords'   => [],
+			'page_text'            => '',  // Plain text for Content Analysis keyword density.
+			'source'               => '',
 		];
 
 		// ── 1. ACF fields (fast, in-process) ──────────────────────────────
@@ -224,6 +225,7 @@ class ECHS_Meta_Box {
 			$rendered = [
 				'seo_title'           => '',
 				'seo_description'     => '',
+				'seo_descriptions'    => [],
 				'service_name'        => '',
 				'service_description' => '',
 				'product_name'        => '',
@@ -238,6 +240,9 @@ class ECHS_Meta_Box {
 					$result[ $k ] = $rendered[ $k ];
 				}
 			}
+			if ( empty( $result['seo_descriptions'] ) && ! empty( $rendered['seo_descriptions'] ) ) {
+				$result['seo_descriptions'] = $rendered['seo_descriptions'];
+			}
 			if ( empty( $result['faqs'] ) && ! empty( $rendered['faqs'] ) ) {
 				$result['faqs'] = $rendered['faqs'];
 			}
@@ -248,6 +253,11 @@ class ECHS_Meta_Box {
 		} elseif ( '' === $result['page_text'] ) {
 			// Fallback: use ACF flat values as text source.
 			$result['page_text'] = implode( ' ', array_filter( $result['acf_fields'], 'is_string' ) );
+		}
+
+		// Keyword suggestions derived from plain-text density.
+		if ( '' !== $result['page_text'] ) {
+			$result['suggested_keywords'] = self::suggest_keywords( $result['page_text'] );
 		}
 
 		wp_send_json_success( $result );
@@ -264,29 +274,73 @@ class ECHS_Meta_Box {
 		libxml_clear_errors();
 		$xpath = new DOMXPath( $dom );
 
-		// H1 → SEO title / service name / product name.
-		foreach ( $xpath->query( '//main//h1 | //article//h1 | //div[contains(@class,"entry")]//h1 | //h1' ) as $node ) {
-			$text = self::clean_text( $node->textContent );
-			if ( '' !== $text ) {
-				if ( '' === $result['seo_title'] )       $result['seo_title']       = $text;
-				if ( '' === $result['service_name'] )    $result['service_name']    = $text;
-				if ( '' === $result['product_name'] )    $result['product_name']    = $text;
-				break;
+		// ── SEO Title: H1 then H2, restricted to main content areas ──────
+		$heading_node = null;
+		foreach ( [
+			'//main//h1', '//article//h1',
+			'//div[contains(@class,"entry-content")]//h1',
+			'//div[contains(@class,"page-content")]//h1',
+			'//div[contains(@class,"post-content")]//h1',
+			'//main//h2', '//article//h2',
+			'//div[contains(@class,"entry-content")]//h2',
+			'//div[contains(@class,"page-content")]//h2',
+		] as $qry ) {
+			$nodes = $xpath->query( $qry );
+			if ( $nodes && $nodes->length > 0 ) {
+				foreach ( $nodes as $node ) {
+					$t = self::clean_text( $node->textContent );
+					if ( '' !== $t ) {
+						$heading_node = $node;
+						break 2;
+					}
+				}
 			}
 		}
 
-		// First substantive <p> → meta description / service/product description.
-		foreach ( $xpath->query( '//main//p | //article//p | //div[contains(@class,"entry")]//p | //p' ) as $node ) {
-			$text = self::clean_text( $node->textContent );
-			if ( strlen( $text ) >= 40 ) {
-				if ( '' === $result['seo_description'] )     $result['seo_description']     = substr( $text, 0, 160 );
-				if ( '' === $result['service_description'] ) $result['service_description'] = $text;
-				if ( '' === $result['product_description'] ) $result['product_description'] = $text;
-				break;
+		if ( $heading_node ) {
+			$title = self::clean_text( $heading_node->textContent );
+			if ( '' === $result['seo_title'] )    $result['seo_title']    = $title;
+			if ( '' === $result['service_name'] ) $result['service_name'] = $title;
+			if ( '' === $result['product_name'] ) $result['product_name'] = $title;
+
+			// ── Meta Descriptions: first 3 <p> elements after the heading ─
+			if ( empty( $result['seo_descriptions'] ) ) {
+				$descs = [];
+				foreach ( $xpath->query( 'following::p', $heading_node ) as $p ) {
+					$text = self::clean_text( $p->textContent );
+					if ( strlen( $text ) >= 40 ) {
+						$descs[] = $text;
+						if ( count( $descs ) >= 3 ) break;
+					}
+				}
+				if ( ! empty( $descs ) ) {
+					$result['seo_descriptions'] = $descs;
+					if ( '' === $result['seo_description'] ) {
+						$result['seo_description'] = substr( $descs[0], 0, 160 );
+					}
+					if ( '' === $result['service_description'] ) $result['service_description'] = $descs[0];
+					if ( '' === $result['product_description'] ) $result['product_description'] = $descs[0];
+				}
 			}
 		}
 
-		// FAQ patterns (runs only if no FAQs found yet).
+		// Fallback: first substantial <p> in content area if still no description.
+		if ( '' === $result['seo_description'] ) {
+			foreach ( $xpath->query( '//main//p | //article//p | //div[contains(@class,"entry-content")]//p | //p' ) as $node ) {
+				$text = self::clean_text( $node->textContent );
+				if ( strlen( $text ) >= 40 ) {
+					$result['seo_description'] = substr( $text, 0, 160 );
+					if ( empty( $result['seo_descriptions'] ) ) {
+						$result['seo_descriptions'] = [ $text ];
+					}
+					if ( '' === $result['service_description'] ) $result['service_description'] = $text;
+					if ( '' === $result['product_description'] ) $result['product_description'] = $text;
+					break;
+				}
+			}
+		}
+
+		// FAQ patterns (only if none found yet).
 		if ( empty( $result['faqs'] ) ) {
 			$result['faqs'] = self::extract_faqs( $xpath );
 		}
@@ -454,6 +508,9 @@ class ECHS_Meta_Box {
 
 			if ( '' === $result['seo_description'] && in_array( $base, $desc_keys, true ) && is_string( $value ) && strlen( $value ) >= 20 ) {
 				$result['seo_description']     = substr( $value, 0, 160 );
+				if ( empty( $result['seo_descriptions'] ) ) {
+					$result['seo_descriptions'] = [ $value ];
+				}
 				$result['service_description'] = $value;
 				$result['product_description'] = $value;
 			}
@@ -490,6 +547,80 @@ class ECHS_Meta_Box {
 
 	private static function clean_text( string $text ): string {
 		return trim( preg_replace( '/\s+/u', ' ', $text ) );
+	}
+
+	/**
+	 * Extract the top keyword phrases (2–4 words) from plain text by density.
+	 * Stop words are excluded from phrase starts and ends.
+	 * Longer phrases are weighted more heavily to favour long-tail keywords.
+	 */
+	private static function suggest_keywords( string $text, int $top = 6 ): array {
+		$stop = array_flip( [
+			'a','an','the','and','or','but','nor','so','yet','for','of','in','on','at',
+			'to','by','up','as','if','than','that','this','these','those','it','its',
+			'i','me','my','we','our','us','you','your','he','she','his','her',
+			'they','them','their','is','are','was','were','be','been','being',
+			'have','has','had','do','does','did','will','would','could','should',
+			'may','might','shall','can','get','got','not','no','too','very','just',
+			'also','both','each','all','some','any','more','most','few','other',
+			'such','with','from','into','through','during','before','after','about',
+			'over','under','again','then','once','here','there','when','where',
+			'why','how','what','which','who','whom','via','re','vs','per',
+			'new','one','two','three','click','read','learn','find','see','use',
+			'make','go','come','take','give','know','want','help','let','work',
+			'need','like','call','contact','home','page','site','www',
+		] );
+
+		// Tokenize: lowercase words of 2+ letters only.
+		preg_match_all( '/[a-z]{2,}/i', strtolower( $text ), $m );
+		$words = $m[0];
+		$n     = count( $words );
+		if ( $n < 6 ) return [];
+
+		// Build n-gram frequency table for phrase lengths 2–4.
+		$freq = [];
+		for ( $i = 0; $i < $n; $i++ ) {
+			for ( $len = 2; $len <= 4 && ( $i + $len ) <= $n; $len++ ) {
+				$slice = array_slice( $words, $i, $len );
+				// Phrase must not start or end on a stop word.
+				if ( isset( $stop[ $slice[0] ] ) || isset( $stop[ $slice[ $len - 1 ] ] ) ) {
+					continue;
+				}
+				$phrase          = implode( ' ', $slice );
+				$freq[ $phrase ] = ( $freq[ $phrase ] ?? 0 ) + 1;
+			}
+		}
+
+		// Require at least 2 occurrences; relax to 1 for short pages.
+		$min  = ( $n > 80 ) ? 2 : 1;
+		$freq = array_filter( $freq, fn( $c ) => $c >= $min );
+		if ( empty( $freq ) ) return [];
+
+		// Score = frequency × length², strongly preferring longer phrases.
+		$scored = [];
+		foreach ( $freq as $phrase => $count ) {
+			$len              = substr_count( $phrase, ' ' ) + 1;
+			$scored[ $phrase ] = $count * ( $len ** 2 );
+		}
+		arsort( $scored );
+
+		// Select, skipping phrases that are sub-strings of already-chosen ones.
+		$selected = [];
+		foreach ( array_keys( $scored ) as $phrase ) {
+			$skip = false;
+			foreach ( $selected as $kept ) {
+				if ( str_contains( $kept, $phrase ) || str_contains( $phrase, $kept ) ) {
+					$skip = true;
+					break;
+				}
+			}
+			if ( ! $skip ) {
+				$selected[] = $phrase;
+				if ( count( $selected ) >= $top ) break;
+			}
+		}
+
+		return $selected;
 	}
 
 	/**

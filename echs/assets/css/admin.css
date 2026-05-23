@@ -515,6 +515,16 @@ ul.echs-tabs li:hover {
 }
 .echs-scan-list li { margin-bottom: 4px; }
 .echs-scan-acf table { margin-top: 8px; }
+.echs-scan-keywords { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+.echs-scan-keyword-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 5px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+.echs-scan-keyword-row:last-child { border-bottom: none; }
+.echs-scan-keyword-text { font-family: monospace; font-size: 13px; color: #1d2327; }
 
 /* ─── Dashboard widget ───────────────────────────────────────────────── */
 .echs-dashboard-widget {
