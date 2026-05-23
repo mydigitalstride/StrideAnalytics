@@ -1074,8 +1074,6 @@ class ECHS_Meta_Box {
 					<?php esc_html_e( 'Set a Focus Keyword on the SEO Meta tab first, then click Scan Content.', 'echs' ); ?>
 				</p>
 
-				<!-- Keyword cluster (secondary keywords) — filled by JS -->
-				<div id="echs-cluster-results" style="display:none;margin-top:12px;"></div>
 			</div>
 
 			<!-- ── Schema Type Suggestions ── -->
