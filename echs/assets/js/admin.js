@@ -612,7 +612,7 @@
 	// ─── Scan Content (Schema tab — AJAX) ────────────────────────────
 
 	function echsEsc(str) {
-		return $('<div>').text(String(str)).html();
+		return $('<div>').text(String(str)).html().replace(/"/g, '&quot;');
 	}
 
 	function echsScanField(label, value, targetSelector) {
@@ -644,7 +644,7 @@
 			post_id: postId
 		})
 		.done(function (response) {
-			$btn.prop('disabled', false).text('\uD83D\uDD0D Scan Content');
+			$btn.prop('disabled', false).text('\uD83D\uDD0D Deep Scan');
 
 			if (!response.success) {
 				$status.addClass('echs-scan-err').text(response.data || 'Scan failed.');
@@ -657,8 +657,19 @@
 
 			// ── SEO fields ──
 			var seoHtml = '';
-			if (d.seo_title)       seoHtml += echsScanField('SEO Title',        d.seo_title,       '#echs_seo_title');
-			if (d.seo_description) seoHtml += echsScanField('Meta Description',  d.seo_description, '#echs_seo_description');
+			if (d.seo_title) {
+				seoHtml += echsScanField('SEO Title', d.seo_title, '#echs_seo_title');
+			}
+			if (d.seo_descriptions && d.seo_descriptions.length) {
+				$.each(d.seo_descriptions, function (i, desc) {
+					var label = d.seo_descriptions.length > 1
+						? 'Meta Description ' + (i + 1)
+						: 'Meta Description';
+					seoHtml += echsScanField(label, desc.substring(0, 160), '#echs_seo_description');
+				});
+			} else if (d.seo_description) {
+				seoHtml += echsScanField('Meta Description', d.seo_description, '#echs_seo_description');
+			}
 			if (seoHtml) html += '<div class="echs-scan-group"><h4>SEO</h4>' + seoHtml + '</div>';
 
 			// ── Service fields ──
@@ -697,19 +708,28 @@
 				html += '</ol></div>';
 			}
 
-			// ── ACF fields ──
-			if (d.acf_fields && Object.keys(d.acf_fields).length) {
-				html += '<div class="echs-scan-group echs-scan-acf">';
-				html += '<h4>ACF Fields detected</h4>';
-				html += '<table class="widefat striped"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>';
-				$.each(d.acf_fields, function (key, value) {
-					var display = String(value).length > 120 ? String(value).substring(0, 120) + '…' : value;
-					html += '<tr><td><code>' + echsEsc(key) + '</code></td><td>' + echsEsc(display) + '</td></tr>';
+			// ── Suggested Keywords ──
+			if (d.suggested_keywords && d.suggested_keywords.length) {
+				html += '<div class="echs-scan-group">';
+				html += '<h4>Suggested Keywords</h4>';
+				html += '<div class="echs-scan-keywords">';
+				$.each(d.suggested_keywords, function (i, kw) {
+					html += '<div class="echs-scan-keyword-row">' +
+						'<span class="echs-scan-keyword-text">' + echsEsc(kw) + '</span>' +
+						'<button type="button" class="button button-small echs-apply-keyword" ' +
+							'data-value="' + echsEsc(kw) + '">' +
+							'Use as keyword' +
+						'</button>' +
+					'</div>';
 				});
-				html += '</tbody></table></div>';
+				html += '</div></div>';
 			}
 
-			if (html === '<div class="echs-scan-panel"><p class="echs-scan-source">Source: <strong>' + echsEsc(d.source || 'post content') + '</strong></p>') {
+			var hasContent = !!(d.seo_title || (d.seo_descriptions && d.seo_descriptions.length) ||
+				d.seo_description || d.service_name || d.product_name ||
+				(d.faqs && d.faqs.length) || (d.howto_steps && d.howto_steps.length) ||
+				(d.suggested_keywords && d.suggested_keywords.length));
+			if (!hasContent) {
 				html += '<p>No content patterns detected. The page may not be published yet or uses a custom layout not readable by the scanner.</p>';
 			}
 
@@ -759,6 +779,16 @@
 		});
 
 		$(this).text('\u2713 Applied').prop('disabled', true);
+	});
+
+	// Apply keyword suggestion — sets primary focus keyword field.
+	$(document).on('click', '.echs-apply-keyword', function () {
+		var kw      = $(this).data('value');
+		var $primary = $('#echs-keywords-list .echs-keyword-input').first();
+		if ($primary.length) {
+			$primary.val(kw).trigger('input');
+			$(this).text('✓ Applied').prop('disabled', true);
+		}
 	});
 
 	// Apply all HowTo steps — enables HowTo toggle, populates #echs-howto-list.
