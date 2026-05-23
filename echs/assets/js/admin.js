@@ -589,7 +589,7 @@
 			echsRenderReadability(editorText);
 		})
 		.always(function () {
-			$btn.prop('disabled', false).text('\u8635 Scan Content');
+			$btn.prop('disabled', false).text('\u21bb Scan Content');
 		});
 	}
 
