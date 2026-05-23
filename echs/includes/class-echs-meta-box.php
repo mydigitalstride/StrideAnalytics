@@ -188,12 +188,20 @@ class ECHS_Meta_Box {
 			'source'               => '',
 		];
 
+		// ── 0. WordPress post title (most reliable source for SEO title) ──
+		$post_obj = get_post( $post_id );
+		if ( $post_obj && '' !== $post_obj->post_title ) {
+			$result['seo_title']    = $post_obj->post_title;
+			$result['service_name'] = $post_obj->post_title;
+			$result['product_name'] = $post_obj->post_title;
+		}
+
 		// ── 1. ACF fields (fast, in-process) ──────────────────────────────
 		if ( function_exists( 'get_fields' ) ) {
 			$acf = get_fields( $post_id );
 			if ( $acf ) {
-				$result['acf_fields'] = self::flatten_acf( (array) $acf );
-				self::hydrate_from_acf( $result['acf_fields'], $result );
+				$acf_flat = self::flatten_acf( (array) $acf );
+				self::hydrate_from_acf( $acf_flat, $result );
 			}
 		}
 
@@ -250,9 +258,9 @@ class ECHS_Meta_Box {
 				$result['howto_steps'] = $rendered['howto_steps'];
 			}
 			$result['source'] = 'rendered_html';
-		} elseif ( '' === $result['page_text'] ) {
+		} elseif ( '' === $result['page_text'] && isset( $acf_flat ) ) {
 			// Fallback: use ACF flat values as text source.
-			$result['page_text'] = implode( ' ', array_filter( $result['acf_fields'], 'is_string' ) );
+			$result['page_text'] = implode( ' ', array_filter( $acf_flat, 'is_string' ) );
 		}
 
 		// Keyword suggestions derived from plain-text density.
@@ -507,12 +515,14 @@ class ECHS_Meta_Box {
 			}
 
 			if ( '' === $result['seo_description'] && in_array( $base, $desc_keys, true ) && is_string( $value ) && strlen( $value ) >= 20 ) {
-				$result['seo_description']     = substr( $value, 0, 160 );
+				$clean = wp_strip_all_tags( html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
+				$clean = trim( preg_replace( '/\s+/', ' ', $clean ) );
+				$result['seo_description']     = substr( $clean, 0, 160 );
 				if ( empty( $result['seo_descriptions'] ) ) {
-					$result['seo_descriptions'] = [ $value ];
+					$result['seo_descriptions'] = [ $clean ];
 				}
-				$result['service_description'] = $value;
-				$result['product_description'] = $value;
+				$result['service_description'] = $clean;
+				$result['product_description'] = $clean;
 			}
 
 			// FAQ repeater: JSON-encoded array of rows.
