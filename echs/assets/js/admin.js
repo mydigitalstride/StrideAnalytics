@@ -43,6 +43,85 @@
 		}
 	});
 
+	// ─── Collapsible card sections + completeness checkmarks ─────────
+
+	function echsCheckSectionComplete($card) {
+		var fieldsAttr = $card.data('fields');
+		var fieldsMode = $card.data('fields-mode');
+		var allFilled = false;
+
+		if (fieldsAttr) {
+			var fieldIds = fieldsAttr.split(',');
+			allFilled = true;
+			$.each(fieldIds, function (i, id) {
+				var $el = $('[name="' + id.trim() + '"], #' + id.trim());
+				if ($el.length && !$el.val().trim()) {
+					allFilled = false;
+					return false;
+				}
+			});
+		} else if (fieldsMode === 'repeatable') {
+			var selector = $card.data('fields-selector');
+			if (selector) {
+				var $inputs = $card.find(selector);
+				allFilled = $inputs.length > 0;
+				$inputs.each(function () {
+					if (!$(this).val().trim()) {
+						allFilled = false;
+						return false;
+					}
+				});
+			}
+		} else if (fieldsMode === 'hours') {
+			var hasAnyHours = false;
+			$card.find('input[type="time"]').each(function () {
+				if ($(this).val()) {
+					hasAnyHours = true;
+					return false;
+				}
+			});
+			allFilled = hasAnyHours;
+		}
+
+		var $check = $card.find('.echs-section-check').first();
+		if (allFilled) {
+			$check.show();
+		} else {
+			$check.hide();
+		}
+	}
+
+	function echsInitCollapsible() {
+		$('.echs-collapsible').each(function () {
+			var $card = $(this);
+			var $header = $card.find('.echs-card-header').first();
+			var $content = $card.children().not('.echs-card-header, h2');
+
+			// Wrap non-header content in a body div if not already wrapped.
+			if (!$card.find('.echs-card-body').length) {
+				$content = $header.nextAll();
+				$content.wrapAll('<div class="echs-card-body"></div>');
+			}
+
+			// Click header to toggle.
+			$header.on('click', function (e) {
+				if ($(e.target).closest('.echs-tooltip, a, button, input').length) return;
+				$card.toggleClass('echs-collapsed');
+			});
+
+			// Check completeness on load.
+			echsCheckSectionComplete($card);
+		});
+
+		// Re-check on input changes.
+		$(document).on('input change', '.echs-collapsible input, .echs-collapsible select, .echs-collapsible textarea', function () {
+			var $card = $(this).closest('.echs-collapsible');
+			if ($card.length) echsCheckSectionComplete($card);
+		});
+	}
+
+	echsInitCollapsible();
+
 	// ─── Cascading business type dropdowns ────────────────────────────
 	var $catDrop  = $('#echs_business_category');
 	var $typeDrop = $('#echs_schema_type');

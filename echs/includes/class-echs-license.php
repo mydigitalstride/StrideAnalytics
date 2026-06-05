@@ -14,6 +14,7 @@ class ECHS_License {
 		add_action( 'admin_post_echs_activate_license',   [ __CLASS__, 'handle_activate' ] );
 		add_action( 'admin_post_echs_deactivate_license', [ __CLASS__, 'handle_deactivate' ] );
 		add_action( 'admin_notices',                       [ __CLASS__, 'maybe_show_notice' ] );
+		add_action( 'wp_ajax_echs_dismiss_license_notice', [ __CLASS__, 'handle_dismiss_notice' ] );
 	}
 
 	public static function get_key(): string {
@@ -180,6 +181,14 @@ class ECHS_License {
 		exit;
 	}
 
+	public static function handle_dismiss_notice(): void {
+		check_ajax_referer( 'echs_dismiss_license_notice' );
+		if ( current_user_can( 'manage_options' ) ) {
+			set_transient( 'echs_license_notice_dismissed', 1, 7 * DAY_IN_SECONDS );
+		}
+		wp_send_json_success();
+	}
+
 	public static function maybe_show_notice(): void {
 		if ( ! is_admin() ) {
 			return;
@@ -198,14 +207,26 @@ class ECHS_License {
 			return;
 		}
 
+		if ( get_transient( 'echs_license_notice_dismissed' ) ) {
+			return;
+		}
+
+		$nonce = wp_create_nonce( 'echs_dismiss_license_notice' );
 		?>
-		<div class="notice notice-warning">
+		<div class="notice notice-warning is-dismissible" id="echs-license-notice">
 			<p>
 				<strong>ECHoS SEO Analytics:</strong> No active license key.
 				Updates and premium support require an active license.
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=echs-settings' ) ); ?>">Enter your license key &rarr;</a>
 			</p>
 		</div>
+		<script>
+		jQuery(function($){
+			$('#echs-license-notice').on('click', '.notice-dismiss', function(){
+				$.post(ajaxurl, { action: 'echs_dismiss_license_notice', _ajax_nonce: '<?php echo esc_js( $nonce ); ?>' });
+			});
+		});
+		</script>
 		<?php
 	}
 
@@ -249,7 +270,10 @@ class ECHS_License {
 							</td>
 						</tr>
 					</table>
+					<div style="display:flex;align-items:center;gap:10px;">
 					<?php submit_button( __( 'Activate License', 'echs' ), 'primary', 'submit', false ); ?>
+					<a href="https://mydigitalstride.com/echos-seo-analytics" target="_blank" class="button"><?php esc_html_e( 'Get my License', 'echs' ); ?></a>
+				</div>
 				</form>
 			</div>
 			<?php

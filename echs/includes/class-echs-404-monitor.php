@@ -346,32 +346,21 @@ class ECHS_404_Monitor {
 		);
 		$email_enabled = (bool) get_option( 'echs_404_email_enabled', 1 );
 
-		echo '<div class="wrap">';
+		echo '<div class="wrap echs-404-wrap">';
 		echo '<h1>404 Monitor</h1>';
 
-		// Email notification settings panel.
-		echo '<div style="background:#fff;border:1px solid #c3c4c7;padding:12px 16px;margin-bottom:20px;max-width:580px;">';
-		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
-		echo '<input type="hidden" name="action" value="echs_save_404_settings">';
-		wp_nonce_field( 'echs_save_404_settings' );
-		echo '<label style="font-weight:600;">';
-		echo '<input type="checkbox" name="echs_404_email_enabled" value="1"' . checked( $email_enabled, true, false ) . '> ';
-		echo 'Send daily 404 email summary';
-		echo '</label>';
-		echo '<p style="margin:6px 0 8px;color:#646970;font-size:13px;">Sends a daily digest of human-traffic 404s to the site admin. Bot and scanner hits are always excluded from the email.</p>';
-		echo '<button type="submit" class="button">Save</button>';
-		echo '</form>';
-		echo '</div>';
+		// Compact header: description, filter tabs, settings, and clear — all in one bar.
+		echo '<div class="echs-404-toolbar">';
+		echo '<p class="description" style="margin:0;">Pages returning 404 errors, tracked automatically. Fix them with a redirect or by updating broken links.</p>';
 
-		echo '<p class="description">Pages returning 404 errors, tracked automatically. Fix them with a redirect or by updating broken links.</p>';
-
+		echo '<div class="echs-404-toolbar-row">';
 		// Filter tabs.
 		$tabs = [
 			'human' => 'Human traffic',
 			'bot'   => 'Bots &amp; scanners',
 			'all'   => 'All',
 		];
-		echo '<ul class="subsubsub" style="margin-bottom:10px;">';
+		echo '<ul class="subsubsub" style="margin:0;float:none;">';
 		$tab_links = [];
 		foreach ( $tabs as $tab_key => $tab_label ) {
 			$class       = ( $filter === $tab_key ) ? ' class="current"' : '';
@@ -380,33 +369,46 @@ class ECHS_404_Monitor {
 		echo implode( ' | ', $tab_links );
 		echo '</ul>';
 
-		echo '<p style="text-align:right;"><a href="' . esc_url( $clear_all_url ) . '" class="button">Clear Dismissed</a></p>';
+		// Settings + Clear in a compact row.
+		echo '<div class="echs-404-actions">';
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-flex;align-items:center;gap:6px;">';
+		echo '<input type="hidden" name="action" value="echs_save_404_settings">';
+		wp_nonce_field( 'echs_save_404_settings' );
+		echo '<label style="font-size:13px;white-space:nowrap;">';
+		echo '<input type="checkbox" name="echs_404_email_enabled" value="1"' . checked( $email_enabled, true, false ) . '> ';
+		echo 'Daily email';
+		echo '</label>';
+		echo '<button type="submit" class="button button-small">Save</button>';
+		echo '</form>';
+		echo '<a href="' . esc_url( $clear_all_url ) . '" class="button button-small">Clear Dismissed</a>';
+		echo '</div>';
+		echo '</div>';
+		echo '</div>';
 
 		if ( empty( $rows ) ) {
 			echo '<p>No 404 errors recorded yet.</p>';
 		} else {
-			echo '<table class="wp-list-table widefat striped">';
+			echo '<table class="wp-list-table widefat striped echs-404-table">';
 			echo '<thead><tr>';
-			echo '<th>URL</th><th>Type</th><th>Hits</th><th>Referrer</th><th>First Seen</th><th>Last Seen</th><th>Suggested Fix</th><th>Actions</th>';
+			echo '<th>URL</th><th>Type</th><th>Hits</th><th>Referrer</th><th>Last Seen</th><th>Suggested Fix</th><th>Actions</th>';
 			echo '</tr></thead>';
 			echo '<tbody>';
 
 			foreach ( $rows as $row ) {
 				$suggestion = self::get_suggestion( $row->url );
 				if ( '' === $suggestion ) {
-					$suggestion = '(none found)';
+					$suggestion = '&mdash;';
 				}
 
 				if ( '' === $row->referrer ) {
 					$referrer_display = '&mdash;';
-				} elseif ( strlen( $row->referrer ) > 60 ) {
-					$referrer_display = '<span title="' . esc_attr( $row->referrer ) . '">' . esc_html( substr( $row->referrer, 0, 60 ) ) . '&hellip;</span>';
+				} elseif ( strlen( $row->referrer ) > 40 ) {
+					$referrer_display = '<span title="' . esc_attr( $row->referrer ) . '">' . esc_html( substr( $row->referrer, 0, 40 ) ) . '&hellip;</span>';
 				} else {
 					$referrer_display = esc_html( $row->referrer );
 				}
 
-				$first_seen = wp_date( 'M j, Y g:i a', strtotime( $row->first_seen ) );
-				$last_seen  = wp_date( 'M j, Y g:i a', strtotime( $row->last_seen ) );
+				$last_seen = wp_date( 'M j, Y', strtotime( $row->last_seen ) );
 
 				$redirect_url = admin_url( 'admin.php?page=echs-redirects&echs_prefill=' . urlencode( $row->url ) );
 				$dismiss_url  = wp_nonce_url(
@@ -416,28 +418,27 @@ class ECHS_404_Monitor {
 
 				$is_bot     = ! empty( $row->is_bot );
 				$type_badge = $is_bot
-					? '<span style="background:#f0b849;color:#1d2327;font-size:11px;padding:1px 6px;border-radius:3px;font-weight:600;">Bot</span>'
-					: '<span style="background:#d7f0dc;color:#1d7a34;font-size:11px;padding:1px 6px;border-radius:3px;font-weight:600;">Human</span>';
+					? '<span class="echs-badge echs-badge-bot">Bot</span>'
+					: '<span class="echs-badge echs-badge-human">Human</span>';
+
+				// Truncate long URLs for display.
+				$url_display = esc_html( $row->url );
+				if ( strlen( $row->url ) > 50 ) {
+					$url_display = '<span title="' . esc_attr( $row->url ) . '">' . esc_html( substr( $row->url, 0, 50 ) ) . '&hellip;</span>';
+				}
 
 				echo '<tr>';
-				echo '<td><code>' . esc_html( $row->url ) . '</code>';
-				if ( ! empty( $row->user_agent ) ) {
-					$ua_display = substr( $row->user_agent, 0, 80 );
-					$ua_suffix  = strlen( $row->user_agent ) > 80 ? '&hellip;' : '';
-					echo '<br><small style="color:#646970;">' . esc_html( $ua_display ) . $ua_suffix . '</small>';
-				}
-				echo '</td>';
+				echo '<td class="echs-404-url-cell"><code style="font-size:12px;word-break:break-all;">' . $url_display . '</code></td>';
 				echo '<td>' . $type_badge . '</td>';
 				echo '<td>' . absint( $row->hit_count ) . '</td>';
-				echo '<td>' . $referrer_display . '</td>';
-				echo '<td>' . esc_html( $first_seen ) . '</td>';
-				echo '<td>' . esc_html( $last_seen ) . '</td>';
-				echo '<td>' . $suggestion . '</td>';
-				echo '<td>';
+				echo '<td style="font-size:12px;">' . $referrer_display . '</td>';
+				echo '<td style="white-space:nowrap;font-size:12px;">' . esc_html( $last_seen ) . '</td>';
+				echo '<td style="font-size:12px;">' . $suggestion . '</td>';
+				echo '<td class="echs-404-actions-cell">';
 				if ( ! $is_bot ) {
-					echo '<a href="' . esc_url( $redirect_url ) . '" class="button button-small">Add Redirect</a> ';
+					echo '<a href="' . esc_url( $redirect_url ) . '" class="button button-small" title="Add Redirect">R</a> ';
 				}
-				echo '<a href="' . esc_url( $dismiss_url ) . '" class="button button-small">Dismiss</a>';
+				echo '<a href="' . esc_url( $dismiss_url ) . '" class="button button-small" title="Dismiss">D</a>';
 				echo '</td>';
 				echo '</tr>';
 			}

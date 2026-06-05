@@ -620,6 +620,91 @@ ul.echs-tabs li:hover {
 	padding-right: 38px;
 }
 
+/* ─── 404 Monitor compact layout ────────────────────────────────────── */
+.echs-404-wrap {
+	max-width: 100%;
+}
+.echs-404-toolbar {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 10px 16px;
+	margin-bottom: 12px;
+}
+.echs-404-toolbar-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+.echs-404-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.echs-404-table {
+	font-size: 13px;
+}
+.echs-404-table th,
+.echs-404-table td {
+	padding: 6px 8px;
+}
+.echs-404-url-cell {
+	max-width: 280px;
+}
+.echs-404-actions-cell {
+	white-space: nowrap;
+}
+.echs-badge {
+	font-size: 11px;
+	padding: 1px 6px;
+	border-radius: 3px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+.echs-badge-bot {
+	background: #f0b849;
+	color: #1d2327;
+}
+.echs-badge-human {
+	background: #d7f0dc;
+	color: #1d7a34;
+}
+
+/* ─── Collapsible card sections ─────────────────────────────────────── */
+.echs-card-header {
+	cursor: pointer;
+	user-select: none;
+}
+.echs-collapse-icon {
+	font-size: .7em;
+	transition: transform .2s;
+	display: inline-block;
+	width: 16px;
+	text-align: center;
+	flex-shrink: 0;
+}
+.echs-collapsible.echs-collapsed .echs-collapse-icon {
+	transform: rotate(-90deg);
+}
+.echs-card-body {
+	overflow: hidden;
+	transition: max-height .25s ease;
+}
+.echs-collapsible.echs-collapsed .echs-card-body {
+	max-height: 0 !important;
+	overflow: hidden;
+}
+.echs-section-check {
+	color: #00a32a;
+	font-weight: 700;
+	font-size: .85em;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 782px) {
 	.echs-schema-types {

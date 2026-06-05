@@ -342,15 +342,19 @@ class ECHS_Global_Settings {
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'echs' ); ?></p></div>
 			<?php endif; ?>
 
+			<?php ECHS_License::render_settings_section(); ?>
+
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="echs_save_global">
 				<?php wp_nonce_field( 'echs_global_settings_save', 'echs_global_nonce' ); ?>
 
 				<!-- ===== Business Identity ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="business-identity" data-fields="echs_business_name,echs_legal_name,echs_phone,echs_email,echs_primary_url">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Business Identity', 'echs' ); ?>
 						<?php echo self::tip( 'Your company\'s public profile — name, type, and contact details that search engines show when people look you up online.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 					<table class="form-table">
 						<tr>
@@ -422,10 +426,12 @@ class ECHS_Global_Settings {
 				</div>
 
 				<!-- ===== Primary Address ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="primary-address" data-fields="echs_street,echs_city,echs_state,echs_zip">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Primary Address &amp; Location', 'echs' ); ?>
 						<?php echo self::tip( 'Your main office or business location. Google uses this to show your business on maps and in local search results near you.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 					<table class="form-table">
 						<tr>
@@ -467,10 +473,12 @@ class ECHS_Global_Settings {
 				</div>
 
 				<!-- ===== Secondary Locations ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="secondary-locations" data-fields-mode="repeatable" data-fields-selector="[name='echs_loc_street[]']">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Secondary Locations', 'echs' ); ?>
 						<?php echo self::tip( 'Additional offices or locations. Google will know you have a physical presence in each place.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 					<p class="description"><?php esc_html_e( 'Add each additional office or job site address.', 'echs' ); ?></p>
 
@@ -503,10 +511,12 @@ class ECHS_Global_Settings {
 				</div>
 
 				<!-- ===== Service Area ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="service-area" data-fields-mode="repeatable" data-fields-selector="[name='echs_service_areas[]']">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Service Area', 'echs' ); ?>
 						<?php echo self::tip( 'Towns and cities where you do work. Google uses this to match your business with searchers in those areas.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 					<p class="description"><?php esc_html_e( 'Add each city or town you serve.', 'echs' ); ?></p>
 					<div id="echs-service-areas-list">
@@ -524,10 +534,12 @@ class ECHS_Global_Settings {
 				</div>
 
 				<!-- ===== Hours of Operation ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="hours" data-fields-mode="hours">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Hours of Operation', 'echs' ); ?>
 						<?php echo self::tip( 'Your regular business hours. Google can show these in search results and on Google Maps.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 					<table class="form-table echs-hours-table">
 						<thead>
@@ -553,10 +565,12 @@ class ECHS_Global_Settings {
 				</div>
 
 				<!-- ===== Social / sameAs ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="social" data-fields-mode="repeatable" data-fields-selector="[name='echs_same_as[]']">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Social Profiles', 'echs' ); ?>
 						<?php echo self::tip( 'Links to your business profiles on Google, Facebook, Nextdoor, BBB, and similar sites. Helps search engines confirm who you are.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 					<p class="description"><?php esc_html_e( 'Google Business, Facebook, Nextdoor, BBB, etc.', 'echs' ); ?></p>
 					<div id="echs-same-as-list">
@@ -574,10 +588,12 @@ class ECHS_Global_Settings {
 				</div>
 
 				<!-- ===== Ratings ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="ratings" data-fields="echs_rating_value,echs_rating_count">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Aggregate Rating', 'echs' ); ?>
 						<?php echo self::tip( 'Your overall customer rating. Enter your average star rating and total review count so Google may show gold stars next to your business in search results.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 					<table class="form-table">
 						<tr>
@@ -592,10 +608,12 @@ class ECHS_Global_Settings {
 				</div>
 
 				<!-- ===== Organization Extras ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="org-extras" data-fields="echs_logo_url,echs_default_og_image,echs_price_range,echs_founded_year,echs_slogan">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Organization Extras', 'echs' ); ?>
 						<?php echo self::tip( 'Extra details — logo, pricing level, years in business, and a short description. Help Google paint a fuller picture of who you are.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 					<table class="form-table">
 						<tr>
@@ -637,10 +655,12 @@ class ECHS_Global_Settings {
 				</div>
 
 				<!-- ===== Team Members ===== -->
-			<div class="echs-card">
-				<h2>
+			<div class="echs-card echs-collapsible" data-section="team" data-fields-mode="repeatable" data-fields-selector="[name='echs_team_name[]']">
+				<h2 class="echs-card-header">
+					<span class="echs-collapse-icon">&#9660;</span>
 					<?php esc_html_e( 'Team Members', 'echs' ); ?>
 					<?php echo self::tip( 'Add team members so AI and Google can identify real people behind the business. Names, job titles, and LinkedIn URLs are output as Person schema on every page.' ); // phpcs:ignore ?>
+					<span class="echs-section-check" style="display:none;">&#10003;</span>
 				</h2>
 
 				<!-- Column headers -->
@@ -670,10 +690,12 @@ class ECHS_Global_Settings {
 			</div>
 
 			<!-- ===== Tracking ===== -->
-				<div class="echs-card">
-					<h2>
+				<div class="echs-card echs-collapsible" data-section="tracking" data-fields="tracking_gtm_id">
+					<h2 class="echs-card-header">
+						<span class="echs-collapse-icon">&#9660;</span>
 						<?php esc_html_e( 'Analytics &amp; Tracking', 'echs' ); ?>
 						<?php echo self::tip( 'Add your marketing tracking codes here so you can measure site visitors, traffic sources, and which ads are working.' ); // phpcs:ignore ?>
+						<span class="echs-section-check" style="display:none;">&#10003;</span>
 					</h2>
 
 					<table class="form-table">
@@ -751,8 +773,6 @@ class ECHS_Global_Settings {
 
 				<?php submit_button( __( 'Save Settings', 'echs' ) ); ?>
 			</form>
-
-			<?php ECHS_License::render_settings_section(); ?>
 
 			<?php ECHS_Google_Auth::render_settings_section(); ?>
 
