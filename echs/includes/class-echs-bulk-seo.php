@@ -39,7 +39,7 @@ class ECHS_Bulk_SEO {
 		$field   = sanitize_text_field( $_POST['field'] ?? '' );
 		$value   = sanitize_text_field( wp_unslash( $_POST['value'] ?? '' ) );
 
-		$allowed = [ 'echs_seo_title', 'echs_seo_description', 'echs_noindex' ];
+		$allowed = [ 'echs_seo_title', 'echs_seo_description', 'echs_noindex', 'echs_focus_keyword_primary' ];
 		if ( ! $post_id || ! in_array( $field, $allowed, true ) ) {
 			wp_send_json_error( 'Invalid request.' );
 		}
@@ -47,6 +47,22 @@ class ECHS_Bulk_SEO {
 		$post = get_post( $post_id );
 		if ( ! $post || ! in_array( $post->post_type, self::$post_types, true ) ) {
 			wp_send_json_error( 'Invalid post.' );
+		}
+
+		if ( $field === 'echs_focus_keyword_primary' ) {
+			$existing = get_post_meta( $post_id, 'echs_focus_keywords', true );
+			$keywords = is_array( $existing ) ? $existing : [];
+			if ( empty( $keywords ) ) {
+				$keywords = [ $value ];
+			} else {
+				$keywords[0] = $value;
+			}
+			$keywords = array_filter( $keywords );
+			update_post_meta( $post_id, 'echs_focus_keywords', $keywords );
+			update_post_meta( $post_id, 'echs_focus_keyword', $keywords[0] ?? '' );
+
+			$count = self::count_keyword( $post->post_content, $value );
+			wp_send_json_success( [ 'post_id' => $post_id, 'field' => $field, 'count' => $count ] );
 		}
 
 		if ( $field === 'echs_noindex' ) {
@@ -270,22 +286,37 @@ class ECHS_Bulk_SEO {
 							<?php endif; ?>
 						</td>
 						<td class="echs-col-kw">
-							<?php if ( empty( $kw_counts ) ) : ?>
-								<span style="color:#646970;font-size:11px;"><?php esc_html_e( 'No keywords set', 'echs' ); ?></span>
-							<?php else : ?>
-								<?php foreach ( $kw_counts as $i => $kc ) :
-									$count_color = $kc['count'] === 0 ? '#d63638' : ( $kc['count'] >= 3 ? '#00a32a' : '#dba617' );
-								?>
-									<div class="echs-bulk-kw-row">
-										<span class="echs-bulk-kw-name" title="<?php echo esc_attr( $kc['keyword'] ); ?>">
-											<?php echo esc_html( $kc['keyword'] ); ?>
-										</span>
-										<span class="echs-bulk-kw-count" style="color:<?php echo esc_attr( $count_color ); ?>;">
-											<?php echo esc_html( $kc['count'] ); ?>×
-										</span>
-									</div>
-								<?php endforeach; ?>
-							<?php endif; ?>
+							<?php
+							$primary_kw    = $keywords[0] ?? '';
+							$primary_count = ! empty( $primary_kw ) ? self::count_keyword( $content, $primary_kw ) : 0;
+							$primary_color = empty( $primary_kw ) ? '#646970' : ( $primary_count === 0 ? '#d63638' : ( $primary_count >= 3 ? '#00a32a' : '#dba617' ) );
+							$secondary     = array_slice( $kw_counts, 1 );
+							?>
+							<div class="echs-bulk-kw-primary-row">
+								<input type="text"
+									class="echs-bulk-kw-input"
+									data-post-id="<?php echo esc_attr( $post_id ); ?>"
+									value="<?php echo esc_attr( $primary_kw ); ?>"
+									placeholder="<?php esc_attr_e( 'Focus keyword…', 'echs' ); ?>"
+								>
+								<span class="echs-bulk-kw-count echs-bulk-kw-primary-count"
+									  style="color:<?php echo esc_attr( $primary_color ); ?>;"
+									  data-post-id="<?php echo esc_attr( $post_id ); ?>">
+									<?php if ( ! empty( $primary_kw ) ) echo esc_html( $primary_count ) . '×'; ?>
+								</span>
+							</div>
+							<?php foreach ( $secondary as $kc ) :
+								$sc_color = $kc['count'] === 0 ? '#d63638' : ( $kc['count'] >= 3 ? '#00a32a' : '#dba617' );
+							?>
+								<div class="echs-bulk-kw-row">
+									<span class="echs-bulk-kw-name" title="<?php echo esc_attr( $kc['keyword'] ); ?>">
+										<?php echo esc_html( $kc['keyword'] ); ?>
+									</span>
+									<span class="echs-bulk-kw-count" style="color:<?php echo esc_attr( $sc_color ); ?>;">
+										<?php echo esc_html( $kc['count'] ); ?>×
+									</span>
+								</div>
+							<?php endforeach; ?>
 						</td>
 					</tr>
 					<?php endwhile; wp_reset_postdata(); ?>
@@ -341,6 +372,14 @@ class ECHS_Bulk_SEO {
 				max-width: 120px; color: #1d2327;
 			}
 			.echs-bulk-kw-count { font-weight: 600; white-space: nowrap; margin-left: 4px; }
+			.echs-bulk-kw-primary-row {
+				display: flex; align-items: center; gap: 4px; margin-bottom: 4px;
+			}
+			.echs-bulk-kw-input {
+				flex: 1; font-size: 12px; padding: 3px 6px; min-width: 0;
+			}
+			.echs-bulk-kw-input.echs-bulk-saved { border-color: #00a32a; }
+			.echs-bulk-kw-input.echs-bulk-error { border-color: #d63638; }
 		</style>
 
 		<script>
@@ -399,6 +438,42 @@ class ECHS_Bulk_SEO {
 				var $cb = $(this);
 				var val = $cb.is(':checked') ? '1' : '0';
 				saveField($cb.data('post-id'), 'echs_noindex', val);
+			});
+
+			$('.echs-bulk-kw-input').on('input', function() {
+				var $el = $(this);
+				var postId = $el.data('post-id');
+				var key = postId + '-kw';
+				if (saveTimers[key]) clearTimeout(saveTimers[key]);
+
+				saveTimers[key] = setTimeout(function() {
+					$el.removeClass('echs-bulk-saved echs-bulk-error');
+					$.post(ajaxurl, {
+						action:  'echs_bulk_seo_save',
+						nonce:   $('#echs-bulk-seo-nonce').val(),
+						post_id: postId,
+						field:   'echs_focus_keyword_primary',
+						value:   $el.val()
+					}).done(function(r) {
+						if (r.success) {
+							$el.addClass('echs-bulk-saved');
+							var $count = $('.echs-bulk-kw-primary-count[data-post-id="' + postId + '"]');
+							var c = r.data.count || 0;
+							var val = $el.val().trim();
+							if (val) {
+								var color = c === 0 ? '#d63638' : (c >= 3 ? '#00a32a' : '#dba617');
+								$count.text(c + '×').css('color', color);
+							} else {
+								$count.text('');
+							}
+							setTimeout(function() { $el.removeClass('echs-bulk-saved'); }, 1500);
+						} else {
+							$el.addClass('echs-bulk-error');
+						}
+					}).fail(function() {
+						$el.addClass('echs-bulk-error');
+					});
+				}, 800);
 			});
 		});
 		</script>
