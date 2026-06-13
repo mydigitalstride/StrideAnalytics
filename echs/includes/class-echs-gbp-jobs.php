@@ -21,6 +21,9 @@ class ECHS_GBP_Jobs {
 	}
 
 	public static function register_menu(): void {
+		if ( ! ECHS_License::is_active() ) {
+			return;
+		}
 		add_submenu_page(
 			'echs-settings',
 			'Push Job Photos',

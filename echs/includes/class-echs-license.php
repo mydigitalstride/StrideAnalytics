@@ -202,7 +202,7 @@ class ECHS_License {
 		<div class="notice notice-warning">
 			<p>
 				<strong>ECHoS SEO Analytics:</strong> No active license key.
-				Updates and premium support require an active license.
+				Google Business Profile features, updates, and premium support require an active license.
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=echs-settings' ) ); ?>">Enter your license key &rarr;</a>
 			</p>
 		</div>
@@ -226,7 +226,7 @@ class ECHS_License {
 			?>
 			<div class="echs-card">
 				<h2><?php esc_html_e( 'License Key', 'echs' ); ?></h2>
-				<p><?php esc_html_e( 'Enter your ECHoS SEO Analytics license key to enable updates and premium support.', 'echs' ); ?></p>
+				<p><?php esc_html_e( 'Enter your ECHoS SEO Analytics license key to unlock Google Business Profile features, automatic updates, and premium support.', 'echs' ); ?></p>
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<input type="hidden" name="action" value="echs_activate_license">
 					<?php wp_nonce_field( 'echs_license_activate' ); ?>
