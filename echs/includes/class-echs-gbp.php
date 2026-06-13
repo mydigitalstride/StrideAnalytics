@@ -45,7 +45,9 @@ class ECHS_GBP {
 	}
 
 	public static function get_locations( string $account_name ): array {
-		$result = ECHS_Google_Auth::request( self::ACCOUNT_API . $account_name . '/locations' );
+		$result = ECHS_Google_Auth::request(
+			self::INFO_API . $account_name . '/locations?readMask=name,title'
+		);
 		if ( is_wp_error( $result ) ) {
 			return [];
 		}
