@@ -253,13 +253,13 @@ class ECHS_404_Monitor {
 		$wpdb->query( "UPDATE {$table} SET notified = 1 WHERE id IN ({$ids})" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
-	public static function get_suggestion( string $url ): string {
+	public static function get_suggestion( string $url ): array {
 		$path       = (string) parse_url( $url, PHP_URL_PATH );
 		$slug       = basename( $path );
 		$slug_words = str_replace( [ '-', '_' ], ' ', $slug );
 
 		if ( '' === trim( $slug_words ) ) {
-			return '';
+			return [];
 		}
 
 		$query = new WP_Query( [
@@ -269,13 +269,14 @@ class ECHS_404_Monitor {
 		] );
 
 		if ( $query->have_posts() ) {
-			$post      = $query->posts[0];
-			$title     = get_the_title( $post );
-			$permalink = get_permalink( $post );
-			return 'Similar content found: &ldquo;<a href="' . esc_url( $permalink ) . '">' . esc_html( $title ) . '</a>&rdquo; at ' . esc_url( $permalink );
+			$post = $query->posts[0];
+			return [
+				'title'     => get_the_title( $post ),
+				'permalink' => get_permalink( $post ),
+			];
 		}
 
-		return '';
+		return [];
 	}
 
 	public static function set_html_content_type(): string {
@@ -397,28 +398,37 @@ class ECHS_404_Monitor {
 		if ( empty( $rows ) ) {
 			echo '<p>No 404 errors recorded yet.</p>';
 		} else {
-			echo '<table class="wp-list-table widefat striped">';
+			echo '<style>
+				.echs-404-table { table-layout:fixed; }
+				.echs-404-table th, .echs-404-table td { word-wrap:break-word; overflow-wrap:break-word; }
+				.echs-404-table .col-url { width:25%; }
+				.echs-404-table .col-type { width:55px; }
+				.echs-404-table .col-hits { width:40px; text-align:center; }
+				.echs-404-table .col-ref { width:12%; }
+				.echs-404-table .col-seen { width:90px; }
+				.echs-404-table .col-fix { width:22%; }
+				.echs-404-table .col-actions { width:120px; }
+				.echs-404-table code { font-size:12px; word-break:break-all; }
+				.echs-404-table .echs-ref-text { font-size:12px; color:#646970; word-break:break-all; }
+				.echs-404-table .echs-suggestion a { word-break:break-all; }
+			</style>';
+			echo '<table class="wp-list-table widefat striped echs-404-table">';
 			echo '<thead><tr>';
-			echo '<th>URL</th><th>Type</th><th>Hits</th><th>Referrer</th><th>First Seen</th><th>Last Seen</th><th>Suggested Fix</th><th>Actions</th>';
+			echo '<th class="col-url">URL</th><th class="col-type">Type</th><th class="col-hits">Hits</th><th class="col-ref">Referrer</th><th class="col-seen">Last Seen</th><th class="col-fix">Suggested Fix</th><th class="col-actions">Actions</th>';
 			echo '</tr></thead>';
 			echo '<tbody>';
 
 			foreach ( $rows as $row ) {
 				$suggestion = self::get_suggestion( $row->url );
-				if ( '' === $suggestion ) {
-					$suggestion = '(none found)';
-				}
 
 				if ( '' === $row->referrer ) {
 					$referrer_display = '&mdash;';
-				} elseif ( strlen( $row->referrer ) > 60 ) {
-					$referrer_display = '<span title="' . esc_attr( $row->referrer ) . '">' . esc_html( substr( $row->referrer, 0, 60 ) ) . '&hellip;</span>';
 				} else {
-					$referrer_display = esc_html( $row->referrer );
+					$ref_host = (string) parse_url( $row->referrer, PHP_URL_HOST );
+					$referrer_display = '<span class="echs-ref-text" title="' . esc_attr( $row->referrer ) . '">' . esc_html( $ref_host ?: substr( $row->referrer, 0, 30 ) ) . '</span>';
 				}
 
-				$first_seen = wp_date( 'M j, Y g:i a', strtotime( $row->first_seen ) );
-				$last_seen  = wp_date( 'M j, Y g:i a', strtotime( $row->last_seen ) );
+				$last_seen = wp_date( 'M j, Y', strtotime( $row->last_seen ) );
 
 				$redirect_url = admin_url( 'admin.php?page=echs-redirects&echs_prefill=' . urlencode( $row->url ) );
 				$dismiss_url  = wp_nonce_url(
@@ -432,24 +442,25 @@ class ECHS_404_Monitor {
 					: '<span style="background:#d7f0dc;color:#1d7a34;font-size:11px;padding:1px 6px;border-radius:3px;font-weight:600;">Human</span>';
 
 				echo '<tr>';
-				echo '<td><code>' . esc_html( $row->url ) . '</code>';
-				if ( ! empty( $row->user_agent ) ) {
-					$ua_display = substr( $row->user_agent, 0, 80 );
-					$ua_suffix  = strlen( $row->user_agent ) > 80 ? '&hellip;' : '';
-					echo '<br><small style="color:#646970;">' . esc_html( $ua_display ) . $ua_suffix . '</small>';
+				echo '<td class="col-url"><code>' . esc_html( $row->url ) . '</code></td>';
+				echo '<td class="col-type">' . $type_badge . '</td>';
+				echo '<td class="col-hits">' . absint( $row->hit_count ) . '</td>';
+				echo '<td class="col-ref">' . $referrer_display . '</td>';
+				echo '<td class="col-seen">' . esc_html( $last_seen ) . '</td>';
+				echo '<td class="col-fix echs-suggestion">';
+				if ( ! empty( $suggestion ) ) {
+					$redir_to_url = admin_url( 'admin.php?page=echs-redirects&echs_prefill=' . urlencode( $row->url ) . '&echs_prefill_target=' . urlencode( $suggestion['permalink'] ) );
+					echo '&ldquo;<a href="' . esc_url( $suggestion['permalink'] ) . '">' . esc_html( $suggestion['title'] ) . '</a>&rdquo;';
+					echo '<br><a href="' . esc_url( $redir_to_url ) . '" class="button button-small" style="margin-top:4px;">Redirect to this</a>';
+				} else {
+					echo '<span style="color:#999;">(none found)</span>';
 				}
 				echo '</td>';
-				echo '<td>' . $type_badge . '</td>';
-				echo '<td>' . absint( $row->hit_count ) . '</td>';
-				echo '<td>' . $referrer_display . '</td>';
-				echo '<td>' . esc_html( $first_seen ) . '</td>';
-				echo '<td>' . esc_html( $last_seen ) . '</td>';
-				echo '<td>' . $suggestion . '</td>';
-				echo '<td>';
+				echo '<td class="col-actions">';
 				if ( ! $is_bot ) {
-					echo '<a href="' . esc_url( $redirect_url ) . '" class="button button-small">Add Redirect</a> ';
+					echo '<a href="' . esc_url( $redirect_url ) . '" class="button button-small" style="margin-bottom:4px;display:block;text-align:center;">Add Redirect</a>';
 				}
-				echo '<a href="' . esc_url( $dismiss_url ) . '" class="button button-small">Dismiss</a>';
+				echo '<a href="' . esc_url( $dismiss_url ) . '" class="button button-small" style="display:block;text-align:center;">Dismiss</a>';
 				echo '</td>';
 				echo '</tr>';
 			}
