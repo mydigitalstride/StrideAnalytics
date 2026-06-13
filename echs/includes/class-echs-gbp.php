@@ -22,6 +22,9 @@ class ECHS_GBP {
 	}
 
 	public static function register_menu(): void {
+		if ( ! ECHS_License::is_active() ) {
+			return;
+		}
 		add_submenu_page(
 			'echs-settings',
 			__( 'Google Business Profile', 'echs' ),
@@ -455,7 +458,7 @@ class ECHS_GBP {
 	}
 
 	public static function render_widget_section(): void {
-		if ( ! ECHS_Google_Auth::is_connected() ) {
+		if ( ! ECHS_License::is_active() || ! ECHS_Google_Auth::is_connected() ) {
 			return;
 		}
 

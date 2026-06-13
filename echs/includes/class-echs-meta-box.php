@@ -619,13 +619,16 @@ class ECHS_Meta_Box {
 		foreach ( array_keys( $scored ) as $phrase ) {
 			$skip = false;
 			foreach ( $selected as $kept ) {
-				if ( str_contains( $kept, $phrase ) || str_contains( $phrase, $kept ) ) {
+				if ( str_contains( $kept['phrase'], $phrase ) || str_contains( $phrase, $kept['phrase'] ) ) {
 					$skip = true;
 					break;
 				}
 			}
 			if ( ! $skip ) {
-				$selected[] = $phrase;
+				$selected[] = [
+					'phrase' => $phrase,
+					'count'  => $freq[ $phrase ],
+				];
 				if ( count( $selected ) >= $top ) break;
 			}
 		}

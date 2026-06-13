@@ -51,6 +51,7 @@ $echs_includes = [
 	'includes/class-echs-gbp.php',
 	'includes/class-echs-gbp-jobs.php',
 	'includes/class-echs-yoast-migrator.php',
+	'includes/class-echs-bulk-seo.php',
 	'includes/class-echs-tasks.php',
 	'includes/class-echs-license.php',
 	'includes/class-echs-updater.php',
@@ -83,6 +84,7 @@ function echs_init(): void {
 	ECHS_GBP::init();
 	ECHS_GBP_Jobs::init();
 	ECHS_Yoast_Migrator::init();
+	ECHS_Bulk_SEO::init();
 	ECHS_Tasks::init();
 	ECHS_License::init();
 	ECHS_Updater::init();

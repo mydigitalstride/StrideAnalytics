@@ -754,7 +754,19 @@ class ECHS_Global_Settings {
 
 			<?php ECHS_License::render_settings_section(); ?>
 
-			<?php ECHS_Google_Auth::render_settings_section(); ?>
+			<?php if ( ECHS_License::is_active() ) : ?>
+				<?php ECHS_Google_Auth::render_settings_section(); ?>
+			<?php else : ?>
+				<div class="echs-card">
+					<h2><?php esc_html_e( 'Google Business Profile', 'echs' ); ?></h2>
+					<p><?php esc_html_e( 'Google Business Profile management, reviews monitoring, Q&A tracking, and job photo uploads are available with an active license.', 'echs' ); ?></p>
+					<p>
+						<a href="https://mydigitalstride.com/echos-seo-analytics" target="_blank" class="button button-primary">
+							<?php esc_html_e( 'Get a License', 'echs' ); ?>
+						</a>
+					</p>
+				</div>
+			<?php endif; ?>
 
 		</div>
 		<?php

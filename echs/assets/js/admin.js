@@ -714,10 +714,13 @@
 				html += '<h4>Suggested Keywords</h4>';
 				html += '<div class="echs-scan-keywords">';
 				$.each(d.suggested_keywords, function (i, kw) {
+					var phrase = typeof kw === 'object' ? kw.phrase : kw;
+					var count  = typeof kw === 'object' && kw.count ? kw.count : 0;
+					var badge  = count ? '<span class="echs-kw-freq">' + count + '×</span>' : '';
 					html += '<div class="echs-scan-keyword-row">' +
-						'<span class="echs-scan-keyword-text">' + echsEsc(kw) + '</span>' +
+						'<span class="echs-scan-keyword-text">' + echsEsc(phrase) + badge + '</span>' +
 						'<button type="button" class="button button-small echs-apply-keyword" ' +
-							'data-value="' + echsEsc(kw) + '">' +
+							'data-value="' + echsEsc(phrase) + '">' +
 							'Use as keyword' +
 						'</button>' +
 					'</div>';
