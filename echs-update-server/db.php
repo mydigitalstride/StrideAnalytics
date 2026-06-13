@@ -142,4 +142,36 @@ class ECHS_DB {
         $stmt->execute([$limit]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function count_total_downloads(): int {
+        return (int) $this->pdo->query("SELECT COUNT(*) FROM request_log WHERE action = 'download' AND result = 'downloaded'")->fetchColumn();
+    }
+
+    public function count_unique_sites(): int {
+        return (int) $this->pdo->query("SELECT COUNT(DISTINCT site_url) FROM request_log WHERE site_url != ''")->fetchColumn();
+    }
+
+    public function count_subscribers(): int {
+        return (int) $this->pdo->query("SELECT COUNT(DISTINCT site_url) FROM request_log WHERE action = 'info' AND site_url != ''")->fetchColumn();
+    }
+
+    public function get_unlicensed_sites(): array {
+        return $this->pdo->query("
+            SELECT
+                site_url,
+                MAX(ts) as last_seen,
+                COUNT(*) as request_count,
+                MAX(CASE WHEN action = 'info' THEN ts ELSE NULL END) as last_update_check
+            FROM request_log
+            WHERE site_url != ''
+              AND site_url NOT IN (
+                  SELECT DISTINCT a.site_url
+                  FROM activations a
+                  JOIN licenses l ON l.id = a.license_id
+                  WHERE l.status = 'active'
+              )
+            GROUP BY site_url
+            ORDER BY last_seen DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

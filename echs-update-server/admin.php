@@ -136,6 +136,9 @@ $page = $_GET['page'] ?? 'licenses';
 $total_licenses   = $db->count_licenses();
 $all_activations  = $db->all_activations();
 $active_sites     = count($all_activations);
+$total_downloads  = $db->count_total_downloads();
+$total_subscribers = $db->count_subscribers();
+$unique_sites     = $db->count_unique_sites();
 
 $stmt_today = (new PDO('sqlite:' . ECHS_DB_PATH));
 $stmt_today->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -240,6 +243,7 @@ function echs_form_action(string $post_action, array $hidden = []): string {
   </div>
   <nav>
     <a href="admin.php?page=licenses"<?= $page === 'licenses' || $page === 'license_detail' ? ' class="active"' : '' ?>>Licenses</a>
+    <a href="admin.php?page=sites"<?= $page === 'sites' ? ' class="active"' : '' ?>>Unlicensed Sites</a>
     <a href="admin.php?page=release"<?= $page === 'release' ? ' class="active"' : '' ?>>Plugin Release</a>
     <a href="admin.php?page=activity"<?= $page === 'activity' ? ' class="active"' : '' ?>>Request Log</a>
   </nav>
@@ -251,12 +255,24 @@ function echs_form_action(string $post_action, array $hidden = []): string {
 <div class="main">
   <div class="stats-bar">
     <div class="stat">
+      <div class="stat-val"><?= $unique_sites ?></div>
+      <div class="stat-lbl">All Installs</div>
+    </div>
+    <div class="stat">
       <div class="stat-val"><?= $total_licenses ?></div>
-      <div class="stat-lbl">Total Licenses</div>
+      <div class="stat-lbl">Licenses</div>
     </div>
     <div class="stat">
       <div class="stat-val"><?= $active_sites ?></div>
-      <div class="stat-lbl">Active Sites</div>
+      <div class="stat-lbl">Licensed Sites</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val"><?= $total_downloads ?></div>
+      <div class="stat-lbl">Downloads</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val"><?= $total_subscribers ?></div>
+      <div class="stat-lbl">Subscribers</div>
     </div>
     <div class="stat">
       <div class="stat-val"><?= $requests_today ?></div>
@@ -462,6 +478,40 @@ function echs_form_action(string $post_action, array $hidden = []): string {
               <td class="mono"><?= htmlspecialchars($row['license_key']) ?></td>
               <td><?= htmlspecialchars($row['site_url']) ?></td>
               <td><?= htmlspecialchars($row['result']) ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+  </div>
+
+<?php elseif ($page === 'sites') : ?>
+
+  <?php $unlicensed = $db->get_unlicensed_sites(); ?>
+
+  <h2>Unlicensed Sites <span class="meta">(<?= count($unlicensed) ?> sites)</span></h2>
+  <p class="meta" style="margin-top:-14px;margin-bottom:18px;">Sites that have checked in with the update server but do not have an active license activation.</p>
+
+  <div class="card">
+    <?php if (empty($unlicensed)) : ?>
+      <p class="meta">No unlicensed sites found. All sites have active licenses.</p>
+    <?php else : ?>
+      <table>
+        <thead>
+          <tr>
+            <th>Site URL</th>
+            <th>Last Seen</th>
+            <th>Last Update Check</th>
+            <th>Total Requests</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($unlicensed as $site) : ?>
+            <tr>
+              <td><a class="plain" href="<?= htmlspecialchars($site['site_url']) ?>" target="_blank" rel="noopener"><?= htmlspecialchars($site['site_url']) ?></a></td>
+              <td class="meta"><?= htmlspecialchars($site['last_seen']) ?></td>
+              <td class="meta"><?= $site['last_update_check'] ? htmlspecialchars($site['last_update_check']) : '—' ?></td>
+              <td><?= (int) $site['request_count'] ?></td>
             </tr>
           <?php endforeach; ?>
         </tbody>
