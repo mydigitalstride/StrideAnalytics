@@ -136,7 +136,7 @@ class ECHS_Redirects {
 						</tr>
 						<tr>
 							<th scope="row"><label for="echs_target_url">Destination URL</label></th>
-							<td><input type="text" id="echs_target_url" name="echs_target_url" class="regular-text" placeholder="https://… or /new-page/" required></td>
+							<td><input type="text" id="echs_target_url" name="echs_target_url" class="regular-text" placeholder="https://… or /new-page/" required value="<?php echo esc_attr( sanitize_text_field( wp_unslash( $_GET['echs_prefill_target'] ?? '' ) ) ); ?>"></td>
 						</tr>
 						<tr>
 							<th scope="row"><label for="echs_redirect_type">Type</label></th>
@@ -233,6 +233,10 @@ class ECHS_Redirects {
 		);
 
 		delete_transient( 'echs_redirects_cache' );
+
+		if ( false !== $inserted && class_exists( 'ECHS_404_Monitor' ) ) {
+			ECHS_404_Monitor::dismiss_by_url( $source );
+		}
 
 		$msg = false !== $inserted ? 'added' : 'error';
 		wp_redirect( admin_url( 'admin.php?page=echs-redirects&echs_msg=' . $msg ) );

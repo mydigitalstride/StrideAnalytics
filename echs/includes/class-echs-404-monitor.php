@@ -39,6 +39,7 @@ class ECHS_404_Monitor {
 		add_action( 'admin_init',                         [ __CLASS__, 'handle_actions' ] );
 		add_action( self::CRON_HOOK,                      [ __CLASS__, 'send_daily_summary' ] );
 		add_action( 'admin_post_echs_save_404_settings',  [ __CLASS__, 'save_settings' ] );
+		add_action( 'wp_ajax_echs_404_add_redirect',      [ __CLASS__, 'ajax_add_redirect' ] );
 		self::maybe_upgrade_table();
 		self::schedule_cron();
 	}
@@ -253,13 +254,13 @@ class ECHS_404_Monitor {
 		$wpdb->query( "UPDATE {$table} SET notified = 1 WHERE id IN ({$ids})" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
-	public static function get_suggestion( string $url ): string {
+	public static function get_suggestion( string $url ): array {
 		$path       = (string) parse_url( $url, PHP_URL_PATH );
 		$slug       = basename( $path );
 		$slug_words = str_replace( [ '-', '_' ], ' ', $slug );
 
 		if ( '' === trim( $slug_words ) ) {
-			return '';
+			return [];
 		}
 
 		$query = new WP_Query( [
@@ -269,13 +270,74 @@ class ECHS_404_Monitor {
 		] );
 
 		if ( $query->have_posts() ) {
-			$post      = $query->posts[0];
-			$title     = get_the_title( $post );
-			$permalink = get_permalink( $post );
-			return 'Similar content found: &ldquo;<a href="' . esc_url( $permalink ) . '">' . esc_html( $title ) . '</a>&rdquo; at ' . esc_url( $permalink );
+			$post = $query->posts[0];
+			return [
+				'title'     => get_the_title( $post ),
+				'permalink' => get_permalink( $post ),
+			];
 		}
 
-		return '';
+		return [];
+	}
+
+	public static function ajax_add_redirect(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized.' );
+		}
+		check_ajax_referer( 'echs_404_redirect', '_nonce' );
+
+		$source   = sanitize_text_field( $_POST['source'] ?? '' );
+		$target   = sanitize_text_field( $_POST['target'] ?? '' );
+		$type_raw = (int) ( $_POST['type'] ?? 301 );
+		$type     = in_array( $type_raw, [ 301, 302, 307 ], true ) ? $type_raw : 301;
+		$entry_id = absint( $_POST['entry_id'] ?? 0 );
+
+		if ( '' === $source || '' === $target ) {
+			wp_send_json_error( 'Source and destination are required.' );
+		}
+
+		$source = esc_url_raw( $source );
+		$target = esc_url_raw( $target );
+
+		if ( ! str_starts_with( $source, '/' ) && ! preg_match( '#^https?://#i', $source ) ) {
+			$source = '/' . $source;
+		}
+
+		global $wpdb;
+		$inserted = $wpdb->insert(
+			ECHS_Redirects::get_table_name(),
+			[
+				'source_url'    => $source,
+				'target_url'    => $target,
+				'redirect_type' => $type,
+			],
+			[ '%s', '%s', '%d' ]
+		);
+
+		if ( false === $inserted ) {
+			wp_send_json_error( 'Failed to create redirect.' );
+		}
+
+		delete_transient( 'echs_redirects_cache' );
+		self::dismiss_by_url( $source );
+
+		if ( $entry_id > 0 ) {
+			$table = self::get_table_name();
+			$wpdb->update( $table, [ 'dismissed' => 1 ], [ 'id' => $entry_id ], [ '%d' ], [ '%d' ] );
+		}
+
+		wp_send_json_success( [ 'message' => 'Redirect created and 404 dismissed.' ] );
+	}
+
+	public static function dismiss_by_url( string $url ): void {
+		global $wpdb;
+		$table = self::get_table_name();
+		$normalized = strtolower( trim( $url ) );
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE {$table} SET dismissed = 1 WHERE LOWER(TRIM(url)) = %s OR LOWER(TRIM(url)) = %s",
+			$normalized,
+			rtrim( $normalized, '/' )
+		) );
 	}
 
 	public static function set_html_content_type(): string {
@@ -397,31 +459,46 @@ class ECHS_404_Monitor {
 		if ( empty( $rows ) ) {
 			echo '<p>No 404 errors recorded yet.</p>';
 		} else {
-			echo '<table class="wp-list-table widefat striped">';
+			echo '<style>
+				.echs-404-table { table-layout:fixed; }
+				.echs-404-table th, .echs-404-table td { word-wrap:break-word; overflow-wrap:break-word; vertical-align:top; }
+				.echs-404-table .col-url { width:25%; }
+				.echs-404-table .col-type { width:55px; }
+				.echs-404-table .col-hits { width:40px; text-align:center; }
+				.echs-404-table .col-ref { width:12%; }
+				.echs-404-table .col-seen { width:80px; }
+				.echs-404-table .col-fix { width:22%; }
+				.echs-404-table .col-actions { width:120px; }
+				.echs-404-table code { font-size:12px; word-break:break-all; }
+				.echs-404-table .echs-ref-text { font-size:12px; color:#646970; word-break:break-all; }
+				.echs-404-table .echs-suggestion a { word-break:break-all; }
+				#echs-redirect-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100000; }
+				#echs-redirect-modal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:8px; padding:24px 28px; width:480px; max-width:90vw; z-index:100001; box-shadow:0 8px 32px rgba(0,0,0,.25); }
+				#echs-redirect-modal h3 { margin:0 0 16px; }
+				#echs-redirect-modal label { display:block; font-weight:600; margin-bottom:4px; font-size:13px; }
+				#echs-redirect-modal input[type=text], #echs-redirect-modal select { width:100%; margin-bottom:12px; }
+				#echs-redirect-modal .echs-modal-buttons { display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+				#echs-redirect-modal .echs-modal-status { margin-top:8px; font-size:13px; }
+			</style>';
+			echo '<table class="wp-list-table widefat striped echs-404-table">';
 			echo '<thead><tr>';
-			echo '<th>URL</th><th>Type</th><th>Hits</th><th>Referrer</th><th>First Seen</th><th>Last Seen</th><th>Suggested Fix</th><th>Actions</th>';
+			echo '<th class="col-url">URL</th><th class="col-type">Type</th><th class="col-hits">Hits</th><th class="col-ref">Referrer</th><th class="col-seen">Last Seen</th><th class="col-fix">Suggested Fix</th><th class="col-actions">Actions</th>';
 			echo '</tr></thead>';
 			echo '<tbody>';
 
 			foreach ( $rows as $row ) {
 				$suggestion = self::get_suggestion( $row->url );
-				if ( '' === $suggestion ) {
-					$suggestion = '(none found)';
-				}
 
 				if ( '' === $row->referrer ) {
 					$referrer_display = '&mdash;';
-				} elseif ( strlen( $row->referrer ) > 60 ) {
-					$referrer_display = '<span title="' . esc_attr( $row->referrer ) . '">' . esc_html( substr( $row->referrer, 0, 60 ) ) . '&hellip;</span>';
 				} else {
-					$referrer_display = esc_html( $row->referrer );
+					$ref_host = (string) parse_url( $row->referrer, PHP_URL_HOST );
+					$referrer_display = '<span class="echs-ref-text" title="' . esc_attr( $row->referrer ) . '">' . esc_html( $ref_host ?: substr( $row->referrer, 0, 30 ) ) . '</span>';
 				}
 
-				$first_seen = wp_date( 'M j, Y g:i a', strtotime( $row->first_seen ) );
-				$last_seen  = wp_date( 'M j, Y g:i a', strtotime( $row->last_seen ) );
+				$last_seen = wp_date( 'M j, Y', strtotime( $row->last_seen ) );
 
-				$redirect_url = admin_url( 'admin.php?page=echs-redirects&echs_prefill=' . urlencode( $row->url ) );
-				$dismiss_url  = wp_nonce_url(
+				$dismiss_url = wp_nonce_url(
 					admin_url( 'admin.php?page=echs-404-monitor&echs_action=dismiss&id=' . absint( $row->id ) ),
 					'echs_dismiss_404_' . absint( $row->id )
 				);
@@ -431,31 +508,144 @@ class ECHS_404_Monitor {
 					? '<span style="background:#f0b849;color:#1d2327;font-size:11px;padding:1px 6px;border-radius:3px;font-weight:600;">Bot</span>'
 					: '<span style="background:#d7f0dc;color:#1d7a34;font-size:11px;padding:1px 6px;border-radius:3px;font-weight:600;">Human</span>';
 
-				echo '<tr>';
-				echo '<td><code>' . esc_html( $row->url ) . '</code>';
-				if ( ! empty( $row->user_agent ) ) {
-					$ua_display = substr( $row->user_agent, 0, 80 );
-					$ua_suffix  = strlen( $row->user_agent ) > 80 ? '&hellip;' : '';
-					echo '<br><small style="color:#646970;">' . esc_html( $ua_display ) . $ua_suffix . '</small>';
+				$suggest_target = ! empty( $suggestion ) ? esc_attr( $suggestion['permalink'] ) : '';
+
+				echo '<tr data-entry-id="' . absint( $row->id ) . '">';
+				echo '<td class="col-url"><code>' . esc_html( $row->url ) . '</code></td>';
+				echo '<td class="col-type">' . $type_badge . '</td>';
+				echo '<td class="col-hits">' . absint( $row->hit_count ) . '</td>';
+				echo '<td class="col-ref">' . $referrer_display . '</td>';
+				echo '<td class="col-seen">' . esc_html( $last_seen ) . '</td>';
+				echo '<td class="col-fix echs-suggestion">';
+				if ( ! empty( $suggestion ) ) {
+					echo '&ldquo;<a href="' . esc_url( $suggestion['permalink'] ) . '">' . esc_html( $suggestion['title'] ) . '</a>&rdquo;';
+					echo '<br><button type="button" class="button button-small echs-redir-btn" style="margin-top:4px;" data-source="' . esc_attr( $row->url ) . '" data-target="' . $suggest_target . '" data-entry="' . absint( $row->id ) . '">Redirect to this</button>';
+				} else {
+					echo '<span style="color:#999;">(none found)</span>';
 				}
 				echo '</td>';
-				echo '<td>' . $type_badge . '</td>';
-				echo '<td>' . absint( $row->hit_count ) . '</td>';
-				echo '<td>' . $referrer_display . '</td>';
-				echo '<td>' . esc_html( $first_seen ) . '</td>';
-				echo '<td>' . esc_html( $last_seen ) . '</td>';
-				echo '<td>' . $suggestion . '</td>';
-				echo '<td>';
+				echo '<td class="col-actions">';
 				if ( ! $is_bot ) {
-					echo '<a href="' . esc_url( $redirect_url ) . '" class="button button-small">Add Redirect</a> ';
+					echo '<button type="button" class="button button-small echs-redir-btn" style="margin-bottom:4px;display:block;width:100%;text-align:center;" data-source="' . esc_attr( $row->url ) . '" data-target="" data-entry="' . absint( $row->id ) . '">Add Redirect</button>';
 				}
-				echo '<a href="' . esc_url( $dismiss_url ) . '" class="button button-small">Dismiss</a>';
+				echo '<a href="' . esc_url( $dismiss_url ) . '" class="button button-small" style="display:block;text-align:center;">Dismiss</a>';
 				echo '</td>';
 				echo '</tr>';
 			}
 
 			echo '</tbody></table>';
 		}
+
+		// Redirect modal.
+		echo '<div id="echs-redirect-modal-overlay"></div>';
+		echo '<div id="echs-redirect-modal" style="display:none;">';
+		echo '<h3>Add Redirect</h3>';
+		echo '<input type="hidden" id="echs-redir-entry-id" value="">';
+		echo '<label for="echs-redir-source">Source URL (404)</label>';
+		echo '<input type="text" id="echs-redir-source" class="regular-text" readonly>';
+		echo '<label for="echs-redir-target">Destination URL</label>';
+		echo '<input type="text" id="echs-redir-target" class="regular-text" placeholder="https://… or /new-page/">';
+		echo '<label for="echs-redir-type">Redirect Type</label>';
+		echo '<select id="echs-redir-type"><option value="301">301 Permanent</option><option value="302">302 Temporary</option><option value="307">307 Temporary</option></select>';
+		echo '<div class="echs-modal-buttons">';
+		echo '<button type="button" class="button" id="echs-redir-cancel">Cancel</button>';
+		echo '<button type="button" class="button button-primary" id="echs-redir-save">Create Redirect</button>';
+		echo '</div>';
+		echo '<div class="echs-modal-status" id="echs-redir-status"></div>';
+		echo '</div>';
+
+		?>
+		<script>
+		(function(){
+			var overlay = document.getElementById('echs-redirect-modal-overlay'),
+				modal   = document.getElementById('echs-redirect-modal'),
+				srcEl   = document.getElementById('echs-redir-source'),
+				tgtEl   = document.getElementById('echs-redir-target'),
+				typeEl  = document.getElementById('echs-redir-type'),
+				entryEl = document.getElementById('echs-redir-entry-id'),
+				status  = document.getElementById('echs-redir-status'),
+				activeRow = null;
+
+			function openModal(source, target, entryId) {
+				srcEl.value   = source;
+				tgtEl.value   = target;
+				entryEl.value = entryId;
+				typeEl.value  = '301';
+				status.textContent = '';
+				overlay.style.display = 'block';
+				modal.style.display   = 'block';
+				if (!target) tgtEl.focus();
+			}
+
+			function closeModal() {
+				overlay.style.display = 'none';
+				modal.style.display   = 'none';
+				activeRow = null;
+			}
+
+			document.querySelectorAll('.echs-redir-btn').forEach(function(btn){
+				btn.addEventListener('click', function(){
+					activeRow = btn.closest('tr');
+					openModal(btn.dataset.source, btn.dataset.target, btn.dataset.entry);
+				});
+			});
+
+			overlay.addEventListener('click', closeModal);
+			document.getElementById('echs-redir-cancel').addEventListener('click', closeModal);
+
+			document.addEventListener('keydown', function(e){
+				if (e.key === 'Escape' && modal.style.display === 'block') closeModal();
+			});
+
+			document.getElementById('echs-redir-save').addEventListener('click', function(){
+				var source = srcEl.value.trim(),
+					target = tgtEl.value.trim();
+
+				if (!target) {
+					status.innerHTML = '<span style="color:#d63638;">Destination URL is required.</span>';
+					tgtEl.focus();
+					return;
+				}
+
+				var saveBtn = this;
+				saveBtn.disabled = true;
+				saveBtn.textContent = 'Saving…';
+				status.textContent = '';
+
+				var data = new FormData();
+				data.append('action', 'echs_404_add_redirect');
+				data.append('_nonce', '<?php echo wp_create_nonce( "echs_404_redirect" ); ?>');
+				data.append('source', source);
+				data.append('target', target);
+				data.append('type', typeEl.value);
+				data.append('entry_id', entryEl.value);
+
+				fetch(ajaxurl, { method: 'POST', body: data })
+					.then(function(r){ return r.json(); })
+					.then(function(resp){
+						if (resp.success) {
+							status.innerHTML = '<span style="color:#00a32a;">Redirect created! Removing row…</span>';
+							if (activeRow) {
+								activeRow.style.transition = 'opacity .3s';
+								activeRow.style.opacity = '0';
+								setTimeout(function(){ activeRow.remove(); }, 300);
+							}
+							setTimeout(closeModal, 600);
+						} else {
+							status.innerHTML = '<span style="color:#d63638;">' + (resp.data || 'Error') + '</span>';
+							saveBtn.disabled = false;
+							saveBtn.textContent = 'Create Redirect';
+						}
+					})
+					.catch(function(){
+						status.innerHTML = '<span style="color:#d63638;">Request failed. Please try again.</span>';
+						saveBtn.disabled = false;
+						saveBtn.textContent = 'Create Redirect';
+					});
+			});
+		})();
+		</script>
+		<?php
 
 		echo '</div>';
 	}
