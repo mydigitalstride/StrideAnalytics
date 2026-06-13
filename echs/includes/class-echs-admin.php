@@ -42,6 +42,7 @@ class ECHS_Admin {
 			'echos-seo-analytics_page_echs-redirects',
 			'echos-seo-analytics_page_echs-gbp',
 			'echos-seo-analytics_page_echs-gbp-jobs',
+			'echos-seo-analytics_page_echs-bulk-seo',
 			'post.php',
 			'post-new.php',
 		];
