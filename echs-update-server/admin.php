@@ -91,6 +91,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['echs_admin'])) {
         $db->remove_activation($license_id, $site_url);
     }
 
+    if ($post_action === 'publish_release') {
+        $new_version   = trim($_POST['version']      ?? '');
+        $tested_wp     = trim($_POST['tested_wp']     ?? '6.7');
+        $description   = trim($_POST['description']   ?? '');
+        $changelog     = trim($_POST['changelog']     ?? '');
+
+        $zip_dir = ECHS_ZIP_DIR;
+        if (!is_dir($zip_dir)) {
+            mkdir($zip_dir, 0755, true);
+        }
+
+        $zip_filename = ECHS_ZIP_FILENAME;
+        $upload_msg   = '';
+
+        if (!empty($_FILES['zip_file']['tmp_name']) && $_FILES['zip_file']['error'] === UPLOAD_ERR_OK) {
+            $ext = strtolower(pathinfo($_FILES['zip_file']['name'], PATHINFO_EXTENSION));
+            if ($ext === 'zip') {
+                $zip_filename = 'echs-' . $new_version . '.zip';
+                move_uploaded_file($_FILES['zip_file']['tmp_name'], $zip_dir . $zip_filename);
+            }
+        }
+
+        $release = [
+            'version'      => $new_version,
+            'zip_filename' => $zip_filename,
+            'tested_wp'    => $tested_wp,
+            'last_updated' => date('Y-m-d'),
+            'description'  => $description,
+            'changelog'    => $changelog,
+        ];
+
+        file_put_contents(ECHS_RELEASE_FILE, json_encode($release, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    }
+
     $redirect_page = $_POST['redirect_page'] ?? 'licenses';
     $redirect_id   = isset($_POST['redirect_id']) ? '&id=' . (int) $_POST['redirect_id'] : '';
     header('Location: admin.php?page=' . urlencode($redirect_page) . $redirect_id);
@@ -206,6 +240,7 @@ function echs_form_action(string $post_action, array $hidden = []): string {
   </div>
   <nav>
     <a href="admin.php?page=licenses"<?= $page === 'licenses' || $page === 'license_detail' ? ' class="active"' : '' ?>>Licenses</a>
+    <a href="admin.php?page=release"<?= $page === 'release' ? ' class="active"' : '' ?>>Plugin Release</a>
     <a href="admin.php?page=activity"<?= $page === 'activity' ? ' class="active"' : '' ?>>Request Log</a>
   </nav>
   <div class="sidebar-footer">
@@ -433,6 +468,107 @@ function echs_form_action(string $post_action, array $hidden = []): string {
       </table>
     <?php endif; ?>
   </div>
+
+<?php elseif ($page === 'release') : ?>
+
+  <?php
+    $rel = file_exists(ECHS_RELEASE_FILE)
+        ? json_decode(file_get_contents(ECHS_RELEASE_FILE), true)
+        : [];
+    $zip_exists = !empty($rel['zip_filename']) && file_exists(ECHS_ZIP_DIR . $rel['zip_filename']);
+    $zip_size   = $zip_exists ? round(filesize(ECHS_ZIP_DIR . $rel['zip_filename']) / 1048576, 2) : 0;
+
+    $zips_on_disk = [];
+    if (is_dir(ECHS_ZIP_DIR)) {
+        foreach (glob(ECHS_ZIP_DIR . '*.zip') as $z) {
+            $zips_on_disk[] = [
+                'name' => basename($z),
+                'size' => round(filesize($z) / 1048576, 2),
+                'date' => date('Y-m-d H:i', filemtime($z)),
+            ];
+        }
+        usort($zips_on_disk, fn($a, $b) => strcmp($b['date'], $a['date']));
+    }
+  ?>
+
+  <h2>Plugin Release</h2>
+
+  <div class="card">
+    <h3>Current Release</h3>
+    <table>
+      <tr><th style="width:160px;">Version</th><td class="mono"><?= htmlspecialchars($rel['version'] ?? '—') ?></td></tr>
+      <tr><th>Zip File</th><td>
+        <?php if ($zip_exists) : ?>
+          <span class="mono"><?= htmlspecialchars($rel['zip_filename']) ?></span>
+          <span class="meta">(<?= $zip_size ?> MB)</span>
+          <span class="badge badge-green">Ready</span>
+        <?php else : ?>
+          <span class="badge badge-red">Missing</span>
+          <span class="meta"><?= htmlspecialchars($rel['zip_filename'] ?? 'none') ?></span>
+        <?php endif; ?>
+      </td></tr>
+      <tr><th>Tested WP</th><td><?= htmlspecialchars($rel['tested_wp'] ?? '') ?></td></tr>
+      <tr><th>Last Updated</th><td><?= htmlspecialchars($rel['last_updated'] ?? '') ?></td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Publish New Release</h3>
+    <form method="post" enctype="multipart/form-data">
+      <?= echs_form_action('publish_release', ['redirect_page' => 'release']) ?>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Version Number</label>
+          <input type="text" name="version" value="<?= htmlspecialchars($rel['version'] ?? '') ?>" required placeholder="2.5.0">
+        </div>
+        <div class="form-group">
+          <label>Tested WordPress Version</label>
+          <input type="text" name="tested_wp" value="<?= htmlspecialchars($rel['tested_wp'] ?? '6.7') ?>" placeholder="6.7">
+        </div>
+        <div class="form-group full">
+          <label>Plugin Zip File <span class="meta">(upload new .zip to replace current)</span></label>
+          <input type="file" name="zip_file" accept=".zip">
+        </div>
+        <div class="form-group full">
+          <label>Description <span class="meta">(HTML allowed)</span></label>
+          <textarea name="description" rows="3"><?= htmlspecialchars($rel['description'] ?? '') ?></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Changelog <span class="meta">(HTML — add newest version at top)</span></label>
+          <textarea name="changelog" rows="6"><?= htmlspecialchars($rel['changelog'] ?? '') ?></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-sm btn-primary" type="submit" onclick="return confirm('Publish this release? All licensed sites will see the update.')">Publish Release</button>
+      </div>
+    </form>
+  </div>
+
+  <?php if (!empty($zips_on_disk)) : ?>
+  <div class="card">
+    <h3>Zip Files on Server</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Filename</th>
+          <th>Size</th>
+          <th>Modified</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($zips_on_disk as $z) : ?>
+          <tr>
+            <td class="mono"><?= htmlspecialchars($z['name']) ?></td>
+            <td><?= $z['size'] ?> MB</td>
+            <td class="meta"><?= htmlspecialchars($z['date']) ?></td>
+            <td><?= ($z['name'] === ($rel['zip_filename'] ?? '')) ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Archive</span>' ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
 
 <?php endif; ?>
 
