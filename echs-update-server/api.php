@@ -119,36 +119,33 @@ if ($action === 'check') {
 }
 
 if ($action === 'info') {
+    // Track license status for logging but serve update info to all users.
+    $licensed = false;
     $row = $db->get_license($license);
-    if (!$row || $row['status'] !== 'active') {
-        $db->log_request($ip, $action, $license, $site, 'invalid');
-        echs_json(['error' => 'invalid_license', 'message' => 'License key is not valid or not activated for this site.']);
+    if ($row && $row['status'] === 'active') {
+        $expired = $row['expires_at'] !== null && strtotime($row['expires_at']) < time();
+        if (!$expired) {
+            $activation = $db->get_activation((int) $row['id'], $site);
+            if ($activation) {
+                $db->update_last_seen((int) $row['id'], $site, $version, $wp_version);
+                $licensed = true;
+            }
+        }
     }
 
-    if ($row['expires_at'] !== null && strtotime($row['expires_at']) < time()) {
-        $db->log_request($ip, $action, $license, $site, 'expired');
-        echs_json(['error' => 'invalid_license', 'message' => 'License key is not valid or not activated for this site.']);
-    }
-
-    $activation = $db->get_activation((int) $row['id'], $site);
-    if (!$activation) {
-        $db->log_request($ip, $action, $license, $site, 'not_activated');
-        echs_json(['error' => 'invalid_license', 'message' => 'License key is not valid or not activated for this site.']);
-    }
-
-    $db->update_last_seen((int) $row['id'], $site, $version, $wp_version);
-    $db->log_request($ip, $action, $license, $site, 'ok');
+    $db->log_request($ip, $action, $license, $site, $licensed ? 'ok' : 'unlicensed');
 
     echs_json([
         'name'         => 'ECHoS SEO Analytics',
         'slug'         => 'echs',
         'version'      => ECHS_LATEST_VERSION,
-        'download_url' => ECHS_API_BASE . '?action=download&license=' . urlencode($license) . '&site=' . urlencode($site),
+        'download_url' => ECHS_API_BASE . '?action=download&site=' . urlencode($site),
         'url'          => 'https://mydigitalstride.com/echos-seo-analytics',
         'requires'     => '6.0',
         'requires_php' => '8.0',
         'tested'       => ECHS_TESTED_WP,
         'last_updated' => ECHS_LAST_UPDATED,
+        'licensed'     => $licensed,
         'sections'     => [
             'description' => ECHS_DESCRIPTION,
             'changelog'   => ECHS_CHANGELOG,
@@ -157,23 +154,6 @@ if ($action === 'info') {
 }
 
 if ($action === 'download') {
-    $row = $db->get_license($license);
-    if (!$row || $row['status'] !== 'active') {
-        $db->log_request($ip, $action, $license, $site, 'invalid');
-        echs_json(['error' => 'invalid_license'], 403);
-    }
-
-    if ($row['expires_at'] !== null && strtotime($row['expires_at']) < time()) {
-        $db->log_request($ip, $action, $license, $site, 'expired');
-        echs_json(['error' => 'invalid_license'], 403);
-    }
-
-    $activation = $db->get_activation((int) $row['id'], $site);
-    if (!$activation) {
-        $db->log_request($ip, $action, $license, $site, 'not_activated');
-        echs_json(['error' => 'invalid_license'], 403);
-    }
-
     $zip = ECHS_ZIP_DIR . ECHS_ZIP_FILENAME;
     if (!file_exists($zip)) {
         $db->log_request($ip, $action, $license, $site, 'zip_not_found');

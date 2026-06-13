@@ -31,10 +31,9 @@ class ECHS_Updater {
 			return $cached;
 		}
 
-		$license = ECHS_License::get_key();
-		$url     = add_query_arg( [
+		$url = add_query_arg( [
 			'action'     => 'info',
-			'license'    => $license,
+			'license'    => ECHS_License::get_key(),
 			'site'       => home_url(),
 			'version'    => ECHS_VERSION,
 			'wp_version' => get_bloginfo( 'version' ),
