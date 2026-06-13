@@ -3,7 +3,7 @@
  * Plugin Name:       ECHoS SEO Analytics
  * Plugin URI:        https://mydigitalstride.com/echos-seo-analytics
  * Description:       Engineering, Construction, Home Services SEO Analytics. All-in-one SEO, structured data (JSON-LD), and marketing analytics plugin. Manages LocalBusiness schema, XML sitemaps, redirect manager, 404 monitoring, multi-keyword clustering, readability analysis, WooCommerce, GTM, Facebook Pixel, LinkedIn Insight Tag, Google Search status, broadcast messages, and Google Business Profile management with geo-tagged job photo push.
- * Version:           2.4.2
+ * Version:           2.4.3
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Digital Stride
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Plugin constants.
-define( 'ECHS_VERSION',     '2.4.2' );
+define( 'ECHS_VERSION',     '2.4.3' );
 define( 'ECHS_PLUGIN_DIR',  plugin_dir_path( __FILE__ ) );
 define( 'ECHS_PLUGIN_URL',  plugin_dir_url( __FILE__ ) );
 define( 'ECHS_PLUGIN_FILE', __FILE__ );
