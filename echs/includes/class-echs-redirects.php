@@ -234,6 +234,10 @@ class ECHS_Redirects {
 
 		delete_transient( 'echs_redirects_cache' );
 
+		if ( false !== $inserted && class_exists( 'ECHS_404_Monitor' ) ) {
+			ECHS_404_Monitor::dismiss_by_url( $source );
+		}
+
 		$msg = false !== $inserted ? 'added' : 'error';
 		wp_redirect( admin_url( 'admin.php?page=echs-redirects&echs_msg=' . $msg ) );
 		exit;
