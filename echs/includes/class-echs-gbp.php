@@ -211,12 +211,40 @@ class ECHS_GBP {
 
 			<?php if ( empty( $location_name ) ) : ?>
 				<?php
-				$accounts  = self::get_accounts();
-				$locations = [];
+				$accounts_raw = ECHS_Google_Auth::request( self::ACCOUNT_API . 'accounts' );
+				$accounts     = is_wp_error( $accounts_raw ) ? [] : ( $accounts_raw['accounts'] ?? [] );
+				$locations    = [];
+				$locations_raw = null;
 				if ( ! empty( $accounts[0]['name'] ) ) {
-					$locations = self::get_locations( $accounts[0]['name'] );
+					$locations_raw = ECHS_Google_Auth::request(
+						self::INFO_API . $accounts[0]['name'] . '/locations?readMask=name,title'
+					);
+					$locations = is_wp_error( $locations_raw ) ? [] : ( $locations_raw['locations'] ?? [] );
 				}
 				?>
+
+				<?php if ( current_user_can( 'manage_options' ) && ( empty( $accounts ) || empty( $locations ) ) ) : ?>
+					<div class="notice notice-info" style="margin-bottom:16px;">
+						<p><strong><?php esc_html_e( 'Diagnostic Info (admin only):', 'echs' ); ?></strong></p>
+						<p><?php esc_html_e( 'Accounts API response:', 'echs' ); ?></p>
+						<pre style="background:#f6f7f7;padding:8px;overflow:auto;max-height:200px;font-size:12px;"><?php
+							echo esc_html( is_wp_error( $accounts_raw )
+								? 'WP_Error: ' . $accounts_raw->get_error_message()
+								: wp_json_encode( $accounts_raw, JSON_PRETTY_PRINT )
+							);
+						?></pre>
+						<?php if ( $locations_raw !== null ) : ?>
+							<p><?php esc_html_e( 'Locations API response:', 'echs' ); ?></p>
+							<pre style="background:#f6f7f7;padding:8px;overflow:auto;max-height:200px;font-size:12px;"><?php
+								echo esc_html( is_wp_error( $locations_raw )
+									? 'WP_Error: ' . $locations_raw->get_error_message()
+									: wp_json_encode( $locations_raw, JSON_PRETTY_PRINT )
+								);
+							?></pre>
+						<?php endif; ?>
+					</div>
+				<?php endif; ?>
+
 				<div class="echs-card">
 					<h2><?php esc_html_e( 'Select Your Business Location', 'echs' ); ?></h2>
 					<?php if ( empty( $locations ) ) : ?>
