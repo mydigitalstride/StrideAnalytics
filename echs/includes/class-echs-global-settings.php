@@ -342,6 +342,10 @@ class ECHS_Global_Settings {
 				<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Settings saved.', 'echs' ); ?></p></div>
 			<?php endif; ?>
 
+			<?php if ( isset( $_GET['setup'] ) && 'complete' === $_GET['setup'] ) : // phpcs:ignore WordPress.Security.NonceVerification ?>
+				<div class="notice notice-success is-dismissible"><p><strong>Setup complete!</strong> Your business information has been saved. You can fine-tune everything below.</p></div>
+			<?php endif; ?>
+
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="echs_save_global">
 				<?php wp_nonce_field( 'echs_global_settings_save', 'echs_global_nonce' ); ?>
