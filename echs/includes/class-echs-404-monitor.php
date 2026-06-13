@@ -36,6 +36,7 @@ class ECHS_404_Monitor {
 	public static function init(): void {
 		add_action( 'template_redirect',                  [ __CLASS__, 'log_404' ], 2 );
 		add_action( 'admin_menu',                         [ __CLASS__, 'register_menu' ] );
+		add_action( 'admin_init',                         [ __CLASS__, 'handle_actions' ] );
 		add_action( self::CRON_HOOK,                      [ __CLASS__, 'send_daily_summary' ] );
 		add_action( 'admin_post_echs_save_404_settings',  [ __CLASS__, 'save_settings' ] );
 		self::maybe_upgrade_table();
@@ -292,6 +293,34 @@ class ECHS_404_Monitor {
 		);
 	}
 
+	public static function handle_actions(): void {
+		if ( ! isset( $_GET['page'] ) || 'echs-404-monitor' !== $_GET['page'] ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table  = self::get_table_name();
+		$action = isset( $_GET['echs_action'] ) ? sanitize_key( $_GET['echs_action'] ) : '';
+
+		if ( 'dismiss' === $action ) {
+			$entry_id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
+			check_admin_referer( 'echs_dismiss_404_' . $entry_id );
+			$wpdb->update( $table, [ 'dismissed' => 1 ], [ 'id' => $entry_id ], [ '%d' ], [ '%d' ] );
+			wp_safe_redirect( add_query_arg( 'echs_msg', 'dismissed', admin_url( 'admin.php?page=echs-404-monitor' ) ) );
+			exit;
+		}
+
+		if ( 'clear_all' === $action ) {
+			check_admin_referer( 'echs_clear_404s' );
+			$wpdb->delete( $table, [ 'dismissed' => 1 ], [ '%d' ] );
+			wp_safe_redirect( add_query_arg( 'echs_msg', 'cleared', admin_url( 'admin.php?page=echs-404-monitor' ) ) );
+			exit;
+		}
+	}
+
 	public static function render_page(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -299,23 +328,6 @@ class ECHS_404_Monitor {
 
 		global $wpdb;
 		$table = self::get_table_name();
-
-		$action = isset( $_GET['echs_action'] ) ? sanitize_key( $_GET['echs_action'] ) : '';
-
-		if ( 'dismiss' === $action ) {
-			$entry_id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
-			check_admin_referer( 'echs_dismiss_404_' . $entry_id );
-			$wpdb->update( $table, [ 'dismissed' => 1 ], [ 'id' => $entry_id ], [ '%d' ], [ '%d' ] );
-			wp_redirect( add_query_arg( 'echs_msg', 'dismissed', admin_url( 'admin.php?page=echs-404-monitor' ) ) );
-			exit;
-		}
-
-		if ( 'clear_all' === $action ) {
-			check_admin_referer( 'echs_clear_404s' );
-			$wpdb->delete( $table, [ 'dismissed' => 1 ], [ '%d' ] );
-			wp_redirect( add_query_arg( 'echs_msg', 'cleared', admin_url( 'admin.php?page=echs-404-monitor' ) ) );
-			exit;
-		}
 
 		$msg = isset( $_GET['echs_msg'] ) ? sanitize_key( $_GET['echs_msg'] ) : '';
 
