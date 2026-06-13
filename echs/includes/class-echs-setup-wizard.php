@@ -526,7 +526,8 @@ class ECHS_Setup_Wizard {
 			var steps    = <?php echo wp_json_encode( self::STEPS ); ?>,
 				current  = 0,
 				nonce    = '<?php echo esc_js( $nonce ); ?>',
-				saving   = false;
+				saving   = false,
+				adminAjax = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
 
 			function showStep(idx) {
 				document.querySelectorAll('.echs-wizard-step').forEach(function(el){ el.classList.remove('active'); });
@@ -593,7 +594,7 @@ class ECHS_Setup_Wizard {
 				var btn = document.querySelector('.echs-wizard-step[data-step="'+stepName+'"] .echs-wiz-next, .echs-wizard-step[data-step="'+stepName+'"] .echs-wiz-finish');
 				if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
-				fetch(ajaxurl, { method:'POST', body: getStepData(stepName) })
+				fetch(adminAjax, { method:'POST', body: getStepData(stepName) })
 					.then(function(r){ return r.json(); })
 					.then(function(resp){
 						saving = false;
@@ -606,14 +607,16 @@ class ECHS_Setup_Wizard {
 							if (nextIdx !== undefined) showStep(nextIdx);
 						}
 					})
-					.catch(function(){
+					.catch(function(err){
 						saving = false;
 						if (btn) { btn.disabled = false; btn.textContent = stepName === 'registration' ? 'Complete Setup' : 'Continue'; }
+						console.error('ECHoS setup save error:', err);
 					});
 			}
 
 			document.addEventListener('click', function(e){
-				var t = e.target;
+				var t = e.target.closest('button');
+				if (!t) return;
 
 				if (t.classList.contains('echs-wiz-next')) {
 					if (!validateStep(steps[current])) return;
