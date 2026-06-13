@@ -1,7 +1,7 @@
 <?php
 /**
- * Bulk SEO editor — list all pages/posts with editable Title and Meta
- * Description fields so users can mass-edit without opening each post.
+ * Bulk SEO editor — list all pages/posts with editable Title, Meta
+ * Description, noindex toggle, readability score, and keyword frequency.
  *
  * @package ECHoS_SEO_Analytics
  */
@@ -35,11 +35,12 @@ class ECHS_Bulk_SEO {
 			wp_send_json_error( 'Permission denied.' );
 		}
 
-		$post_id     = (int) ( $_POST['post_id'] ?? 0 );
-		$field       = sanitize_text_field( $_POST['field'] ?? '' );
-		$value       = sanitize_text_field( wp_unslash( $_POST['value'] ?? '' ) );
+		$post_id = (int) ( $_POST['post_id'] ?? 0 );
+		$field   = sanitize_text_field( $_POST['field'] ?? '' );
+		$value   = sanitize_text_field( wp_unslash( $_POST['value'] ?? '' ) );
 
-		if ( ! $post_id || ! in_array( $field, [ 'echs_seo_title', 'echs_seo_description' ], true ) ) {
+		$allowed = [ 'echs_seo_title', 'echs_seo_description', 'echs_noindex' ];
+		if ( ! $post_id || ! in_array( $field, $allowed, true ) ) {
 			wp_send_json_error( 'Invalid request.' );
 		}
 
@@ -48,9 +49,76 @@ class ECHS_Bulk_SEO {
 			wp_send_json_error( 'Invalid post.' );
 		}
 
+		if ( $field === 'echs_noindex' ) {
+			$value = ( $value === '1' ) ? '1' : '0';
+		}
+
 		update_post_meta( $post_id, $field, $value );
 
 		wp_send_json_success( [ 'post_id' => $post_id, 'field' => $field ] );
+	}
+
+	private static function flesch_score( string $text ): ?float {
+		$text = wp_strip_all_tags( $text );
+		$text = preg_replace( '/\s+/', ' ', trim( $text ) );
+		if ( empty( $text ) ) {
+			return null;
+		}
+
+		$sentences = preg_split( '/[.!?]+/', $text, -1, PREG_SPLIT_NO_EMPTY );
+		$sentence_count = count( $sentences );
+
+		preg_match_all( '/[a-z]+/i', $text, $m );
+		$words = $m[0];
+		$word_count = count( $words );
+
+		if ( $sentence_count < 3 || $word_count < 10 ) {
+			return null;
+		}
+
+		$syllable_count = 0;
+		foreach ( $words as $w ) {
+			$syllable_count += self::count_syllables( $w );
+		}
+
+		$score = 206.835
+			- 1.015 * ( $word_count / $sentence_count )
+			- 84.6 * ( $syllable_count / $word_count );
+
+		return max( 0.0, min( 100.0, round( $score, 1 ) ) );
+	}
+
+	private static function count_syllables( string $word ): int {
+		$word = strtolower( $word );
+		if ( strlen( $word ) <= 3 ) {
+			return 1;
+		}
+		$word = preg_replace( '/(?:[^laeiouy]es|ed|[^laeiouy]e)$/', '', $word );
+		$word = preg_replace( '/^y/', '', $word );
+		preg_match_all( '/[aeiouy]{1,2}/', $word, $m );
+		$count = count( $m[0] );
+		return max( 1, $count );
+	}
+
+	private static function count_keyword( string $content, string $keyword ): int {
+		if ( empty( $keyword ) || empty( $content ) ) {
+			return 0;
+		}
+		$text    = strtolower( wp_strip_all_tags( $content ) );
+		$needle  = strtolower( $keyword );
+		$escaped = preg_quote( $needle, '/' );
+		preg_match_all( '/\b' . $escaped . '\b/', $text, $m );
+		return count( $m[0] );
+	}
+
+	private static function flesch_label( float $score ): array {
+		if ( $score >= 60 ) {
+			return [ 'color' => '#00a32a', 'label' => 'Easy' ];
+		}
+		if ( $score >= 30 ) {
+			return [ 'color' => '#dba617', 'label' => 'Moderate' ];
+		}
+		return [ 'color' => '#d63638', 'label' => 'Difficult' ];
 	}
 
 	public static function render_page(): void {
@@ -63,7 +131,7 @@ class ECHS_Bulk_SEO {
 			$current_type = 'page';
 		}
 
-		$paged = max( 1, (int) ( $_GET['paged'] ?? 1 ) );
+		$paged    = max( 1, (int) ( $_GET['paged'] ?? 1 ) );
 		$per_page = 30;
 
 		$query = new WP_Query( [
@@ -76,11 +144,7 @@ class ECHS_Bulk_SEO {
 		] );
 
 		$total_pages = $query->max_num_pages;
-
-		$type_obj = get_post_type_object( $current_type );
-		$type_label = $type_obj ? $type_obj->labels->name : ucfirst( $current_type );
-
-		$nonce = wp_create_nonce( 'echs_bulk_seo_nonce' );
+		$nonce       = wp_create_nonce( 'echs_bulk_seo_nonce' );
 		?>
 		<div class="wrap echs-settings-wrap">
 			<h1><?php esc_html_e( 'Bulk SEO Editor', 'echs' ); ?></h1>
@@ -108,67 +172,119 @@ class ECHS_Bulk_SEO {
 			<table class="wp-list-table widefat fixed striped echs-bulk-seo-table">
 				<thead>
 					<tr>
-						<th style="width:30%;"><?php esc_html_e( 'Page', 'echs' ); ?></th>
-						<th style="width:30%;"><?php esc_html_e( 'SEO Title', 'echs' ); ?></th>
-						<th style="width:30%;"><?php esc_html_e( 'Meta Description', 'echs' ); ?></th>
-						<th style="width:10%;text-align:center;"><?php esc_html_e( 'Status', 'echs' ); ?></th>
+						<th class="echs-col-page"><?php esc_html_e( 'Page', 'echs' ); ?></th>
+						<th class="echs-col-title"><?php esc_html_e( 'SEO Title', 'echs' ); ?></th>
+						<th class="echs-col-desc"><?php esc_html_e( 'Meta Description', 'echs' ); ?></th>
+						<th class="echs-col-noindex"><?php esc_html_e( 'Noindex', 'echs' ); ?></th>
+						<th class="echs-col-read"><?php esc_html_e( 'Readability', 'echs' ); ?></th>
+						<th class="echs-col-kw"><?php esc_html_e( 'Keywords', 'echs' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
 					<?php while ( $query->have_posts() ) : $query->the_post();
 						$post_id   = get_the_ID();
+						$post_obj  = get_post( $post_id );
 						$title     = get_the_title();
 						$seo_title = get_post_meta( $post_id, 'echs_seo_title', true );
 						$seo_desc  = get_post_meta( $post_id, 'echs_seo_description', true );
+						$noindex   = get_post_meta( $post_id, 'echs_noindex', true ) === '1';
 						$status    = get_post_status();
+						$content   = $post_obj->post_content ?? '';
 
-						$has_title = ! empty( $seo_title );
-						$has_desc  = ! empty( $seo_desc );
 						$title_len = mb_strlen( $seo_title );
 						$desc_len  = mb_strlen( $seo_desc );
+
+						// Readability.
+						$flesch      = self::flesch_score( $content );
+						$flesch_info = $flesch !== null ? self::flesch_label( $flesch ) : null;
+
+						// Focus keywords.
+						$keywords = get_post_meta( $post_id, 'echs_focus_keywords', true );
+						if ( ! is_array( $keywords ) ) {
+							$legacy = get_post_meta( $post_id, 'echs_focus_keyword', true );
+							$keywords = $legacy ? [ $legacy ] : [];
+						}
+						$keywords = array_filter( $keywords );
+
+						$kw_counts = [];
+						foreach ( $keywords as $kw ) {
+							$kw_counts[] = [
+								'keyword' => $kw,
+								'count'   => self::count_keyword( $content, $kw ),
+							];
+						}
 					?>
 					<tr data-post-id="<?php echo esc_attr( $post_id ); ?>">
-						<td>
+						<td class="echs-col-page">
 							<strong>
 								<a href="<?php echo esc_url( get_edit_post_link( $post_id ) ); ?>">
 									<?php echo esc_html( $title ?: __( '(no title)', 'echs' ) ); ?>
 								</a>
 							</strong>
 							<?php if ( $status !== 'publish' ) : ?>
-								<span style="color:#646970;font-size:11px;"> — <?php echo esc_html( ucfirst( $status ) ); ?></span>
+								<span class="echs-bulk-status-label"><?php echo esc_html( ucfirst( $status ) ); ?></span>
 							<?php endif; ?>
 						</td>
-						<td>
+						<td class="echs-col-title">
 							<input type="text"
-								class="echs-bulk-field large-text"
+								class="echs-bulk-field"
 								data-field="echs_seo_title"
 								data-post-id="<?php echo esc_attr( $post_id ); ?>"
 								value="<?php echo esc_attr( $seo_title ); ?>"
 								placeholder="<?php echo esc_attr( $title ); ?>"
 							>
-							<span class="echs-bulk-charcount" style="font-size:11px;color:#646970;">
+							<span class="echs-bulk-charcount">
 								<?php echo esc_html( $title_len ); ?> <?php esc_html_e( 'chars', 'echs' ); ?>
 							</span>
 						</td>
-						<td>
+						<td class="echs-col-desc">
 							<textarea
-								class="echs-bulk-field large-text"
+								class="echs-bulk-field"
 								data-field="echs_seo_description"
 								data-post-id="<?php echo esc_attr( $post_id ); ?>"
 								rows="2"
 								placeholder="<?php esc_attr_e( 'Enter meta description…', 'echs' ); ?>"
 							><?php echo esc_textarea( $seo_desc ); ?></textarea>
-							<span class="echs-bulk-charcount" style="font-size:11px;color:#646970;">
-								<?php echo esc_html( $desc_len ); ?>/160 <?php esc_html_e( 'chars', 'echs' ); ?>
+							<span class="echs-bulk-charcount <?php echo $desc_len > 160 ? 'echs-over' : ''; ?>">
+								<?php echo esc_html( $desc_len ); ?>/160
 							</span>
 						</td>
-						<td style="text-align:center;">
-							<?php if ( $has_title && $has_desc ) : ?>
-								<span style="color:#00a32a;font-size:16px;" title="<?php esc_attr_e( 'Title and description set', 'echs' ); ?>">&#10003;</span>
-							<?php elseif ( $has_title || $has_desc ) : ?>
-								<span style="color:#dba617;font-size:16px;" title="<?php esc_attr_e( 'Partially complete', 'echs' ); ?>">&#9679;</span>
+						<td class="echs-col-noindex" style="text-align:center;">
+							<input type="checkbox"
+								class="echs-bulk-noindex"
+								data-post-id="<?php echo esc_attr( $post_id ); ?>"
+								<?php checked( $noindex ); ?>
+							>
+						</td>
+						<td class="echs-col-read" style="text-align:center;">
+							<?php if ( $flesch_info ) : ?>
+								<span style="color:<?php echo esc_attr( $flesch_info['color'] ); ?>;font-weight:600;font-size:13px;"
+									  title="<?php echo esc_attr( $flesch_info['label'] ); ?>">
+									<?php echo esc_html( $flesch ); ?>
+								</span>
+								<span style="display:block;font-size:10px;color:#646970;">
+									<?php echo esc_html( $flesch_info['label'] ); ?>
+								</span>
 							<?php else : ?>
-								<span style="color:#d63638;font-size:16px;" title="<?php esc_attr_e( 'Missing title and description', 'echs' ); ?>">&#10007;</span>
+								<span style="color:#646970;font-size:11px;">—</span>
+							<?php endif; ?>
+						</td>
+						<td class="echs-col-kw">
+							<?php if ( empty( $kw_counts ) ) : ?>
+								<span style="color:#646970;font-size:11px;"><?php esc_html_e( 'No keywords set', 'echs' ); ?></span>
+							<?php else : ?>
+								<?php foreach ( $kw_counts as $i => $kc ) :
+									$count_color = $kc['count'] === 0 ? '#d63638' : ( $kc['count'] >= 3 ? '#00a32a' : '#dba617' );
+								?>
+									<div class="echs-bulk-kw-row">
+										<span class="echs-bulk-kw-name" title="<?php echo esc_attr( $kc['keyword'] ); ?>">
+											<?php echo esc_html( $kc['keyword'] ); ?>
+										</span>
+										<span class="echs-bulk-kw-count" style="color:<?php echo esc_attr( $count_color ); ?>;">
+											<?php echo esc_html( $kc['count'] ); ?>×
+										</span>
+									</div>
+								<?php endforeach; ?>
 							<?php endif; ?>
 						</td>
 					</tr>
@@ -199,13 +315,32 @@ class ECHS_Bulk_SEO {
 		</div>
 
 		<style>
+			.echs-bulk-seo-table th,
 			.echs-bulk-seo-table td { vertical-align: top; padding: 8px; }
+			.echs-col-page  { width: 20%; }
+			.echs-col-title { width: 22%; }
+			.echs-col-desc  { width: 26%; }
+			.echs-col-noindex { width: 6%; text-align: center; }
+			.echs-col-read  { width: 8%; text-align: center; }
+			.echs-col-kw    { width: 18%; }
 			.echs-bulk-seo-table input.echs-bulk-field,
 			.echs-bulk-seo-table textarea.echs-bulk-field { width: 100%; }
 			.echs-bulk-seo-table textarea.echs-bulk-field { resize: vertical; min-height: 48px; }
 			.echs-bulk-field.echs-bulk-saving { opacity: 0.5; }
 			.echs-bulk-field.echs-bulk-saved { border-color: #00a32a; }
 			.echs-bulk-field.echs-bulk-error { border-color: #d63638; }
+			.echs-bulk-charcount { font-size: 11px; color: #646970; }
+			.echs-bulk-charcount.echs-over { color: #d63638; }
+			.echs-bulk-status-label { color: #646970; font-size: 11px; }
+			.echs-bulk-kw-row {
+				display: flex; justify-content: space-between; align-items: center;
+				padding: 2px 0; font-size: 12px;
+			}
+			.echs-bulk-kw-name {
+				overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+				max-width: 120px; color: #1d2327;
+			}
+			.echs-bulk-kw-count { font-weight: 600; white-space: nowrap; margin-left: 4px; }
 		</style>
 
 		<script>
@@ -216,57 +351,54 @@ class ECHS_Bulk_SEO {
 				var len = $field.val().length;
 				var $count = $field.siblings('.echs-bulk-charcount');
 				if ($field.data('field') === 'echs_seo_description') {
-					$count.text(len + '/160 chars');
-					$count.css('color', len > 160 ? '#d63638' : '#646970');
+					$count.text(len + '/160');
+					$count.toggleClass('echs-over', len > 160);
 				} else {
 					$count.text(len + ' chars');
-					$count.css('color', (len > 60 ? '#d63638' : '#646970'));
+					$count.toggleClass('echs-over', len > 60);
 				}
 			}
 
-			function updateStatusIcon($row) {
-				var hasTitle = !!$row.find('[data-field="echs_seo_title"]').val().trim();
-				var hasDesc  = !!$row.find('[data-field="echs_seo_description"]').val().trim();
-				var $td = $row.find('td:last');
-				if (hasTitle && hasDesc) {
-					$td.html('<span style="color:#00a32a;font-size:16px;" title="Title and description set">&#10003;</span>');
-				} else if (hasTitle || hasDesc) {
-					$td.html('<span style="color:#dba617;font-size:16px;" title="Partially complete">&#9679;</span>');
-				} else {
-					$td.html('<span style="color:#d63638;font-size:16px;" title="Missing title and description">&#10007;</span>');
-				}
-			}
-
-			$('.echs-bulk-field').on('input', function() {
-				var $el = $(this);
-				var key = $el.data('post-id') + '-' + $el.data('field');
-
-				updateCharCount($el);
-
+			function saveField(postId, field, value) {
+				var key = postId + '-' + field;
 				if (saveTimers[key]) clearTimeout(saveTimers[key]);
 
 				saveTimers[key] = setTimeout(function() {
-					$el.removeClass('echs-bulk-saved echs-bulk-error').addClass('echs-bulk-saving');
+					var $el = $('[data-post-id="' + postId + '"][data-field="' + field + '"]');
+					if ($el.length) $el.removeClass('echs-bulk-saved echs-bulk-error').addClass('echs-bulk-saving');
 
 					$.post(ajaxurl, {
 						action:  'echs_bulk_seo_save',
 						nonce:   $('#echs-bulk-seo-nonce').val(),
-						post_id: $el.data('post-id'),
-						field:   $el.data('field'),
-						value:   $el.val()
+						post_id: postId,
+						field:   field,
+						value:   value
 					}).done(function(r) {
-						$el.removeClass('echs-bulk-saving');
-						if (r.success) {
-							$el.addClass('echs-bulk-saved');
-							updateStatusIcon($el.closest('tr'));
-							setTimeout(function() { $el.removeClass('echs-bulk-saved'); }, 1500);
-						} else {
-							$el.addClass('echs-bulk-error');
+						if ($el.length) {
+							$el.removeClass('echs-bulk-saving');
+							if (r.success) {
+								$el.addClass('echs-bulk-saved');
+								setTimeout(function() { $el.removeClass('echs-bulk-saved'); }, 1500);
+							} else {
+								$el.addClass('echs-bulk-error');
+							}
 						}
 					}).fail(function() {
-						$el.removeClass('echs-bulk-saving').addClass('echs-bulk-error');
+						if ($el.length) $el.removeClass('echs-bulk-saving').addClass('echs-bulk-error');
 					});
 				}, 800);
+			}
+
+			$('.echs-bulk-field').on('input', function() {
+				var $el = $(this);
+				updateCharCount($el);
+				saveField($el.data('post-id'), $el.data('field'), $el.val());
+			});
+
+			$('.echs-bulk-noindex').on('change', function() {
+				var $cb = $(this);
+				var val = $cb.is(':checked') ? '1' : '0';
+				saveField($cb.data('post-id'), 'echs_noindex', val);
 			});
 		});
 		</script>
