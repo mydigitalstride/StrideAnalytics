@@ -53,7 +53,7 @@ class ECHS_Activator {
 
 			// Organization extras.
 			'echs_logo_url'        => '',
-			'echs_price_range'     => '$',
+			'echs_price_range'     => '',
 			'echs_founded_year'    => '',
 			'echs_slogan'          => '',
 		];

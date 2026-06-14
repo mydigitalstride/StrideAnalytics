@@ -80,8 +80,8 @@ class ECHS_Setup_Wizard {
 						update_option( 'echs_business_type', $type );
 					}
 				}
-				if ( isset( $_POST['echs_description'] ) ) {
-					update_option( 'echs_description', sanitize_textarea_field( wp_unslash( $_POST['echs_description'] ) ) );
+				if ( isset( $_POST['echs_slogan'] ) ) {
+					update_option( 'echs_slogan', sanitize_textarea_field( wp_unslash( $_POST['echs_slogan'] ) ) );
 				}
 				break;
 
@@ -268,7 +268,7 @@ class ECHS_Setup_Wizard {
 			.echs-wizard-hours-table { width:100%; border-collapse:collapse; margin-bottom:14px; }
 			.echs-wizard-hours-table th { text-align:left; font-size:12px; color:#646970; text-transform:uppercase; padding:4px 8px 4px 0; }
 			.echs-wizard-hours-table td { padding:3px 8px 3px 0; }
-			.echs-wizard-hours-table input[type=time] { width:100%; margin-bottom:0; padding:5px 8px; }
+			.echs-wizard-hours-table select { width:100%; margin-bottom:0; padding:5px 8px; }
 			.echs-wizard-hours-table .echs-day-label { font-weight:600; font-size:13px; min-width:90px; }
 
 			.echs-wizard-repeatable { margin-bottom:14px; }
@@ -338,7 +338,7 @@ class ECHS_Setup_Wizard {
 				</div>
 
 				<label for="wiz_description">Short Description</label>
-				<textarea id="wiz_description" name="echs_description" placeholder="A brief description of your business and services."><?php echo esc_textarea( get_option( 'echs_description' ) ); ?></textarea>
+				<textarea id="wiz_description" name="echs_slogan" placeholder="A brief description of your business and services."><?php echo esc_textarea( get_option( 'echs_slogan' ) ); ?></textarea>
 
 				<div class="echs-wizard-nav">
 					<div></div>
@@ -413,6 +413,16 @@ class ECHS_Setup_Wizard {
 				<h2>Hours of Operation</h2>
 				<p class="echs-step-desc">Set your business hours. Leave a day blank to mark it as closed.</p>
 
+				<?php
+					$time_options = [ '' => '— Closed —' ];
+					for ( $h = 0; $h < 24; $h++ ) {
+						foreach ( [ 0, 15, 30, 45 ] as $m ) {
+							$val   = sprintf( '%02d:%02d', $h, $m );
+							$label = gmdate( 'g:i A', strtotime( $val ) );
+							$time_options[ $val ] = $label;
+						}
+					}
+				?>
 				<table class="echs-wizard-hours-table">
 					<thead><tr><th>Day</th><th>Open</th><th>Close</th></tr></thead>
 					<tbody>
@@ -425,8 +435,20 @@ class ECHS_Setup_Wizard {
 					?>
 					<tr>
 						<td class="echs-day-label"><?php echo esc_html( ucfirst( $day ) ); ?></td>
-						<td><input type="time" name="echs_hours_open_<?php echo esc_attr( $day ); ?>" value="<?php echo esc_attr( $open ); ?>"></td>
-						<td><input type="time" name="echs_hours_close_<?php echo esc_attr( $day ); ?>" value="<?php echo esc_attr( $close ); ?>"></td>
+						<td>
+							<select name="echs_hours_open_<?php echo esc_attr( $day ); ?>">
+								<?php foreach ( $time_options as $val => $label ) : ?>
+									<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $open, $val ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</td>
+						<td>
+							<select name="echs_hours_close_<?php echo esc_attr( $day ); ?>">
+								<?php foreach ( $time_options as $val => $label ) : ?>
+									<option value="<?php echo esc_attr( $val ); ?>" <?php selected( $close, $val ); ?>><?php echo esc_html( $label ); ?></option>
+								<?php endforeach; ?>
+							</select>
+						</td>
 					</tr>
 					<?php endforeach; ?>
 					</tbody>
