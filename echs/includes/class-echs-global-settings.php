@@ -533,6 +533,15 @@ class ECHS_Global_Settings {
 						<?php esc_html_e( 'Hours of Operation', 'echs' ); ?>
 						<?php echo self::tip( 'Your regular business hours. Google can show these in search results and on Google Maps.' ); // phpcs:ignore ?>
 					</h2>
+					<?php
+					$time_opts = [ '' => '— Closed —' ];
+					for ( $h = 0; $h < 24; $h++ ) {
+						foreach ( [ 0, 15, 30, 45 ] as $m ) {
+							$tv = sprintf( '%02d:%02d', $h, $m );
+							$time_opts[ $tv ] = gmdate( 'g:i A', strtotime( $tv ) );
+						}
+					}
+					?>
 					<table class="form-table echs-hours-table">
 						<thead>
 							<tr>
@@ -548,8 +557,20 @@ class ECHS_Global_Settings {
 						?>
 							<tr>
 								<td><?php echo esc_html( $day ); ?></td>
-								<td><input type="time" name="<?php echo esc_attr( 'echs_hours_open_' . $day ); ?>" value="<?php echo esc_attr( $open ); ?>"></td>
-								<td><input type="time" name="<?php echo esc_attr( 'echs_hours_close_' . $day ); ?>" value="<?php echo esc_attr( $close ); ?>"></td>
+								<td>
+									<select name="<?php echo esc_attr( 'echs_hours_open_' . $day ); ?>">
+										<?php foreach ( $time_opts as $tv => $tl ) : ?>
+											<option value="<?php echo esc_attr( $tv ); ?>" <?php selected( $open, $tv ); ?>><?php echo esc_html( $tl ); ?></option>
+										<?php endforeach; ?>
+									</select>
+								</td>
+								<td>
+									<select name="<?php echo esc_attr( 'echs_hours_close_' . $day ); ?>">
+										<?php foreach ( $time_opts as $tv => $tl ) : ?>
+											<option value="<?php echo esc_attr( $tv ); ?>" <?php selected( $close, $tv ); ?>><?php echo esc_html( $tl ); ?></option>
+										<?php endforeach; ?>
+									</select>
+								</td>
 							</tr>
 						<?php endforeach; ?>
 						</tbody>
@@ -622,8 +643,9 @@ class ECHS_Global_Settings {
 							<th><label for="echs_price_range"><?php esc_html_e( 'Price Range', 'echs' ); ?></label></th>
 							<td>
 								<select id="echs_price_range" name="echs_price_range">
+									<option value="">— Select —</option>
 									<?php foreach ( [ '$', '$$', '$$$', '$$$$' ] as $pr ) : ?>
-										<option value="<?php echo esc_attr( $pr ); ?>" <?php selected( get_option( 'echs_price_range', '$' ), $pr ); ?>><?php echo esc_html( $pr ); ?></option>
+										<option value="<?php echo esc_attr( $pr ); ?>" <?php selected( get_option( 'echs_price_range' ), $pr ); ?>><?php echo esc_html( $pr ); ?></option>
 									<?php endforeach; ?>
 								</select>
 								<p class="description"><?php esc_html_e( '$ = budget-friendly, $$$$ = premium. Shown on Google Maps.', 'echs' ); ?></p>
