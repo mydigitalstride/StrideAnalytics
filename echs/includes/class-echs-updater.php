@@ -15,8 +15,12 @@ class ECHS_Updater {
 
 	const UPDATE_URL  = 'https://mydigitalstride.com/echos-updates/api.php';
 	const CACHE_KEY   = 'echs_update_info';
-	const CACHE_TTL   = 12 * HOUR_IN_SECONDS;
+	const CACHE_TTL   = 3 * HOUR_IN_SECONDS;
 	const PLUGIN_FILE = 'echs/echs.php';
+
+	private static function transient_key(): string {
+		return self::CACHE_KEY . '_' . ECHS_VERSION;
+	}
 
 	public static function init(): void {
 		add_filter( 'pre_set_site_transient_update_plugins', [ __CLASS__, 'check_for_update' ] );
@@ -26,7 +30,7 @@ class ECHS_Updater {
 	}
 
 	private static function fetch_remote_info(): array|false {
-		$cached = get_transient( self::CACHE_KEY );
+		$cached = get_transient( self::transient_key() );
 		if ( false !== $cached ) {
 			return $cached;
 		}
@@ -58,7 +62,7 @@ class ECHS_Updater {
 			return false;
 		}
 
-		set_transient( self::CACHE_KEY, $data, self::CACHE_TTL );
+		set_transient( self::transient_key(), $data, self::CACHE_TTL );
 		return $data;
 	}
 
@@ -124,7 +128,7 @@ class ECHS_Updater {
 
 	public static function bust_cache( WP_Upgrader $upgrader, array $options ): void {
 		if ( 'update' === ( $options['action'] ?? '' ) && 'plugin' === ( $options['type'] ?? '' ) ) {
-			delete_transient( self::CACHE_KEY );
+			delete_transient( self::transient_key() );
 			if ( ! empty( $options['plugins'] ) && in_array( self::PLUGIN_FILE, (array) $options['plugins'], true ) ) {
 				update_option( 'echs_last_updated_version', ECHS_VERSION );
 			}
