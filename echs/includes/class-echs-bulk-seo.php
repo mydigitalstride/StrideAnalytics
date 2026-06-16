@@ -261,8 +261,8 @@ class ECHS_Bulk_SEO {
 								rows="2"
 								placeholder="<?php esc_attr_e( 'Enter meta description…', 'echs' ); ?>"
 							><?php echo esc_textarea( $seo_desc ); ?></textarea>
-							<span class="echs-bulk-charcount <?php echo $desc_len > 160 ? 'echs-over' : ''; ?>">
-								<?php echo esc_html( $desc_len ); ?>/160
+							<span class="echs-bulk-charcount <?php echo $desc_len > 300 ? 'echs-over' : ( $desc_len > 160 ? 'echs-warn' : '' ); ?>">
+								<?php echo esc_html( $desc_len ); ?>/300
 							</span>
 						</td>
 						<td class="echs-col-noindex" style="text-align:center;">
@@ -361,7 +361,8 @@ class ECHS_Bulk_SEO {
 			.echs-bulk-field.echs-bulk-saved { border-color: #00a32a; }
 			.echs-bulk-field.echs-bulk-error { border-color: #d63638; }
 			.echs-bulk-charcount { font-size: 11px; color: #646970; }
-			.echs-bulk-charcount.echs-over { color: #d63638; }
+			.echs-bulk-charcount.echs-warn { color: #dba617; font-weight: 600; }
+			.echs-bulk-charcount.echs-over { color: #d63638; font-weight: 600; }
 			.echs-bulk-status-label { color: #646970; font-size: 11px; }
 			.echs-bulk-kw-row {
 				display: flex; justify-content: space-between; align-items: center;
@@ -390,8 +391,9 @@ class ECHS_Bulk_SEO {
 				var len = $field.val().length;
 				var $count = $field.siblings('.echs-bulk-charcount');
 				if ($field.data('field') === 'echs_seo_description') {
-					$count.text(len + '/160');
-					$count.toggleClass('echs-over', len > 160);
+					$count.text(len + '/300');
+					$count.toggleClass('echs-over',  len > 300);
+					$count.toggleClass('echs-warn', len > 160 && len <= 300);
 				} else {
 					$count.text(len + ' chars');
 					$count.toggleClass('echs-over', len > 60);
