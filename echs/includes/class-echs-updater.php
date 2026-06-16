@@ -29,6 +29,29 @@ class ECHS_Updater {
 		add_action( 'admin_notices',                         [ __CLASS__, 'maybe_show_changelog_notice' ] );
 		// When WordPress clears its plugin update cache (e.g. "Check Again"), clear ours too.
 		add_action( 'deleted_site_transient', [ __CLASS__, 'bust_cache_on_wp_clear' ] );
+		// Manual "Clear Cache & Check Now" button in plugin settings.
+		add_action( 'admin_init', [ __CLASS__, 'handle_force_check' ] );
+	}
+
+	public static function handle_force_check(): void {
+		if ( ! isset( $_GET['echs_force_update_check'] ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		check_admin_referer( 'echs_force_update_check' );
+
+		// Clear our transients.
+		delete_transient( self::transient_key() );
+		delete_transient( self::CACHE_KEY );
+
+		// Force WordPress to re-run its own update check.
+		delete_site_transient( 'update_plugins' );
+		wp_update_plugins();
+
+		wp_safe_redirect( admin_url( 'update-core.php' ) );
+		exit;
 	}
 
 	public static function bust_cache_on_wp_clear( string $transient ): void {

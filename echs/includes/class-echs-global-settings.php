@@ -794,6 +794,80 @@ class ECHS_Global_Settings {
 				</div>
 			<?php endif; ?>
 
+			<?php self::render_update_diagnostics(); ?>
+
+		</div>
+		<?php
+	}
+
+	public static function render_update_diagnostics(): void {
+		$api_url = add_query_arg( [
+			'action'     => 'info',
+			'license'    => ECHS_License::get_key(),
+			'site'       => home_url(),
+			'version'    => ECHS_VERSION,
+			'wp_version' => get_bloginfo( 'version' ),
+		], ECHS_Updater::UPDATE_URL );
+
+		$response    = wp_remote_get( $api_url, [ 'timeout' => 10 ] );
+		$is_error    = is_wp_error( $response );
+		$status_code = $is_error ? 0 : wp_remote_retrieve_response_code( $response );
+		$body        = $is_error ? $response->get_error_message() : wp_remote_retrieve_body( $response );
+		$data        = ( ! $is_error && 200 === $status_code ) ? json_decode( $body, true ) : null;
+		$server_ver  = $data['version'] ?? null;
+		$can_connect = ( 200 === $status_code );
+		$update_avail = $server_ver && version_compare( $server_ver, ECHS_VERSION, '>' );
+		?>
+		<div class="echs-card">
+			<h2><?php esc_html_e( 'Update Server Diagnostics', 'echs' ); ?></h2>
+			<table class="form-table">
+				<tr>
+					<th><?php esc_html_e( 'Installed Version', 'echs' ); ?></th>
+					<td><strong><?php echo esc_html( ECHS_VERSION ); ?></strong></td>
+				</tr>
+				<tr>
+					<th><?php esc_html_e( 'Server Reachable', 'echs' ); ?></th>
+					<td>
+						<?php if ( $can_connect ) : ?>
+							<span style="color:#00a32a;">&#10003; <?php esc_html_e( 'Yes (HTTP 200)', 'echs' ); ?></span>
+						<?php else : ?>
+							<span style="color:#d63638;">&#10007; <?php echo esc_html( $is_error ? $body : 'HTTP ' . $status_code ); ?></span>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<?php if ( $can_connect ) : ?>
+				<tr>
+					<th><?php esc_html_e( 'Latest Version on Server', 'echs' ); ?></th>
+					<td>
+						<?php if ( $server_ver ) : ?>
+							<strong><?php echo esc_html( $server_ver ); ?></strong>
+							<?php if ( $update_avail ) : ?>
+								— <span style="color:#00a32a;"><?php esc_html_e( 'Update available!', 'echs' ); ?></span>
+							<?php else : ?>
+								— <span style="color:#646970;"><?php esc_html_e( 'You are up to date.', 'echs' ); ?></span>
+							<?php endif; ?>
+						<?php else : ?>
+							<span style="color:#d63638;"><?php esc_html_e( 'Could not parse version from response.', 'echs' ); ?></span>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<?php endif; ?>
+				<tr>
+					<th><?php esc_html_e( 'Force Update Check', 'echs' ); ?></th>
+					<td>
+						<?php
+						$force_url = wp_nonce_url(
+							add_query_arg( 'echs_force_update_check', '1', admin_url( 'admin.php?page=echs-settings' ) ),
+							'echs_force_update_check'
+						);
+						?>
+						<a href="<?php echo esc_url( $force_url ); ?>" class="button">
+							<?php esc_html_e( 'Clear Cache &amp; Check Now', 'echs' ); ?>
+						</a>
+						<p class="description"><?php esc_html_e( 'Clears the local update cache and forces a fresh check. Use this if the WordPress Updates page is not showing an available update.', 'echs' ); ?></p>
+					</td>
+				</tr>
+			</table>
 		</div>
 		<?php
 	}
