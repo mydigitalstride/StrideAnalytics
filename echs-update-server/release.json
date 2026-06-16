@@ -1,8 +1,8 @@
 {
-    "version": "2.4.5",
-    "zip_filename": "echs-2.4.5.zip",
+    "version": "2.4.6",
+    "zip_filename": "echs-2.4.6.zip",
     "tested_wp": "6.7",
     "last_updated": "2026-06-16",
     "description": "<p>Engineering, Construction, Home Services SEO Analytics. All-in-one SEO, structured data, redirect manager, 404 monitoring, Google Business Profile integration, and more.</p>",
-    "changelog": "<h4>2.4.5</h4><ul><li>Bulk SEO Editor fixes and full-width layout</li><li>Meta description limit raised to 300 characters with 160-character warning</li></ul><h4>2.4.0</h4><ul><li>Google Business Profile OAuth integration</li><li>Yoast SEO migration tool</li><li>SEO Tasks checklist</li><li>License-gated remote updates</li></ul>"
+    "changelog": "<h4>2.4.6</h4><ul><li>Fix: Bulk SEO Editor \"Cannot load\" error resolved permanently across all WordPress configurations</li></ul><h4>2.4.5</h4><ul><li>Bulk SEO Editor fixes and full-width layout</li><li>Meta description limit raised to 300 characters with 160-character warning</li><li>Update checker now clears cache on \"Check Again\" click</li></ul><h4>2.4.0</h4><ul><li>Google Business Profile OAuth integration</li><li>Yoast SEO migration tool</li><li>SEO Tasks checklist</li><li>License-gated remote updates</li></ul>"
 }

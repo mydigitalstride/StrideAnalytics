@@ -26,6 +26,35 @@ class ECHS_Bulk_SEO {
 			'echs-bulk-seo',
 			[ __CLASS__, 'render_page' ]
 		);
+
+		// add_submenu_page() only calls add_action( $hookname, $callback ) when
+		// current_user_can() passes at registration time. In some environments
+		// (caching layers, certain security plugins, multisite edge cases) this
+		// check can fail during admin_menu, leaving has_action() returning false.
+		// WordPress's get_plugin_page_hook() relies on has_action() to validate
+		// pages — if it returns false the page is treated as invalid and
+		// "Cannot load echs-bulk-seo." is shown even though the page exists.
+		//
+		// Fix: register the action ourselves for both possible hooknames WordPress
+		// might compute during validation. render_page() enforces capability
+		// independently, so it is safe to always have the action registered.
+		global $_registered_pages;
+
+		// Primary hookname (parent resolved to its menu-title slug).
+		$hook = get_plugin_page_hookname( 'echs-bulk-seo', 'echs-settings' );
+		if ( $hook && ! has_action( $hook, [ __CLASS__, 'render_page' ] ) ) {
+			add_action( $hook, [ __CLASS__, 'render_page' ] );
+		}
+		if ( $hook ) {
+			$_registered_pages[ $hook ] = true;
+		}
+
+		// Fallback hookname used when WordPress cannot find the page in $submenu
+		// (e.g. the submenu entry was suppressed by the capability check above).
+		if ( ! has_action( 'admin_page_echs-bulk-seo', [ __CLASS__, 'render_page' ] ) ) {
+			add_action( 'admin_page_echs-bulk-seo', [ __CLASS__, 'render_page' ] );
+		}
+		$_registered_pages['admin_page_echs-bulk-seo'] = true;
 	}
 
 	public static function ajax_save(): void {

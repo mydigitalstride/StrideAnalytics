@@ -34,12 +34,16 @@ class ECHS_Updater {
 	public static function bust_cache_on_wp_clear( string $transient ): void {
 		if ( 'update_plugins' === $transient ) {
 			delete_transient( self::transient_key() );
+			delete_transient( self::CACHE_KEY ); // clear legacy static key from older installs
 		}
 	}
 
 	private static function fetch_remote_info(): array|false {
 		$cached = get_transient( self::transient_key() );
-		if ( false !== $cached ) {
+		// Only use the cache if it already tells us a newer version exists.
+		// If the cached version is <= what's installed, re-fetch in case the
+		// server has been updated since we last checked.
+		if ( false !== $cached && version_compare( $cached['version'] ?? '0', ECHS_VERSION, '>' ) ) {
 			return $cached;
 		}
 
