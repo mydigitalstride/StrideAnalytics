@@ -1,13 +1,13 @@
 {
   "name": "ECHoS SEO Analytics",
   "slug": "echs",
-  "version": "2.4.0",
-  "download_url": "https://mydigitalstride.com/echos-updates/echs-2.4.0.zip",
+  "version": "2.4.5",
+  "download_url": "https://mydigitalstride.com/echos-updates/api.php?action=download&site=",
   "url": "https://mydigitalstride.com/echos-seo-analytics",
   "requires": "6.0",
   "requires_php": "8.0",
   "tested": "6.7",
-  "last_updated": "2026-05-18",
+  "last_updated": "2026-06-16",
   "upgrade_notice": "",
   "icons": {
     "1x": "https://mydigitalstride.com/echos-updates/icon-128x128.png",
@@ -19,6 +19,6 @@
   },
   "sections": {
     "description": "<p>Engineering, Construction, Home Services SEO Analytics. All-in-one SEO, structured data, redirect manager, 404 monitoring, multi-keyword clustering, Google Business Profile integration, and more.</p>",
-    "changelog": "<h4>2.4.0</h4><ul><li>Google Business Profile OAuth integration with profile health, reviews, Q&amp;A, and job photo push</li><li>Yoast SEO one-click migration tool</li><li>SEO Tasks dashboard with actionable checklist</li><li>Remote update support</li></ul>"
+    "changelog": "<h4>2.4.5</h4><ul><li>Bulk SEO Editor fixes and full-width layout</li><li>Meta description limit raised to 300 characters with 160-character warning</li></ul><h4>2.4.0</h4><ul><li>Google Business Profile OAuth integration with profile health, reviews, Q&amp;A, and job photo push</li><li>Yoast SEO one-click migration tool</li><li>SEO Tasks dashboard with actionable checklist</li><li>Remote update support</li></ul>"
   }
 }
