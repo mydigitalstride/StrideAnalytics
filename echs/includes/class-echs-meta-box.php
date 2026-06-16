@@ -324,7 +324,7 @@ class ECHS_Meta_Box {
 				if ( ! empty( $descs ) ) {
 					$result['seo_descriptions'] = $descs;
 					if ( '' === $result['seo_description'] ) {
-						$result['seo_description'] = substr( $descs[0], 0, 160 );
+						$result['seo_description'] = substr( $descs[0], 0, 300 );
 					}
 					if ( '' === $result['service_description'] ) $result['service_description'] = $descs[0];
 					if ( '' === $result['product_description'] ) $result['product_description'] = $descs[0];
@@ -337,7 +337,7 @@ class ECHS_Meta_Box {
 			foreach ( $xpath->query( '//main//p | //article//p | //div[contains(@class,"entry-content")]//p | //p' ) as $node ) {
 				$text = self::clean_text( $node->textContent );
 				if ( strlen( $text ) >= 40 ) {
-					$result['seo_description'] = substr( $text, 0, 160 );
+					$result['seo_description'] = substr( $text, 0, 300 );
 					if ( empty( $result['seo_descriptions'] ) ) {
 						$result['seo_descriptions'] = [ $text ];
 					}
@@ -517,7 +517,7 @@ class ECHS_Meta_Box {
 			if ( '' === $result['seo_description'] && in_array( $base, $desc_keys, true ) && is_string( $value ) && strlen( $value ) >= 20 ) {
 				$clean = wp_strip_all_tags( html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) );
 				$clean = trim( preg_replace( '/\s+/', ' ', $clean ) );
-				$result['seo_description']     = substr( $clean, 0, 160 );
+				$result['seo_description']     = substr( $clean, 0, 300 );
 				if ( empty( $result['seo_descriptions'] ) ) {
 					$result['seo_descriptions'] = [ $clean ];
 				}
@@ -707,10 +707,10 @@ class ECHS_Meta_Box {
 						</th>
 						<td>
 							<textarea id="echs_seo_description" name="echs_seo_description" rows="3"
-								class="large-text" maxlength="160"><?php echo esc_textarea( get_post_meta( $post->ID, 'echs_seo_description', true ) ); ?></textarea>
-							<p class="description echs-char-count" data-max="160"><?php esc_html_e( '0 / 160 characters', 'echs' ); ?></p>
+								class="large-text" maxlength="300"><?php echo esc_textarea( get_post_meta( $post->ID, 'echs_seo_description', true ) ); ?></textarea>
+							<p class="description echs-char-count" data-max="300" data-warn="160"><?php esc_html_e( '0 / 300 characters', 'echs' ); ?></p>
 							<p class="description echs-best-practice">
-								&#128270; <?php esc_html_e( 'Best practice: 120–158 characters. Include your focus keyword, a clear benefit, and a call to action. Appears verbatim in search results.', 'echs' ); ?>
+								&#128270; <?php esc_html_e( 'Best practice: 120–158 characters. Include your focus keyword, a clear benefit, and a call to action. Appears verbatim in search results. Maximum 300 characters.', 'echs' ); ?>
 							</p>
 						</td>
 					</tr>

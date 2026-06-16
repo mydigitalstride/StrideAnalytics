@@ -366,10 +366,12 @@
 		if (!$counter.length) return;
 
 		var current = $textarea.val().length;
-		var max     = parseInt($counter.data('max'), 10) || 160;
+		var max     = parseInt($counter.data('max'),  10) || 300;
+		var warn    = parseInt($counter.data('warn'), 10) || 160;
 
 		$counter.text(current + ' / ' + max + ' characters');
-		$counter.toggleClass('echs-over-limit', current > max);
+		$counter.toggleClass('echs-over-limit',   current > max);
+		$counter.toggleClass('echs-over-warning', current > warn && current <= max);
 	}
 
 	$('#echs_seo_description').on('input', function () {
@@ -665,7 +667,7 @@
 					var label = d.seo_descriptions.length > 1
 						? 'Meta Description ' + (i + 1)
 						: 'Meta Description';
-					seoHtml += echsScanField(label, desc.substring(0, 160), '#echs_seo_description');
+					seoHtml += echsScanField(label, desc.substring(0, 300), '#echs_seo_description');
 				});
 			} else if (d.seo_description) {
 				seoHtml += echsScanField('Meta Description', d.seo_description, '#echs_seo_description');

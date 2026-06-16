@@ -408,6 +408,10 @@ ul.echs-tabs li:hover {
 .echs-char-count {
 	margin-top: 4px;
 }
+.echs-char-count.echs-over-warning {
+	color: #dba617;
+	font-weight: 600;
+}
 .echs-char-count.echs-over-limit {
 	color: #d63638;
 	font-weight: 600;
