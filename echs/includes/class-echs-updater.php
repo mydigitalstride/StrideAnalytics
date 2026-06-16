@@ -27,6 +27,14 @@ class ECHS_Updater {
 		add_filter( 'plugins_api',                           [ __CLASS__, 'plugin_info' ], 10, 3 );
 		add_action( 'upgrader_process_complete',             [ __CLASS__, 'bust_cache' ], 10, 2 );
 		add_action( 'admin_notices',                         [ __CLASS__, 'maybe_show_changelog_notice' ] );
+		// When WordPress clears its plugin update cache (e.g. "Check Again"), clear ours too.
+		add_action( 'deleted_site_transient', [ __CLASS__, 'bust_cache_on_wp_clear' ] );
+	}
+
+	public static function bust_cache_on_wp_clear( string $transient ): void {
+		if ( 'update_plugins' === $transient ) {
+			delete_transient( self::transient_key() );
+		}
 	}
 
 	private static function fetch_remote_info(): array|false {
