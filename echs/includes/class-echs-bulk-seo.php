@@ -13,7 +13,7 @@ class ECHS_Bulk_SEO {
 	private static array $post_types = [ 'page', 'post', 'product' ];
 
 	public static function init(): void {
-		add_action( 'admin_menu',                     [ __CLASS__, 'register_menu' ] );
+		add_action( 'admin_menu',                     [ __CLASS__, 'register_menu' ], 20 );
 		add_action( 'wp_ajax_echs_bulk_seo_save',     [ __CLASS__, 'ajax_save' ] );
 	}
 
@@ -162,7 +162,7 @@ class ECHS_Bulk_SEO {
 		$total_pages = $query->max_num_pages;
 		$nonce       = wp_create_nonce( 'echs_bulk_seo_nonce' );
 		?>
-		<div class="wrap echs-settings-wrap">
+		<div class="wrap echs-bulk-seo-wrap" style="max-width:100%;">
 			<h1><?php esc_html_e( 'Bulk SEO Editor', 'echs' ); ?></h1>
 
 			<div class="echs-bulk-seo-filters" style="margin:12px 0 16px;display:flex;gap:8px;align-items:center;">
@@ -185,7 +185,7 @@ class ECHS_Bulk_SEO {
 				<p><?php esc_html_e( 'No posts found.', 'echs' ); ?></p>
 			<?php else : ?>
 
-			<table class="wp-list-table widefat fixed striped echs-bulk-seo-table">
+			<table class="wp-list-table widefat striped echs-bulk-seo-table" style="table-layout:auto;width:100%;">
 				<thead>
 					<tr>
 						<th class="echs-col-page"><?php esc_html_e( 'Page', 'echs' ); ?></th>
@@ -348,12 +348,12 @@ class ECHS_Bulk_SEO {
 		<style>
 			.echs-bulk-seo-table th,
 			.echs-bulk-seo-table td { vertical-align: top; padding: 8px; }
-			.echs-col-page  { width: 20%; }
-			.echs-col-title { width: 22%; }
-			.echs-col-desc  { width: 26%; }
-			.echs-col-noindex { width: 6%; text-align: center; }
-			.echs-col-read  { width: 8%; text-align: center; }
-			.echs-col-kw    { width: 18%; }
+			.echs-col-page  { width: 14%; min-width: 120px; }
+			.echs-col-title { width: 28%; min-width: 200px; }
+			.echs-col-desc  { width: 34%; min-width: 240px; }
+			.echs-col-noindex { width: 5%; min-width: 60px; text-align: center; }
+			.echs-col-read  { width: 6%; min-width: 70px; text-align: center; }
+			.echs-col-kw    { width: 13%; min-width: 120px; }
 			.echs-bulk-seo-table input.echs-bulk-field,
 			.echs-bulk-seo-table textarea.echs-bulk-field { width: 100%; }
 			.echs-bulk-seo-table textarea.echs-bulk-field { resize: vertical; min-height: 48px; }
